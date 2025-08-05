@@ -19,22 +19,22 @@ class BasicDataSeeder extends Seeder
 
         // Create permissions
         $this->createPermissions();
-        
+
         // Create roles
         $roles = $this->createRoles();
-        
+
         // Create sample organization
         $organization = $this->createOrganization();
-        
+
         // Create department groups
         $departmentGroups = $this->createDepartmentGroups();
-        
+
         // Create departments
         $departments = $this->createDepartments($departmentGroups);
-        
+
         // Create users
         $this->createUsers($organization, $departments, $roles);
-        
+
         $this->command->info('✅ Basic data seeded successfully!');
     }
 
@@ -42,21 +42,35 @@ class BasicDataSeeder extends Seeder
     {
         $permissions = [
             // User management
-            'users.view', 'users.create', 'users.edit', 'users.delete',
-            
+            'users.view',
+            'users.create',
+            'users.edit',
+            'users.delete',
+
             // Organization management
-            'organizations.view', 'organizations.edit',
-            
+            'organizations.view',
+            'organizations.edit',
+
             // Department management
-            'departments.view', 'departments.create', 'departments.edit', 'departments.delete',
-            
+            'departments.view',
+            'departments.create',
+            'departments.edit',
+            'departments.delete',
+
             // Ticket management
-            'tickets.view', 'tickets.create', 'tickets.edit', 'tickets.delete',
-            'tickets.assign', 'tickets.close',
-            
+            'tickets.view',
+            'tickets.create',
+            'tickets.edit',
+            'tickets.delete',
+            'tickets.assign',
+            'tickets.close',
+
             // Knowledge base
-            'articles.view', 'articles.create', 'articles.edit', 'articles.delete',
-            
+            'articles.view',
+            'articles.create',
+            'articles.edit',
+            'articles.delete',
+
             // Reports
             'reports.view',
         ];
@@ -69,7 +83,7 @@ class BasicDataSeeder extends Seeder
     private function createRoles(): array
     {
         // For team-based permissions, create roles without team first, then assign with team context
-        
+
         // Super Admin - has all permissions
         $superAdmin = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
         $superAdmin->givePermissionTo(Permission::all());
@@ -77,18 +91,31 @@ class BasicDataSeeder extends Seeder
         // Admin - organization level admin
         $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
         $admin->givePermissionTo([
-            'users.view', 'users.create', 'users.edit',
+            'users.view',
+            'users.create',
+            'users.edit',
             'organizations.view',
-            'departments.view', 'departments.create', 'departments.edit',
-            'tickets.view', 'tickets.create', 'tickets.edit', 'tickets.assign', 'tickets.close',
-            'articles.view', 'articles.create', 'articles.edit',
+            'departments.view',
+            'departments.create',
+            'departments.edit',
+            'tickets.view',
+            'tickets.create',
+            'tickets.edit',
+            'tickets.assign',
+            'tickets.close',
+            'articles.view',
+            'articles.create',
+            'articles.edit',
             'reports.view',
         ]);
 
         // Agent - department level support
         $agent = Role::firstOrCreate(['name' => 'Agent', 'guard_name' => 'web']);
         $agent->givePermissionTo([
-            'tickets.view', 'tickets.create', 'tickets.edit', 'tickets.close',
+            'tickets.view',
+            'tickets.create',
+            'tickets.edit',
+            'tickets.close',
             'articles.view',
             'users.view',
         ]);
@@ -96,7 +123,8 @@ class BasicDataSeeder extends Seeder
         // Client - can create and view own tickets
         $client = Role::firstOrCreate(['name' => 'Client', 'guard_name' => 'web']);
         $client->givePermissionTo([
-            'tickets.view', 'tickets.create',
+            'tickets.view',
+            'tickets.create',
             'articles.view',
         ]);
 
@@ -129,20 +157,32 @@ class BasicDataSeeder extends Seeder
             [
                 'name' => 'Admin',
                 'description' => 'Adminstrative Group',
-                'color' => '#3b82f6',
+                'color' => '#3b82f6', // blue
                 'sort_order' => 1,
             ],
             [
                 'name' => 'PMS',
                 'description' => 'Property Management System Softwares',
-                'color' => '#10b981',
+                'color' => '#10b981', // green
                 'sort_order' => 2,
             ],
             [
                 'name' => 'POS',
                 'description' => 'Point of Sales Softwares',
-                'color' => '#f59e0b',
+                'color' => '#f59e0b', // amber
                 'sort_order' => 3,
+            ],
+            [
+                'name' => 'MC',
+                'description' => 'Materials Control',
+                'color' => '#8b5cf6', // violet
+                'sort_order' => 4,
+            ],
+            [
+                'name' => 'Hardware',
+                'description' => 'Hardware Group',
+                'color' => '#ef4444', // red
+                'sort_order' => 5,
             ],
         ];
 
@@ -158,34 +198,98 @@ class BasicDataSeeder extends Seeder
     {
         $departments = [
             [
-                'name' => 'IT Support',
-                'description' => 'Technical support and system administration',
-                'email' => 'it@pms.com',
-                'department_group_id' => $departmentGroups[0]->id,
+                'name' => 'OPERA',
+                'description' => 'Property Management On premise',
+                'email' => 'opera@htm.com.mv',
+                'department_group_id' => $departmentGroups[1]->id, // PMS
                 'sort_order' => 1,
             ],
             [
-                'name' => 'Network Administration',
-                'description' => 'Network infrastructure and security',
-                'email' => 'network@ht.com',
-                'department_group_id' => $departmentGroups[0]->id,
+                'name' => 'OPERA Cloud',
+                'description' => 'Property Management Cloud System',
+                'email' => 'operacloud@htm.com.mv',
+                'department_group_id' => $departmentGroups[1]->id, // PMS
                 'sort_order' => 2,
             ],
             [
-                'name' => 'Human Resources',
-                'description' => 'Employee management and support',
-                'email' => 'hr@ht.com',
-                'department_group_id' => $departmentGroups[1]->id,
+                'name' => 'OXI',
+                'description' => 'Opera Exchange Interface',
+                'email' => 'oxi@htm.com.mv',
+                'department_group_id' => $departmentGroups[1]->id, // PMS
+                'sort_order' => 3,
+            ],
+            [
+                'name' => 'IFC',
+                'description' => 'Opera Interface',
+                'email' => 'ifc@htm.com.mv',
+                'department_group_id' => $departmentGroups[1]->id, // PMS
+                'sort_order' => 4,
+            ],
+            [
+                'name' => 'VISION',
+                'description' => 'Infor Query and Analysis',
+                'email' => 'vision@htm.com.mv',
+                'department_group_id' => $departmentGroups[1]->id, // PMS
+                'sort_order' => 5,
+            ],
+            [
+                'name' => 'SYMPHONY',
+                'description' => 'Point of Sales - Symphony On-premise',
+                'email' => 'symphony@htm.com.mv',
+                'department_group_id' => $departmentGroups[2]->id, // POS
                 'sort_order' => 1,
             ],
             [
-                'name' => 'Customer Support',
-                'description' => 'Customer service and support',
-                'email' => 'support@testcompany.com',
-                'department_group_id' => $departmentGroups[2]->id,
+                'name' => 'RES9700',
+                'description' => 'Point of Sales - 9700',
+                'email' => 'res9700@htm.com.mv',
+                'department_group_id' => $departmentGroups[2]->id, // POS
+                'sort_order' => 2,
+            ],
+            [
+                'name' => 'SYMPHONY CLOUD',
+                'description' => 'Point of Sales - Symphony Cloud',
+                'email' => 'symphonycloud@htm.com.mv',
+                'department_group_id' => $departmentGroups[2]->id, // POS
+                'sort_order' => 3,
+            ],
+            [
+                'name' => 'MC',
+                'description' => 'Materials Control on-premise',
+                'email' => 'mc@htm.com.mv',
+                'department_group_id' => $departmentGroups[3]->id, // MC
                 'sort_order' => 1,
             ],
+            [
+                'name' => 'Hardware',
+                'description' => 'Hardware',
+                'email' => 'hardware@htm.com.mv',
+                'department_group_id' => $departmentGroups[4]->id, // Hardware
+                'sort_order' => 1,
+            ],
+            [
+                'name' => 'Sales',
+                'description' => 'Sales Engagement',
+                'email' => 'sales@htm.com.mv',
+                'department_group_id' => $departmentGroups[0]->id, // Admin
+                'sort_order' => 1,
+            ],
+            [
+                'name' => 'Finance',
+                'description' => 'Finance Department',
+                'email' => 'finance@htm.com.mv',
+                'department_group_id' => $departmentGroups[0]->id, // Admin
+                'sort_order' => 2,
+            ],
+            [
+                'name' => 'Resource',
+                'description' => 'Human Resource',
+                'email' => 'resource@htm.com.mv',
+                'department_group_id' => $departmentGroups[0]->id, // Admin
+                'sort_order' => 3,
+            ],
         ];
+
 
         $createdDepartments = [];
         foreach ($departments as $department) {
@@ -199,7 +303,7 @@ class BasicDataSeeder extends Seeder
     {
         // Super Admin - assign to IT Support department
         $superAdmin = User::firstOrCreate([
-            'email' => 'superadmin@samplecompany.com',
+            'email' => 'superadmin@htm.com',
         ], [
             'name' => 'Super Admin',
             'username' => 'superadmin',
