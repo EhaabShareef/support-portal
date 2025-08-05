@@ -226,6 +226,132 @@ html, body {
     @apply flex items-center justify-center;
   }
 
+  /* Dashboard Components */
+  .dashboard-card {
+    @apply glass-card p-6 hover:shadow-lg transition-all duration-200;
+  }
+
+  .contribution-graph-container {
+    @apply p-4;
+  }
+
+  .contribution-grid {
+    @apply flex gap-1 min-w-max;
+  }
+
+  .contribution-week {
+    @apply flex flex-col gap-1;
+  }
+
+  .contribution-day {
+    @apply w-3 h-3 rounded-sm border border-neutral-200 dark:border-neutral-700 cursor-pointer transition-all duration-200;
+  }
+
+  .contribution-day:hover {
+    @apply scale-110 border-neutral-400 dark:border-neutral-500;
+  }
+
+  .contribution-empty {
+    @apply bg-transparent border-transparent;
+  }
+
+  .contribution-level-0 {
+    @apply bg-neutral-100 dark:bg-neutral-800;
+  }
+
+  .contribution-level-1 {
+    @apply bg-green-200 dark:bg-green-900;
+  }
+
+  .contribution-level-2 {
+    @apply bg-green-300 dark:bg-green-700;
+  }
+
+  .contribution-level-3 {
+    @apply bg-green-400 dark:bg-green-600;
+  }
+
+  .contribution-level-4 {
+    @apply bg-green-500 dark:bg-green-500;
+  }
+
+  /* Mobile-specific Dashboard Styles */
+  @media (max-width: 640px) {
+    .dashboard-card {
+      @apply p-4;
+    }
+
+    .contribution-day {
+      @apply w-2.5 h-2.5;
+    }
+
+    .contribution-grid {
+      @apply gap-0.5;
+    }
+
+    .contribution-week {
+      @apply gap-0.5;
+    }
+  }
+
+  /* Chart Container Responsive */
+  .chart-container {
+    @apply relative h-64 w-full;
+  }
+
+  @media (max-width: 768px) {
+    .chart-container {
+      @apply h-48;
+    }
+  }
+
+  /* Metric Cards with Gradient Animation */
+  .metric-card {
+    @apply relative overflow-hidden;
+  }
+
+  .metric-card::before {
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition-opacity duration-500;
+    content: '';
+    transform: translateX(-100%);
+  }
+
+  .metric-card:hover::before {
+    @apply opacity-100;
+    animation: shimmer 1.5s ease-in-out;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Status Badge Animations */
+  .status-badge {
+    @apply transition-all duration-200 hover:scale-105;
+  }
+
+  /* Touch-friendly buttons for mobile */
+  @media (max-width: 768px) {
+    .touch-target {
+      @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+    }
+
+    .quick-action-card {
+      @apply p-4 min-h-[60px] touch-target;
+    }
+  }
+
+  /* Loading skeleton animations */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .loading-skeleton {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
   /* Alert/Flash Messages */
   .alert {
     @apply px-4 py-3 rounded-md text-sm border;

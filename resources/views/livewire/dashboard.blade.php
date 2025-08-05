@@ -1,71 +1,49 @@
-<div class="space-y-6">
-
-    {{-- Page Heading --}}
-    <h1 class="text-heading-1">
-        Welcome to the Support Dashboard
-    </h1>
-
-    {{-- Overview Stat Cards --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="card">
-            <div class="text-body-secondary">Open Tickets</div>
-            <div class="text-2xl font-bold text-heading-2">24</div>
-        </div>
-        <div class="card">
-            <div class="text-body-secondary">Resolved Today</div>
-            <div class="text-2xl font-bold text-heading-2">8</div>
-        </div>
-        <div class="card">
-            <div class="text-body-secondary">Organizations</div>
-            <div class="text-2xl font-bold text-heading-2">53</div>
-        </div>
-        <div class="card">
-            <div class="text-body-secondary">Users Online</div>
-            <div class="text-2xl font-bold text-heading-2">5</div>
+<div class="space-y-6" wire:poll.30s="refreshData">
+    {{-- Page Header --}}
+    <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-neutral-800 dark:text-neutral-100 flex items-center gap-3">
+                    <x-heroicon-o-chart-bar-square class="h-8 w-8 text-sky-500" />
+                    Dashboard
+                </h1>
+                <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                    Welcome back, {{ auth()->user()->name }} | {{ $userRole }}
+                </p>
+            </div>
+            <button wire:click="refreshData" 
+                class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
+                <x-heroicon-o-arrow-path class="h-4 w-4 mr-2" />
+                Refresh
+            </button>
         </div>
     </div>
 
-    {{-- Chart Placeholder --}}
-    <div class="card h-64">
-        <div class="card-header">
-            <h2 class="text-heading-4">Ticket Trends</h2>
-            <span class="text-body-tertiary">Last 7 days</span>
-        </div>
-        <div class="w-full h-full flex-center text-body-secondary">
-            [Chart Placeholder]
-        </div>
-    </div>
+    @if($userRole === 'Super Admin' || $userRole === 'Admin')
+        @include('livewire.dashboard.admin-dashboard')
+    @elseif($userRole === 'Agent')
+        @include('livewire.dashboard.agent-dashboard')
+    @else
+        @include('livewire.dashboard.client-dashboard')
+    @endif
 
-    {{-- Quick Actions --}}
-    <div class="content-section">
-        <h2 class="text-heading-4">Quick Actions</h2>
-        <div class="grid-responsive">
-            <a href="{{ route('tickets.create') }}" class="btn-primary">
-                <x-heroicon-o-plus-circle class="w-5 h-5 mr-2" />
-                Create Ticket
-            </a>
-
-            <a href="#" class="btn-success">
-                <x-heroicon-o-building-office class="h-5 w-5 mr-2" />
-                Manage Organizations
-            </a>
-            
-            <a href="#" class="btn-secondary">
-                <x-heroicon-o-server class="h-5 w-5 mr-2" />
-                Hardware Inventory
-            </a>
+    {{-- Loading States --}}
+    <div wire:loading wire:target="refreshData" class="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 shadow-xl">
+            <div class="flex items-center space-x-3">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-sky-600"></div>
+                <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Updating dashboard...</span>
+            </div>
         </div>
     </div>
-
-    {{-- Recent Activity Placeholder --}}
-    <div class="content-section">
-        <h2 class="text-heading-4 mb-3">Recent Activity</h2>
-        <ul class="space-y-2 text-body">
-            <li>📝 Ticket #3482 opened by <strong class="text-body">Aysha</strong></li>
-            <li>✅ Ticket #3419 resolved by <strong class="text-body">Ibrahim</strong></li>
-            <li>👤 New user <strong class="text-body">Ali Rasheed</strong> added to Org #3</li>
-            <li>🔧 System maintenance scheduled for tonight</li>
-        </ul>
-    </div>
-
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('livewire:initialized', () => {
+        Livewire.on('dataRefreshed', () => {
+            console.log('Dashboard data refreshed');
+        });
+    });
+</script>
+@endpush
