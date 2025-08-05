@@ -205,6 +205,45 @@
                         </div>
                         
                         <div>
+                            <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Contract Status</dt>
+                            <dd class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
+                                @if($this->activeContract)
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-medium">{{ $this->activeContract->contract_number }}</span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
+                                                @if($this->activeContract->status === 'active') bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300
+                                                @elseif($this->activeContract->status === 'expired') bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300
+                                                @else bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300 @endif">
+                                                {{ ucfirst($this->activeContract->status) }}
+                                            </span>
+                                        </div>
+                                        <div class="text-xs text-neutral-600 dark:text-neutral-400">
+                                            {{ ucfirst($this->activeContract->type) }} • 
+                                            {{ $this->activeContract->start_date->format('M d, Y') }} - 
+                                            {{ $this->activeContract->end_date ? $this->activeContract->end_date->format('M d, Y') : 'Ongoing' }}
+                                        </div>
+                                        @if($this->activeContract->contract_value)
+                                        <div class="text-xs text-neutral-600 dark:text-neutral-400">
+                                            Value: {{ $this->activeContract->currency }} {{ number_format($this->activeContract->contract_value, 2) }}
+                                        </div>
+                                        @endif
+                                    </div>
+                                @else
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300">
+                                            <x-heroicon-o-exclamation-triangle class="h-3 w-3 mr-1" />
+                                            No Active Contract
+                                        </span>
+                                    </div>
+                                    <div class="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                                        No active contract found for {{ $ticket->organization->name }} in {{ $ticket->department->name }} department
+                                    </div>
+                                @endif
+                            </dd>
+                        </div>
+                        
+                        <div>
                             <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Assigned To</dt>
                             <dd class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
                                 @if($ticket->assigned)

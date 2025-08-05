@@ -70,6 +70,12 @@ class ViewTicket extends Component
 
         $this->ticket = $ticket->load([
             'organization',
+            'organization.contracts' => function($query) use ($ticket) {
+                $query->where('department_id', $ticket->department_id)
+                      ->where('status', 'active')
+                      ->orderBy('start_date', 'desc')
+                      ->limit(1);
+            },
             'department',
             'assigned',
             'client',
@@ -129,6 +135,12 @@ class ViewTicket extends Component
     public function canAddNotes()
     {
         return auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Admin') || auth()->user()->hasRole('Agent');
+    }
+
+    #[Computed]
+    public function activeContract()
+    {
+        return $this->ticket->organization->contracts->first();
     }
 
     public function enableEdit()
