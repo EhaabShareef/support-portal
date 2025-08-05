@@ -7,53 +7,69 @@
 
     {{-- Overview Stat Cards --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="card">
-            <div class="text-body-secondary">Open Tickets</div>
-            <div class="text-2xl font-bold text-heading-2">24</div>
-        </div>
-        <div class="card">
-            <div class="text-body-secondary">Resolved Today</div>
-            <div class="text-2xl font-bold text-heading-2">8</div>
-        </div>
-        <div class="card">
-            <div class="text-body-secondary">Organizations</div>
-            <div class="text-2xl font-bold text-heading-2">53</div>
-        </div>
-        <div class="card">
-            <div class="text-body-secondary">Users Online</div>
-            <div class="text-2xl font-bold text-heading-2">5</div>
-        </div>
+        @can('tickets.view')
+            <div class="card hover-lift">
+                <div class="text-body-secondary">Open Tickets</div>
+                <div class="text-2xl font-bold text-heading-2">{{ $stats['open'] ?? 0 }}</div>
+            </div>
+            <div class="card hover-lift">
+                <div class="text-body-secondary">Resolved Today</div>
+                <div class="text-2xl font-bold text-heading-2">{{ $stats['resolvedToday'] ?? 0 }}</div>
+            </div>
+        @endcan
+
+        @can('organizations.view')
+            <div class="card hover-lift">
+                <div class="text-body-secondary">Organizations</div>
+                <div class="text-2xl font-bold text-heading-2">{{ $stats['organizations'] ?? 0 }}</div>
+            </div>
+        @endcan
+
+        @can('users.view')
+            <div class="card hover-lift">
+                <div class="text-body-secondary">Active Users</div>
+                <div class="text-2xl font-bold text-heading-2">{{ $stats['activeUsers'] ?? 0 }}</div>
+            </div>
+        @endcan
     </div>
 
-    {{-- Chart Placeholder --}}
-    <div class="card h-64">
-        <div class="card-header">
-            <h2 class="text-heading-4">Ticket Trends</h2>
-            <span class="text-body-tertiary">Last 7 days</span>
+    {{-- Ticket Trends Chart --}}
+    @can('tickets.view')
+        <div class="card h-72">
+            <div class="card-header">
+                <h2 class="text-heading-4">Ticket Trends</h2>
+                <span class="text-body-tertiary">Last 7 days</span>
+            </div>
+            <div class="p-4 h-full">
+                <canvas id="ticket-trends-chart" class="w-full h-full"></canvas>
+            </div>
         </div>
-        <div class="w-full h-full flex-center text-body-secondary">
-            [Chart Placeholder]
-        </div>
-    </div>
+    @endcan
 
     {{-- Quick Actions --}}
     <div class="content-section">
         <h2 class="text-heading-4">Quick Actions</h2>
         <div class="grid-responsive">
-            <a href="{{ route('tickets.create') }}" class="btn-primary">
-                <x-heroicon-o-plus-circle class="w-5 h-5 mr-2" />
-                Create Ticket
-            </a>
+            @can('tickets.create')
+                <a href="{{ route('tickets.create') }}" class="btn-primary flex items-center">
+                    <x-heroicon-o-plus-circle class="w-5 h-5 mr-2" />
+                    Create Ticket
+                </a>
+            @endcan
 
-            <a href="#" class="btn-success">
-                <x-heroicon-o-building-office class="h-5 w-5 mr-2" />
-                Manage Organizations
-            </a>
-            
-            <a href="#" class="btn-secondary">
-                <x-heroicon-o-server class="h-5 w-5 mr-2" />
-                Hardware Inventory
-            </a>
+            @can('organizations.view')
+                <a href="{{ route('organizations.index') }}" class="btn-success flex items-center">
+                    <x-heroicon-o-building-office class="h-5 w-5 mr-2" />
+                    Manage Organizations
+                </a>
+            @endcan
+
+            @can('users.view')
+                <a href="{{ route('users.index') }}" class="btn-secondary flex items-center">
+                    <x-heroicon-o-user-group class="h-5 w-5 mr-2" />
+                    Manage Users
+                </a>
+            @endcan
         </div>
     </div>
 
@@ -69,3 +85,39 @@
     </div>
 
 </div>
+
+@push('scripts')
+    @can('tickets.view')
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('livewire:load', () => {
+                const ctx = document.getElementById('ticket-trends-chart');
+                if (!ctx) return;
+
+                const data = {
+                    labels: @json(array_keys($ticketTrends)),
+                    datasets: [{
+                        label: 'Tickets',
+                        data: @json(array_values($ticketTrends)),
+                        borderColor: 'rgb(59,130,246)',
+                        backgroundColor: 'rgba(59,130,246,0.1)',
+                        tension: 0.4,
+                        fill: true,
+                    }],
+                };
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                        },
+                    },
+                });
+            });
+        </script>
+    @endcan
+@endpush
