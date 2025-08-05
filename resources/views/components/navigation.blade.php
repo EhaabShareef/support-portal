@@ -13,7 +13,7 @@
             <div class="flex items-center">
                 <a href="{{ route('dashboard') }}" 
                    class="flex items-center space-x-3 text-xl font-semibold text-neutral-900 dark:text-neutral-100 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors">
-                    <x-heroicon-o-sparkles class="h-8 w-8 text-sky-600" />
+                    <x-heroicon-s-sparkles class="h-8 w-8 text-sky-500/75 stroke-1" />
                     <span class="hidden sm:block">Support Portal</span>
                 </a>
             </div>
