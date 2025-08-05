@@ -1,0 +1,208 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Models\Organization;
+use Livewire\Attributes\Computed;
+use Livewire\Component;
+
+class ViewOrganization extends Component
+{
+    public Organization $organization;
+
+    public bool $editMode = false;
+
+    public bool $confirmingDelete = false;
+
+    public string $activeTab = 'users';
+
+    public string $ticketSearch = '';
+
+    public array $form = [];
+
+    public function mount(Organization $organization)
+    {
+        // Check permissions
+        $user = auth()->user();
+        if (! $user->can('organizations.view')) {
+            abort(403, 'You do not have permission to view organizations.');
+        }
+
+        // Clients can only view their own organization
+        if ($user->hasRole('Client') && $organization->id !== $user->organization_id) {
+            abort(403, 'You can only view your own organization.');
+        }
+
+        $this->organization = $organization->load(['users', 'contracts', 'hardware', 'tickets']);
+        $this->syncForm();
+    }
+
+    public function pageRefresh(): void
+    {
+        $this->organization->refresh();
+        $this->syncForm();
+    }
+
+    #[Computed]
+    public function canEdit()
+    {
+        $user = auth()->user();
+        if ($user->hasRole('Super Admin') || $user->can('organizations.edit')) {
+            return true;
+        }
+
+        // Clients can edit their own organization
+        return $user->hasRole('Client') && $this->organization->id === $user->organization_id;
+    }
+
+    #[Computed]
+    public function canDelete()
+    {
+        return auth()->user()->hasRole('Super Admin') || auth()->user()->can('organizations.delete');
+    }
+
+    protected function syncForm(): void
+    {
+        $this->form = [
+            'name' => $this->organization->name,
+            'company' => $this->organization->company,
+            'company_contact' => $this->organization->company_contact,
+            'tin_no' => $this->organization->tin_no,
+            'email' => $this->organization->email,
+            'phone' => $this->organization->phone,
+            'is_active' => $this->organization->is_active,
+            'subscription_status' => $this->organization->subscription_status,
+            'notes' => $this->organization->notes,
+        ];
+    }
+
+    public function enableEdit(): void
+    {
+        if (! $this->canEdit) {
+            session()->flash('error', 'You do not have permission to edit this organization.');
+
+            return;
+        }
+
+        $this->editMode = true;
+        $this->syncForm();
+    }
+
+    public function cancel(): void
+    {
+        $this->editMode = false;
+        $this->confirmingDelete = false;
+        $this->syncForm();
+    }
+
+    public function save(): void
+    {
+        if (! $this->canEdit) {
+            session()->flash('error', 'You do not have permission to edit this organization.');
+
+            return;
+        }
+
+        $validated = $this->validate([
+            'form.name' => 'required|string|max:255',
+            'form.company' => 'required|string|max:255',
+            'form.company_contact' => 'required|string|max:255',
+            'form.tin_no' => 'required|string|max:255|unique:organizations,tin_no,'.$this->organization->id,
+            'form.email' => 'required|email|unique:organizations,email,'.$this->organization->id,
+            'form.phone' => 'nullable|string|max:20',
+            'form.is_active' => 'boolean',
+            'form.subscription_status' => 'required|in:trial,active,suspended,cancelled',
+            'form.notes' => 'nullable|string',
+        ]);
+
+        $this->organization->update($validated['form']);
+        $this->organization->refresh();
+
+        $this->editMode = false;
+        $this->syncForm();
+        session()->flash('message', 'Organization updated successfully.');
+    }
+
+    public function confirmDelete()
+    {
+        if (! $this->canDelete) {
+            session()->flash('error', 'You do not have permission to delete this organization.');
+
+            return;
+        }
+
+        if (! $this->organization->canBeDeleted()) {
+            session()->flash('error', 'Cannot delete organization with associated users, tickets, or contracts.');
+
+            return;
+        }
+
+        $this->confirmingDelete = true;
+    }
+
+    public function delete()
+    {
+        if (! $this->canDelete) {
+            session()->flash('error', 'You do not have permission to delete this organization.');
+
+            return;
+        }
+
+        if (! $this->organization->canBeDeleted()) {
+            session()->flash('error', 'Cannot delete organization with associated users, tickets, or contracts.');
+
+            return;
+        }
+
+        $this->organization->delete();
+
+        return redirect()->route('organizations.index')->with('message', 'Organization deleted successfully.');
+    }
+
+    public function toggleActive()
+    {
+        if (! auth()->user()->hasRole('Super Admin') && ! auth()->user()->can('organizations.edit')) {
+            session()->flash('error', 'You do not have permission to change organization status.');
+
+            return;
+        }
+
+        $this->organization->update([
+            'is_active' => ! $this->organization->is_active,
+        ]);
+
+        $this->organization->refresh();
+        $this->syncForm();
+
+        $status = $this->organization->is_active ? 'activated' : 'deactivated';
+        session()->flash('message', "Organization {$status} successfully.");
+    }
+
+    public function setActiveTab($tab)
+    {
+        $this->activeTab = $tab;
+    }
+
+    #[Computed]
+    public function filteredTickets()
+    {
+        return $this->organization->tickets()
+            ->with(['client', 'department', 'assigned'])
+            ->when($this->ticketSearch, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('subject', 'like', '%'.$this->ticketSearch.'%')
+                        ->orWhere('ticket_number', 'like', '%'.$this->ticketSearch.'%')
+                        ->orWhereHas('client', function ($clientQuery) {
+                            $clientQuery->where('name', 'like', '%'.$this->ticketSearch.'%');
+                        });
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+    }
+
+    public function render()
+    {
+        return view('livewire.view-organization');
+    }
+}

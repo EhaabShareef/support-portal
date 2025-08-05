@@ -1,0 +1,368 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Enums\TicketPriority;
+use App\Enums\TicketStatus;
+use App\Models\Department;
+use App\Models\Ticket;
+use App\Models\TicketMessage;
+use App\Models\TicketNote;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Computed;
+use Livewire\Component;
+
+class ViewTicket extends Component
+{
+    public Ticket $ticket;
+
+    public string $activeInput = ''; // values: 'reply', 'note'
+
+    public bool $editMode = false;
+
+    public array $form = [
+        'subject' => '',
+        'type' => '',
+        'status' => '',
+        'priority' => '',
+        'assigned_to' => '',
+        'department_id' => '',
+        'description' => '',
+    ];
+
+    public string $replyMessage = '';
+
+    public ?int $confirmingNoteId = null;
+
+    public $noteInputKey = null;
+
+    public string $note = '';
+
+    public string $noteColor = 'sky';
+
+    public bool $noteInternal = false;
+
+    public function mount(Ticket $ticket)
+    {
+        // Check permissions
+        $user = auth()->user();
+        if (! $user->can('tickets.view')) {
+            abort(403, 'You do not have permission to view tickets.');
+        }
+
+        // Role-based access control
+        if ($user->hasRole('Client') && $ticket->organization_id !== $user->organization_id) {
+            abort(403, 'You can only view tickets from your organization.');
+        }
+
+        if ($user->hasRole('Agent') && $ticket->department_id !== $user->department_id) {
+            abort(403, 'You can only view tickets from your department.');
+        }
+
+        $this->ticket = $ticket->load([
+            'organization',
+            'department',
+            'assigned',
+            'client',
+            'messages',
+            'messages.sender',
+            'notes.user',
+        ]);
+
+        $this->ticket->setRelation(
+            'messages',
+            $ticket->messages()->with('sender')->latest('created_at')->get()
+        );
+
+        $this->form = [
+            'subject' => $ticket->subject,
+            'type' => $ticket->type,
+            'status' => $ticket->status,
+            'priority' => $ticket->priority,
+            'assigned_to' => $ticket->assigned_to,
+            'department_id' => $ticket->department_id,
+            'description' => $ticket->description,
+        ];
+
+        $this->noteInputKey = uniqid();
+    }
+
+    #[Computed]
+    public function canEdit()
+    {
+        $user = auth()->user();
+
+        return $user->hasRole('Super Admin') || $user->can('tickets.edit');
+    }
+
+    #[Computed]
+    public function canReply()
+    {
+        $user = auth()->user();
+
+        // Clients can only reply to their own organization's tickets
+        if ($user->hasRole('Client')) {
+            return $this->ticket->organization_id === $user->organization_id;
+        }
+
+        // Agents can reply to tickets in their department
+        if ($user->hasRole('Agent')) {
+            return $this->ticket->department_id === $user->department_id;
+        }
+
+        // Admins can reply to any ticket
+        return $user->hasRole('Super Admin') || $user->hasRole('Admin');
+    }
+
+    #[Computed]
+    public function canAddNotes()
+    {
+        return auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Admin') || auth()->user()->hasRole('Agent');
+    }
+
+    public function enableEdit()
+    {
+        if (! $this->canEdit) {
+            session()->flash('error', 'You do not have permission to edit this ticket.');
+
+            return;
+        }
+
+        $this->editMode = true;
+    }
+
+    public function cancelEdit()
+    {
+        $this->editMode = false;
+        $this->form = [
+            'subject' => $this->ticket->subject,
+            'type' => $this->ticket->type,
+            'status' => $this->ticket->status,
+            'priority' => $this->ticket->priority,
+            'assigned_to' => $this->ticket->assigned_to,
+            'department_id' => $this->ticket->department_id,
+            'description' => $this->ticket->description,
+        ];
+    }
+
+    public function updateTicket()
+    {
+        if (! $this->canEdit) {
+            session()->flash('error', 'You do not have permission to edit this ticket.');
+
+            return;
+        }
+
+        $this->validate([
+            'form.subject' => 'required|string|max:255',
+            'form.type' => 'required|in:issue,feedback,bug,lead,task,incident,request',
+            'form.status' => 'required|in:open,in_progress,awaiting_customer_response,awaiting_case_closure,sales_engagement,monitoring,solution_provided,closed,on_hold',
+            'form.priority' => 'required|in:low,normal,high,urgent,critical',
+            'form.assigned_to' => 'nullable|exists:users,id',
+            'form.department_id' => 'required|exists:departments,id',
+            'form.description' => 'nullable|string',
+        ]);
+
+        $this->ticket->update($this->form);
+        $this->ticket->refresh();
+        $this->editMode = false;
+
+        session()->flash('message', 'Ticket updated successfully.');
+
+        // Refresh messages
+        $this->ticket->setRelation(
+            'messages',
+            $this->ticket->messages()->with('sender')->latest('created_at')->get()
+        );
+    }
+
+    public function sendMessage()
+    {
+        if (! $this->canReply) {
+            session()->flash('error', 'You do not have permission to reply to this ticket.');
+
+            return;
+        }
+
+        $this->validate([
+            'replyMessage' => 'required|string|max:2000',
+        ]);
+
+        TicketMessage::create([
+            'ticket_id' => $this->ticket->id,
+            'sender_id' => Auth::id(),
+            'message' => $this->replyMessage,
+            'created_at' => now(),
+        ]);
+
+        $this->replyMessage = '';
+        $this->activeInput = ''; // hide input after submit
+
+        // Update first response time if this is the first response
+        if (! $this->ticket->first_response_at && auth()->user()->hasRole(['Agent', 'Admin', 'Super Admin'])) {
+            $this->ticket->update([
+                'first_response_at' => now(),
+                'response_time_minutes' => $this->ticket->created_at->diffInMinutes(now()),
+            ]);
+        }
+
+        $this->ticket = $this->ticket->fresh(['messages.sender']);
+        $this->ticket->setRelation(
+            'messages',
+            $this->ticket->messages()->with('sender')->latest('created_at')->get()
+        );
+
+        session()->flash('message', 'Message sent successfully.');
+    }
+
+    public function addNote()
+    {
+        if (! $this->canAddNotes) {
+            session()->flash('error', 'You do not have permission to add notes.');
+
+            return;
+        }
+
+        $this->validate([
+            'note' => 'required|string|max:2000',
+            'noteColor' => 'required',
+        ]);
+
+        TicketNote::create([
+            'ticket_id' => $this->ticket->id,
+            'user_id' => Auth::id(),
+            'is_internal' => $this->noteInternal,
+            'color' => $this->noteColor,
+            'created_at' => now(),
+            'note' => $this->note,
+        ]);
+
+        $this->note = '';
+        $this->noteColor = 'sky';
+        $this->noteInternal = false;
+        $this->noteInputKey = uniqid();
+        $this->activeInput = ''; // hide input after submit
+
+        $this->ticket->refresh()->load('notes.user');
+        session()->flash('message', 'Note added successfully.');
+        $this->dispatch('noteAdded', ['ticket' => $this->ticket]);
+    }
+
+    public function confirmDelete($noteId)
+    {
+        $this->confirmingNoteId = $noteId;
+    }
+
+    public function cancelDelete()
+    {
+        $this->confirmingNoteId = null;
+    }
+
+    public function deleteNote($noteId)
+    {
+        $note = TicketNote::where('ticket_id', $this->ticket->id)
+            ->where('id', $noteId)
+            ->first();
+
+        if (! $note || ($note->user_id !== Auth::id() && ! auth()->user()->hasRole(['Super Admin', 'Admin']))) {
+            session()->flash('error', 'Unauthorized to delete this note.');
+
+            return;
+        }
+
+        $note->delete();
+
+        $this->confirmingNoteId = null;
+
+        $this->ticket->refresh()->load('notes.user');
+        session()->flash('message', 'Note deleted successfully.');
+        $this->dispatch('noteDeleted', ['ticket' => $this->ticket]);
+    }
+
+    public function render()
+    {
+        $user = auth()->user();
+
+        // Filter departments and users based on role
+        $departments = collect();
+        $users = collect();
+
+        if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
+            $departments = Department::orderBy('name')->get();
+            $users = User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['Agent', 'Admin', 'Super Admin']);
+            })->orderBy('name')->get();
+        } elseif ($user->hasRole('Agent')) {
+            $departments = Department::where('id', $user->department_id)->get();
+            $users = User::where('department_id', $user->department_id)
+                ->whereHas('roles', function ($q) {
+                    $q->whereIn('name', ['Agent', 'Admin', 'Super Admin']);
+                })->orderBy('name')->get();
+        }
+
+        return view('livewire.view-ticket', [
+            'departments' => $departments,
+            'users' => $users,
+            'statusOptions' => TicketStatus::options(),
+            'priorityOptions' => TicketPriority::options(),
+            'typeOptions' => [
+                'issue' => 'Issue',
+                'feedback' => 'Feedback',
+                'bug' => 'Bug',
+                'lead' => 'Lead',
+                'task' => 'Task',
+                'incident' => 'Incident',
+                'request' => 'Request',
+            ],
+        ]);
+    }
+
+    // TODO: Add any additional methods needed for ticket management, such as filtering messages or notes, or handling file uploads.
+    /*🧩 UI/UX Enhancements
+    Animate reply/note form toggle (with Alpine or transition utilities)
+
+    Scroll to bottom on new reply/message
+
+    Highlight new messages or notes temporarily (e.g., yellow flash)
+
+    Add icons to messages (based on user role/type)
+
+    Show relative timestamps (e.g., "5 minutes ago", via Carbon::diffForHumans())
+
+    🗂️ Ticket Content Management
+    Add file attachments to replies or notes
+
+    Support Markdown or rich text formatting in replies
+
+    Allow editing of notes/messages (limited to author)
+
+    Add reply tagging (e.g. @owner) or quick mentions
+
+    🔐 Authorization & Roles
+    Restrict note visibility if internal (hide from unauthorized users)
+
+    Show owner’s avatar or badge next to replies
+
+    Allow admin-only visibility for certain notes or replies
+
+    📡 Livewire & Real-time
+    Convert messages/notes to Livewire polling or Pusher for real-time updates
+
+    Auto-refresh when ticket is updated by another user
+
+    📊 Data & Insights
+    Show message count / note count badges
+
+    Add activity log (who updated status, department, etc.)
+
+    Visualize note color usage or ticket priority trend
+
+    🧪 QA & Stability
+    Add debounce to form inputs to prevent spammy writes
+
+    Persist open tab/form state on refresh (optional: Alpine + localStorage)
+
+    Add validation feedback indicators near form fields
+    */
+}
