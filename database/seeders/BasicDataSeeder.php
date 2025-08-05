@@ -111,15 +111,15 @@ class BasicDataSeeder extends Seeder
     private function createOrganization(): Organization
     {
         return Organization::firstOrCreate([
-            'name' => 'Sample Company',
-            'company' => 'Sample Company Ltd',
-            'company_contact' => 'John Doe',
+            'name' => 'Hospitality Technology',
+            'company' => 'Hospitality Technology Ltd',
+            'company_contact' => 'Ismail Ibrahim',
             'tin_no' => '123456789',
-            'email' => 'contact@samplecompany.com',
+            'email' => 'info@ht.com',
             'phone' => '+1234567890',
             'is_active' => true,
             'subscription_status' => 'active',
-            'notes' => 'Sample organization for testing',
+            'notes' => 'Default Organization',
         ]);
     }
 
@@ -127,20 +127,20 @@ class BasicDataSeeder extends Seeder
     {
         $groups = [
             [
-                'name' => 'Technical',
-                'description' => 'Technical support and IT departments',
+                'name' => 'Admin',
+                'description' => 'Adminstrative Group',
                 'color' => '#3b82f6',
                 'sort_order' => 1,
             ],
             [
-                'name' => 'Business',
-                'description' => 'Business and administrative departments',
+                'name' => 'PMS',
+                'description' => 'Property Management System Softwares',
                 'color' => '#10b981',
                 'sort_order' => 2,
             ],
             [
-                'name' => 'Support',
-                'description' => 'Customer support and service departments',
+                'name' => 'POS',
+                'description' => 'Point of Sales Softwares',
                 'color' => '#f59e0b',
                 'sort_order' => 3,
             ],
@@ -160,28 +160,28 @@ class BasicDataSeeder extends Seeder
             [
                 'name' => 'IT Support',
                 'description' => 'Technical support and system administration',
-                'email' => 'itsupport@samplecompany.com',
+                'email' => 'it@pms.com',
                 'department_group_id' => $departmentGroups[0]->id,
                 'sort_order' => 1,
             ],
             [
                 'name' => 'Network Administration',
                 'description' => 'Network infrastructure and security',
-                'email' => 'network@samplecompany.com',
+                'email' => 'network@ht.com',
                 'department_group_id' => $departmentGroups[0]->id,
                 'sort_order' => 2,
             ],
             [
                 'name' => 'Human Resources',
                 'description' => 'Employee management and support',
-                'email' => 'hr@samplecompany.com',
+                'email' => 'hr@ht.com',
                 'department_group_id' => $departmentGroups[1]->id,
                 'sort_order' => 1,
             ],
             [
                 'name' => 'Customer Support',
                 'description' => 'Customer service and support',
-                'email' => 'support@samplecompany.com',
+                'email' => 'support@testcompany.com',
                 'department_group_id' => $departmentGroups[2]->id,
                 'sort_order' => 1,
             ],
@@ -201,7 +201,7 @@ class BasicDataSeeder extends Seeder
         $superAdmin = User::firstOrCreate([
             'email' => 'superadmin@samplecompany.com',
         ], [
-            'name' => 'Super Administrator',
+            'name' => 'Super Admin',
             'username' => 'superadmin',
             'password' => Hash::make('password'),
             'organization_id' => $organization->id,
@@ -214,9 +214,9 @@ class BasicDataSeeder extends Seeder
 
         // IT Admin
         $admin = User::firstOrCreate([
-            'email' => 'admin@samplecompany.com',
+            'email' => 'admin@ht.com',
         ], [
-            'name' => 'IT Administrator',
+            'name' => 'Administrator',
             'username' => 'admin',
             'password' => Hash::make('password'),
             'organization_id' => $organization->id,
@@ -228,7 +228,7 @@ class BasicDataSeeder extends Seeder
 
         // IT Agent
         $agent = User::firstOrCreate([
-            'email' => 'agent@samplecompany.com',
+            'email' => 'agent@ht.com',
         ], [
             'name' => 'Support Agent',
             'username' => 'agent',
@@ -242,9 +242,9 @@ class BasicDataSeeder extends Seeder
 
         // Sample Client - assign to Customer Support department
         $client = User::firstOrCreate([
-            'email' => 'client@samplecompany.com',
+            'email' => 'client@ht.com',
         ], [
-            'name' => 'Sample Client',
+            'name' => 'Client User',
             'username' => 'client',
             'password' => Hash::make('password'),
             'organization_id' => $organization->id,
