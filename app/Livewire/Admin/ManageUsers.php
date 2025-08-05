@@ -39,7 +39,7 @@ class ManageUsers extends Component
         'department_id' => '',
         'organization_id' => '',
         'is_active' => true,
-        'role' => '', // Single role selection based on your structure
+        'role' => 'Client', // Default to Client role
     ];
 
     // Confirmation properties
@@ -49,13 +49,17 @@ class ManageUsers extends Component
 
     protected function rules()
     {
+        // Get all available roles from database
+        $availableRoles = Role::pluck('name')->toArray();
+        $rolesString = implode(',', $availableRoles);
+        
         $rules = [
             'form.name' => 'required|string|max:255',
             'form.username' => 'required|string|max:255|unique:users,username',
             'form.email' => 'required|email|unique:users,email',
             'form.password' => 'required|min:8|confirmed',
             'form.is_active' => 'boolean',
-            'form.role' => 'required|in:Admin,Agent,Client',
+            'form.role' => 'required|in:' . $rolesString,
         ];
 
         // Role-specific validation
@@ -159,7 +163,7 @@ class ManageUsers extends Component
             'department_id' => '',
             'organization_id' => '',
             'is_active' => true,
-            'role' => '',
+            'role' => 'Client', // Default to Client role
         ];
         $this->userId = null;
     }
@@ -310,7 +314,7 @@ class ManageUsers extends Component
             'users' => $query->withCount(['tickets', 'assignedTickets', 'permissions'])->latest()->paginate(15),
             'departments' => Department::orderBy('name')->get(),
             'organizations' => Organization::orderBy('name')->get(),
-            'availableRoles' => ['Admin', 'Agent', 'Client'],
+            'availableRoles' => Role::orderBy('name')->get(),
         ]);
     }
 }

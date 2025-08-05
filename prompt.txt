@@ -1,1 +1,11 @@
-Create a Livewire-powered settings page within the admin views where admins can define and manage application-level settings. This page should allow CRUD operations for departments and department groups, enabling the creation, updating, and deletion of these entities. Additionally, provide options to define default values used across the application in various places. Review the database to identify if any relevant settings tables or structures already exist, and integrate them where appropriate to avoid duplication and ensure consistency.
+Create a fully manageable role-permission system using Spatie Laravel Permission where:
+
+Admins can create and manage roles
+Admins can define module-based CRUD permissions per role
+Permissions are only assigned to roles, never to users
+Each user gets a single role
+Admins can assign and change roles for users from the manage-users panel
+All access control (UI and backend) respects Spatie’s permission checks
+Use grid-style permission management in the UI for clarity and scalability
+Check existing roles/permissions in DB before adding duplicates
+This setup should be fully integrated with Livewire and follow Laravel best practices.

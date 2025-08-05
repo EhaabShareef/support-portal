@@ -16,6 +16,7 @@ use App\Livewire\ManageTickets;
 use App\Livewire\ViewTicket;
 use App\Livewire\Admin\ManageUsers;
 use App\Livewire\Admin\ViewUser;
+use App\Livewire\Admin\ManageRoles;
 use App\Livewire\Admin\ManageSettings;
 
 
@@ -56,6 +57,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['role:Admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/users', ManageUsers::class)->name('users.index');
         Route::get('/users/{user}', ViewUser::class)->name('users.view');
+        Route::get('/roles', ManageRoles::class)->name('roles.index');
         Route::get('/settings', ManageSettings::class)->name('settings');
     });
 

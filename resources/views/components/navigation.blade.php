@@ -50,6 +50,13 @@
                     <span>Users</span>
                 </a>
                 
+                {{-- Admin Roles (only for admins) --}}
+                <a href="{{ route('admin.roles.index') }}"
+                   class="nav-link {{ request()->routeIs('admin.roles.*') ? 'nav-link-active' : '' }}">
+                    <x-heroicon-o-shield-check class="h-4 w-4" />
+                    <span>Roles</span>
+                </a>
+                
                 {{-- Admin Settings (only for admins) --}}
                 <a href="{{ route('admin.settings') }}"
                    class="nav-link {{ request()->routeIs('admin.settings') ? 'nav-link-active' : '' }}">
@@ -180,6 +187,14 @@
                    @click="mobileMenuOpen = false">
                     <x-heroicon-o-users class="h-5 w-5" />
                     <span>Users</span>
+                </a>
+                
+                {{-- Mobile Admin Roles --}}
+                <a href="{{ route('admin.roles.index') }}"
+                   class="mobile-nav-link {{ request()->routeIs('admin.roles.*') ? 'mobile-nav-link-active' : '' }}"
+                   @click="mobileMenuOpen = false">
+                    <x-heroicon-o-shield-check class="h-5 w-5" />
+                    <span>Roles</span>
                 </a>
                 
                 {{-- Mobile Admin Settings --}}

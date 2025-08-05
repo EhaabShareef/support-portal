@@ -42,37 +42,65 @@ class BasicDataSeeder extends Seeder
     {
         $permissions = [
             // User management
-            'users.view',
             'users.create',
-            'users.edit',
+            'users.read',
+            'users.update',
             'users.delete',
 
             // Organization management
-            'organizations.view',
-            'organizations.edit',
+            'organizations.create',
+            'organizations.read',
+            'organizations.update',
+            'organizations.delete',
 
             // Department management
-            'departments.view',
             'departments.create',
-            'departments.edit',
+            'departments.read',
+            'departments.update',
             'departments.delete',
 
             // Ticket management
-            'tickets.view',
             'tickets.create',
-            'tickets.edit',
+            'tickets.read',
+            'tickets.update',
             'tickets.delete',
-            'tickets.assign',
-            'tickets.close',
 
-            // Knowledge base
-            'articles.view',
-            'articles.create',
-            'articles.edit',
-            'articles.delete',
+            // Contract management
+            'contracts.create',
+            'contracts.read',
+            'contracts.update',
+            'contracts.delete',
+
+            // Hardware management
+            'hardware.create',
+            'hardware.read',
+            'hardware.update',
+            'hardware.delete',
+
+            // Settings management
+            'settings.read',
+            'settings.update',
+
+            // Note management
+            'notes.create',
+            'notes.read',
+            'notes.update',
+            'notes.delete',
+
+            // Message management
+            'messages.create',
+            'messages.read',
+            'messages.update',
+            'messages.delete',
 
             // Reports
-            'reports.view',
+            'reports.read',
+
+            // Knowledge base (articles)
+            'articles.create',
+            'articles.read',
+            'articles.update',
+            'articles.delete',
         ];
 
         foreach ($permissions as $permission) {
@@ -82,50 +110,110 @@ class BasicDataSeeder extends Seeder
 
     private function createRoles(): array
     {
-        // For team-based permissions, create roles without team first, then assign with team context
+        // Create role descriptions
+        $roleDescriptions = [
+            'Super Admin' => 'Full system access with all permissions',
+            'Admin' => 'Administrative access to manage users, organizations, and all modules',
+            'Agent' => 'Support agent with limited access to tickets and basic operations within their department',
+            'Client' => 'Client user with basic access to create and view tickets and articles',
+        ];
 
         // Super Admin - has all permissions
-        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
+        $superAdmin = Role::firstOrCreate([
+            'name' => 'Super Admin', 
+            'guard_name' => 'web'
+        ]);
+        $superAdmin->update(['description' => $roleDescriptions['Super Admin']]);
         $superAdmin->givePermissionTo(Permission::all());
 
         // Admin - organization level admin
-        $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        $admin = Role::firstOrCreate([
+            'name' => 'Admin', 
+            'guard_name' => 'web'
+        ]);
+        $admin->update(['description' => $roleDescriptions['Admin']]);
         $admin->givePermissionTo([
-            'users.view',
-            'users.create',
-            'users.edit',
-            'organizations.view',
-            'departments.view',
-            'departments.create',
-            'departments.edit',
-            'tickets.view',
-            'tickets.create',
-            'tickets.edit',
-            'tickets.assign',
-            'tickets.close',
-            'articles.view',
-            'articles.create',
-            'articles.edit',
-            'reports.view',
+            // User management
+            'users.create', 'users.read', 'users.update',
+            
+            // Organization management
+            'organizations.read', 'organizations.update',
+            
+            // Department management
+            'departments.create', 'departments.read', 'departments.update', 'departments.delete',
+            
+            // Ticket management
+            'tickets.create', 'tickets.read', 'tickets.update', 'tickets.delete',
+            
+            // Contract management
+            'contracts.create', 'contracts.read', 'contracts.update', 'contracts.delete',
+            
+            // Hardware management
+            'hardware.create', 'hardware.read', 'hardware.update', 'hardware.delete',
+            
+            // Settings
+            'settings.read', 'settings.update',
+            
+            // Notes and messages
+            'notes.create', 'notes.read', 'notes.update', 'notes.delete',
+            'messages.create', 'messages.read', 'messages.update', 'messages.delete',
+            
+            // Articles and reports
+            'articles.create', 'articles.read', 'articles.update', 'articles.delete',
+            'reports.read',
         ]);
 
         // Agent - department level support
-        $agent = Role::firstOrCreate(['name' => 'Agent', 'guard_name' => 'web']);
+        $agent = Role::firstOrCreate([
+            'name' => 'Agent', 
+            'guard_name' => 'web'
+        ]);
+        $agent->update(['description' => $roleDescriptions['Agent']]);
         $agent->givePermissionTo([
-            'tickets.view',
-            'tickets.create',
-            'tickets.edit',
-            'tickets.close',
-            'articles.view',
-            'users.view',
+            // Basic user access
+            'users.read',
+            
+            // Organization read access
+            'organizations.read',
+            
+            // Department read access
+            'departments.read',
+            
+            // Ticket management (limited to department)
+            'tickets.create', 'tickets.read', 'tickets.update',
+            
+            // Contract read access
+            'contracts.read',
+            
+            // Hardware read access
+            'hardware.read',
+            
+            // Notes and messages
+            'notes.create', 'notes.read', 'notes.update',
+            'messages.create', 'messages.read', 'messages.update',
+            
+            // Articles read access
+            'articles.read',
         ]);
 
         // Client - can create and view own tickets
-        $client = Role::firstOrCreate(['name' => 'Client', 'guard_name' => 'web']);
+        $client = Role::firstOrCreate([
+            'name' => 'Client', 
+            'guard_name' => 'web'
+        ]);
+        $client->update(['description' => $roleDescriptions['Client']]);
         $client->givePermissionTo([
-            'tickets.view',
-            'tickets.create',
-            'articles.view',
+            // Basic organization access
+            'organizations.read',
+            
+            // Basic ticket access
+            'tickets.create', 'tickets.read',
+            
+            // Basic message access
+            'messages.create', 'messages.read',
+            
+            // Articles read access
+            'articles.read',
         ]);
 
         return [

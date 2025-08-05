@@ -47,12 +47,13 @@ class ViewUser extends Component
 
     protected function syncPermissions(): void
     {
-        $userPermissions = $this->user->permissions->pluck('name')->toArray();
+        // Get permissions through roles (role-based permissions)
+        $rolePermissions = $this->user->getAllPermissions()->pluck('name')->toArray();
         $allPermissions = Permission::all()->pluck('name')->toArray();
 
         $this->permissions = [];
         foreach ($allPermissions as $permission) {
-            $this->permissions[$permission] = in_array($permission, $userPermissions);
+            $this->permissions[$permission] = in_array($permission, $rolePermissions);
         }
     }
 
@@ -171,20 +172,9 @@ class ViewUser extends Component
 
     public function updatePermission($permission, $granted)
     {
-        if (! $this->canEdit) {
-            session()->flash('error', 'You do not have permission to modify permissions.');
-
-            return;
-        }
-
-        if ($granted) {
-            $this->user->givePermissionTo($permission);
-        } else {
-            $this->user->revokePermissionTo($permission);
-        }
-
-        $this->syncPermissions();
-        session()->flash('message', 'Permission updated successfully.');
+        // Disable direct permission editing - permissions should be managed through roles
+        session()->flash('error', 'Permissions cannot be modified directly. Please manage permissions through roles.');
+        return;
     }
 
     public function refreshUser()

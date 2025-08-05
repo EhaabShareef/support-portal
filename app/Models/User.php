@@ -71,6 +71,16 @@ class User extends Authenticatable
                 $user->uuid = Str::uuid();
             }
         });
+        
+        static::created(function ($user) {
+            // Automatically assign Client role if no role is assigned
+            if ($user->roles()->count() === 0) {
+                $clientRole = \Spatie\Permission\Models\Role::where('name', 'Client')->first();
+                if ($clientRole) {
+                    $user->assignRole($clientRole);
+                }
+            }
+        });
     }
     
     // Hash Password if not already hashed
