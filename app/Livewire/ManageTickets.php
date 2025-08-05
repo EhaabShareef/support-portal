@@ -34,12 +34,10 @@ class ManageTickets extends Component
 
     public string $sortDirection = 'desc';
 
-    // Form properties for creating/editing tickets
+    public string $quickFilter = 'all'; // 'all', 'my_tickets', 'my_department', 'unassigned'
+
+    // Form properties for creating tickets
     public bool $showCreateModal = false;
-
-    public bool $editMode = false;
-
-    public ?Ticket $selectedTicket = null;
 
     public array $form = [
         'subject' => '',
@@ -63,9 +61,15 @@ class ManageTickets extends Component
 
     public function updating($field)
     {
-        if (in_array($field, ['search', 'filterStatus', 'filterPriority', 'filterType', 'filterOrg', 'filterDept', 'filterAssigned'])) {
+        if (in_array($field, ['search', 'filterStatus', 'filterPriority', 'filterType', 'filterOrg', 'filterDept', 'filterAssigned', 'quickFilter'])) {
             $this->resetPage();
         }
+    }
+
+    public function setQuickFilter($filter)
+    {
+        $this->quickFilter = $filter;
+        $this->resetPage();
     }
 
     public function sortBy($field)
@@ -85,22 +89,10 @@ class ManageTickets extends Component
         return auth()->user()->hasRole('Super Admin') || auth()->user()->can('tickets.create');
     }
 
-    #[Computed]
-    public function canEdit()
-    {
-        return auth()->user()->hasRole('Super Admin') || auth()->user()->can('tickets.edit');
-    }
-
-    #[Computed]
-    public function canDelete()
-    {
-        return auth()->user()->hasRole('Super Admin') || auth()->user()->can('tickets.delete');
-    }
 
     public function openCreateModal()
     {
         $this->resetForm();
-        $this->editMode = false;
 
         // Auto-set organization for clients
         $user = auth()->user();
@@ -112,29 +104,11 @@ class ManageTickets extends Component
         $this->showCreateModal = true;
     }
 
-    public function openEditModal(Ticket $ticket)
-    {
-        $this->selectedTicket = $ticket;
-        $this->form = [
-            'subject' => $ticket->subject,
-            'type' => $ticket->type,
-            'priority' => $ticket->priority,
-            'status' => $ticket->status,
-            'description' => $ticket->description ?? '',
-            'organization_id' => $ticket->organization_id,
-            'client_id' => $ticket->client_id,
-            'department_id' => $ticket->department_id,
-            'assigned_to' => $ticket->assigned_to,
-        ];
-        $this->editMode = true;
-        $this->showCreateModal = true;
-    }
 
     public function closeModal()
     {
         $this->showCreateModal = false;
         $this->resetForm();
-        $this->selectedTicket = null;
     }
 
     public function resetForm()
@@ -176,48 +150,58 @@ class ManageTickets extends Component
     {
         $this->validate();
 
-        if ($this->editMode && $this->selectedTicket) {
-            $this->selectedTicket->update($this->form);
-            session()->flash('message', 'Ticket updated successfully.');
-        } else {
-            // Set defaults for new tickets
-            $ticketData = $this->form;
-            $ticketData['status'] = 'open';
-            $ticketData['assigned_to'] = null; // Keep unassigned
+        // Set defaults for new tickets
+        $ticketData = $this->form;
+        $ticketData['status'] = 'open';
+        $ticketData['assigned_to'] = null; // Keep unassigned
 
-            Ticket::create($ticketData);
-            session()->flash('message', 'Ticket created successfully.');
-        }
+        Ticket::create($ticketData);
+        session()->flash('message', 'Ticket created successfully.');
 
         $this->closeModal();
     }
 
-    public function deleteTicket(Ticket $ticket)
-    {
-        if (! $this->canDelete) {
-            session()->flash('error', 'You do not have permission to delete tickets.');
-
-            return;
-        }
-
-        $ticket->delete();
-        session()->flash('message', 'Ticket deleted successfully.');
-    }
 
     public function render()
     {
         $user = auth()->user();
-        $query = Ticket::query()->with(['organization', 'department', 'client', 'assigned']);
+        $query = Ticket::query()->with(['organization', 'department', 'client', 'assigned'])
+            ->withCount('messages')
+            ->with(['messages' => function($q) {
+                $q->latest()->limit(1);
+            }]);
 
-        // Apply role-based filtering
-        if ($user->hasRole('Agent')) {
-            // Agents can only see tickets in their department
-            $query->where('department_id', $user->department_id);
-        } elseif ($user->hasRole('Client')) {
-            // Clients can only see tickets from their organization
-            $query->where('organization_id', $user->organization_id);
+        // Apply quick filter first
+        switch ($this->quickFilter) {
+            case 'my_tickets':
+                $query->where('assigned_to', $user->id);
+                break;
+            case 'my_department':
+                if ($user->department_id) {
+                    $query->where('department_id', $user->department_id);
+                }
+                break;
+            case 'unassigned':
+                $query->whereNull('assigned_to');
+                if ($user->hasRole('Agent')) {
+                    $query->where('department_id', $user->department_id);
+                } elseif ($user->hasRole('Client')) {
+                    $query->where('organization_id', $user->organization_id);
+                }
+                break;
+            case 'all':
+            default:
+                // Apply role-based filtering for 'all' tab
+                if ($user->hasRole('Agent')) {
+                    // Agents can only see tickets in their department
+                    $query->where('department_id', $user->department_id);
+                } elseif ($user->hasRole('Client')) {
+                    // Clients can only see tickets from their organization
+                    $query->where('organization_id', $user->organization_id);
+                }
+                // Super Admin and Admin can see all tickets (no additional filtering)
+                break;
         }
-        // Super Admin and Admin can see all tickets (no additional filtering)
 
         if ($this->search) {
             $query->where(function ($q) {
@@ -296,6 +280,7 @@ class ManageTickets extends Component
                 'incident' => 'Incident',
                 'request' => 'Request',
             ],
+            'showFilters' => $this->quickFilter === 'all',
         ]);
     }
 }

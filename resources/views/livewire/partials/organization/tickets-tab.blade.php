@@ -61,8 +61,8 @@
                             </div>
                             
                             <div class="flex items-center gap-2">
-                                @can('tickets.view')
-                                <a href="{{ route('tickets.view', $ticket) }}" 
+                                @can('tickets.show')
+                                <a href="{{ route('tickets.show', $ticket) }}" 
                                    class="inline-flex items-center px-3 py-1.5 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-md transition-all duration-200">
                                     <x-heroicon-o-eye class="h-3 w-3 mr-1" />
                                     View Ticket

@@ -4,18 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TicketNote extends Model
 {
-    public $timestamps = false; // Since you are using a custom timestamp column
+    use SoftDeletes;
 
     protected $fillable = [
         'ticket_id',
         'note',
         'user_id',
-        'internal_yn',
+        'is_internal',
         'color',
-        'timestamp',
+        'type',
+    ];
+
+    protected $casts = [
+        'is_internal' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     // Ticket

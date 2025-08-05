@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Models\Ticket;
+use App\Models\TicketNote;
 use App\Models\User;
 use Livewire\Component;
 
@@ -46,6 +47,15 @@ class CreateTicket extends Component
         }
 
         $ticket = Ticket::create($validated);
+
+        // Add dependent note about calling hotline
+        TicketNote::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => auth()->id(),
+            'is_internal' => false,
+            'color' => 'blue',
+            'note' => 'Please note: For urgent assistance or immediate support regarding this ticket, you may contact our technical hotline at [HOTLINE_NUMBER]. Our support team is available to provide additional guidance and ensure timely resolution of your request.',
+        ]);
 
         session()->flash('message', 'Ticket created successfully.');
 

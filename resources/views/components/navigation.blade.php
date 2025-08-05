@@ -6,7 +6,7 @@
 }" 
     class="sticky top-0 z-50 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm border-b border-neutral-200/50 dark:border-neutral-700/50">
     
-    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="md:w-11/12 mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
             
             {{-- Left: Logo --}}

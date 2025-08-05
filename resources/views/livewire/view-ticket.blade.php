@@ -1,3 +1,4 @@
+<div>
 <div class="space-y-6">
     {{-- Header --}}
     <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
@@ -11,9 +12,9 @@
                 <div>
                     <h1 class="text-2xl sm:text-3xl font-bold text-neutral-800 dark:text-neutral-100 flex items-center gap-3">
                         <x-heroicon-o-ticket class="h-8 w-8" />
-                        #{{ $ticket->ticket_number }}
+                        {{ $ticket->subject }}
                     </h1>
-                    <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{{ $ticket->subject }}</p>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">#{{ $ticket->ticket_number }}</p>
                 </div>
             </div>
             
@@ -44,6 +45,7 @@
         </div>
     </div>
 
+    <div>
     {{-- Flash Messages --}}
     @if (session()->has('message'))
         <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" 
@@ -70,10 +72,11 @@
             </div>
         </div>
     @endif
+    </div>
 
     {{-- Main Content --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {{-- Left Column - Ticket Details --}}
+        {{-- Left Column - Ticket Details & Notes --}}
         <div class="lg:col-span-1 space-y-6">
             {{-- Ticket Information --}}
             <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
@@ -93,9 +96,9 @@
                     <form wire:submit="updateTicket" class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Subject</label>
-                            <input type="text" wire:model="form.subject" 
-                                   class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            @error('form.subject') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            <input type="text" value="{{ $form['subject'] }}" readonly
+                                   class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 cursor-not-allowed">
+                            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Subject cannot be modified after ticket creation</p>
                         </div>
 
                         <div class="grid grid-cols-2 gap-3">
@@ -160,9 +163,9 @@
 
                         <div>
                             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description</label>
-                            <textarea wire:model="form.description" rows="3"
-                                      class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
-                            @error('form.description') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            <textarea readonly rows="3"
+                                      class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 cursor-not-allowed">{{ $form['description'] }}</textarea>
+                            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Description cannot be modified after ticket creation</p>
                         </div>
 
                         <div class="flex items-center gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
@@ -226,102 +229,8 @@
                     </dl>
                 @endif
             </div>
-        </div>
 
-        {{-- Right Column - Messages and Notes --}}
-        <div class="lg:col-span-2 space-y-6">
-            {{-- Messages --}}
-            <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md">
-                <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Conversation</h3>
-                        @if($this->canReply)
-                        <button wire:click="$set('activeInput', 'reply')" 
-                                class="inline-flex items-center px-3 py-1.5 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-md transition-all duration-200">
-                            <x-heroicon-o-chat-bubble-left class="h-3 w-3 mr-1" />
-                            Reply
-                        </button>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="p-6 space-y-4">
-                    {{-- Initial Description --}}
-                    @if($ticket->description)
-                    <div class="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-4 border-l-4 border-sky-500">
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center">
-                                <span class="text-white text-xs font-medium">{{ substr($ticket->client->name, 0, 1) }}</span>
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $ticket->client->name }}</span>
-                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">opened this ticket</span>
-                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $ticket->created_at->diffForHumans() }}</span>
-                                </div>
-                                <div class="text-sm text-neutral-700 dark:text-neutral-300">
-                                    {!! nl2br(e($ticket->description)) !!}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-
-                    {{-- Messages --}}
-                    @foreach($ticket->messages as $message)
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
-                            <span class="text-white text-xs font-medium">{{ substr($message->sender->name, 0, 1) }}</span>
-                        </div>
-                        <div class="flex-1 bg-white/20 dark:bg-neutral-800/20 rounded-lg p-4">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $message->sender->name }}</span>
-                                <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $message->created_at->diffForHumans() }}</span>
-                            </div>
-                            <div class="text-sm text-neutral-700 dark:text-neutral-300">
-                                {!! nl2br(e($message->message)) !!}
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-
-                    {{-- Reply Form --}}
-                    @if($activeInput === 'reply')
-                    <div class="border-t border-neutral-200 dark:border-neutral-700 pt-4">
-                        <form wire:submit="sendMessage">
-                            <div>
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Your Reply</label>
-                                <textarea wire:model="replyMessage" rows="4"
-                                          class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                          placeholder="Type your reply..."></textarea>
-                                @error('replyMessage') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                            </div>
-                            <div class="flex items-center gap-2 mt-3">
-                                <button type="submit" 
-                                        class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200">
-                                    <x-heroicon-o-paper-airplane class="h-4 w-4 mr-1" />
-                                    Send Reply
-                                </button>
-                                <button type="button" wire:click="$set('activeInput', '')"
-                                        class="inline-flex items-center px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 text-sm font-medium transition-all duration-200">
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    @endif
-
-                    @if($ticket->messages->isEmpty() && !$ticket->description)
-                    <div class="text-center py-8">
-                        <x-heroicon-o-chat-bubble-left class="mx-auto h-12 w-12 text-neutral-400" />
-                        <h3 class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">No messages yet</h3>
-                        <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Start the conversation by sending a reply.</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-
-            {{-- Notes Section --}}
+            {{-- Internal Notes Section --}}
             @if($this->canAddNotes)
             <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md">
                 <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
@@ -338,12 +247,23 @@
                 <div class="p-6 space-y-4">
                     {{-- Notes --}}
                     @foreach($ticket->notes as $note)
-                    <div class="relative bg-{{ $note->color }}-50 dark:bg-{{ $note->color }}-900/20 border border-{{ $note->color }}-200 dark:border-{{ $note->color }}-800 rounded-lg p-4">
+                    @php
+                        $colorClasses = [
+                            'sky' => 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800',
+                            'green' => 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
+                            'yellow' => 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800',
+                            'red' => 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
+                            'purple' => 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800',
+                            'blue' => 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
+                        ];
+                        $noteClasses = $colorClasses[$note->color] ?? $colorClasses['sky'];
+                    @endphp
+                    <div class="relative {{ $noteClasses }} border rounded-lg p-4">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-2">
                                     <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $note->user->name }}</span>
-                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $note->created_at->diffForHumans() }}</span>
+                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $note->created_at?->diffForHumans() ?? 'Unknown time' }}</span>
                                     @if($note->is_internal)
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
                                             Internal
@@ -432,7 +352,7 @@
 
                     @if($ticket->notes->isEmpty())
                     <div class="text-center py-8">
-                        <x-heroicon-o-sticky-note class="mx-auto h-12 w-12 text-neutral-400" />
+                        <x-heroicon-o-paper-clip class="mx-auto h-12 w-12 text-neutral-400" />
                         <h3 class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">No notes yet</h3>
                         <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Add internal notes to keep track of progress.</p>
                     </div>
@@ -441,5 +361,303 @@
             </div>
             @endif
         </div>
+
+        {{-- Right Column - Conversation Only --}}
+        <div class="lg:col-span-2">
+            <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md">
+                <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Conversation</h3>
+                        @if($this->canReply)
+                        <button wire:click="$set('activeInput', 'reply')" 
+                                class="inline-flex items-center px-3 py-1.5 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-md transition-all duration-200">
+                            <x-heroicon-o-chat-bubble-left class="h-3 w-3 mr-1" />
+                            Reply
+                        </button>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    {{-- Initial Description --}}
+                    @if($ticket->description)
+                    <div class="bg-neutral-50 dark:bg-neutral-800/50 p-4 border-l-4 border-sky-500">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-gradient-to-br bg-sky-500/75 rounded-full flex items-center justify-center">
+                                <span class="text-white text-xs font-medium">{{ substr($ticket->client->name, 0, 1) }}</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $ticket->client->name }}</span>
+                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">opened this ticket</span>
+                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $ticket->created_at?->diffForHumans() ?? 'Unknown time' }}</span>
+                                </div>
+                                <div class="text-sm text-neutral-700 dark:text-neutral-300">
+                                    {!! nl2br(e($ticket->description)) !!}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Messages --}}
+                    @foreach($ticket->messages as $message)
+                        @if(!$loop->first)
+                            <hr class="border-neutral-200 dark:border-neutral-700">
+                        @endif
+                        
+                        @php
+                            $isCurrentUser = $message->sender_id === auth()->id();
+                            $avatarClass = $isCurrentUser 
+                                ? 'bg-gradient-to-br bg-green-400/60' 
+                                : 'bg-gradient-to-br bg-orange-400/60';
+                        @endphp
+                        
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 {{ $avatarClass }} rounded-full flex items-center justify-center">
+                                <span class="text-white text-xs font-medium">{{ substr($message->sender->name, 0, 1) }}</span>
+                            </div>
+                        <div class="flex-1 bg-white/20 dark:bg-neutral-800/20 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $message->sender->name }}</span>
+                                <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $message->created_at?->diffForHumans() ?? 'Unknown time' }}</span>
+                            </div>
+                            <div class="text-sm text-neutral-700 dark:text-neutral-300">
+                                {!! nl2br(e($message->message)) !!}
+                            </div>
+                            
+                            {{-- Message Attachments --}}
+                            @if($message->attachments->isNotEmpty())
+                                <div class="mt-3 space-y-2">
+                                    <div class="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Attachments:</div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        @foreach($message->attachments as $attachment)
+                                            <div class="flex items-center p-2 bg-neutral-100 dark:bg-neutral-700 rounded border">
+                                                <div class="flex items-center flex-1 min-w-0">
+                                                    <x-dynamic-component :component="$attachment->icon" class="h-4 w-4 text-neutral-500 mr-2 flex-shrink-0" />
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="text-sm text-neutral-700 dark:text-neutral-200 truncate">{{ $attachment->original_name }}</div>
+                                                        <div class="text-xs text-neutral-500">{{ $attachment->formatted_size }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center space-x-1 ml-2">
+                                                    @if($attachment->canBeViewedInBrowser())
+                                                        <button @click="$dispatch('show-attachment', {{ $attachment->toJson() }})"
+                                                                class="text-sky-600 hover:text-sky-800 transition-colors"
+                                                                title="View in browser">
+                                                            <x-heroicon-o-eye class="h-4 w-4" />
+                                                        </button>
+                                                    @endif
+                                                    <a href="{{ route('attachments.download', ['uuid' => $attachment->uuid, 'download' => true]) }}"
+                                                       class="text-neutral-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors"
+                                                       title="Download">
+                                                        <x-heroicon-o-arrow-down-tray class="h-4 w-4" />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+
+                    @if($ticket->messages->isEmpty() && !$ticket->description)
+                    <div class="text-center py-8">
+                        <x-heroicon-o-chat-bubble-left class="mx-auto h-12 w-12 text-neutral-400" />
+                        <h3 class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">No messages yet</h3>
+                        <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Start the conversation by sending a reply.</p>
+                    </div>
+                    @endif
+                </div>
+
+                    {{-- Reply Form --}}
+                    @if($activeInput === 'reply')
+                    <div class="border-t border-neutral-200 dark:border-neutral-700 pt-4 px-4 py-6">
+                    <div class="border-t border-neutral-200 dark:border-neutral-700 pt-4">
+                        <form wire:submit="sendMessage">
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Your Reply</label>
+                                <textarea wire:model="replyMessage" rows="4"
+                                          class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                          placeholder="Type your reply..."></textarea>
+                                @error('replyMessage') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+
+                            {{-- File Upload Section --}}
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Attachments</label>
+                                
+                                {{-- Drag & Drop Zone --}}
+                                <div x-data="{ 
+                                    dragging: false,
+                                    handleDrop($event) {
+                                        this.dragging = false;
+                                        const files = Array.from($event.dataTransfer.files);
+                                        files.forEach(file => {
+                                            if (file.size <= 10485760) { // 10MB limit
+                                                @this.upload('attachments', file, () => {}, () => {}, () => {});
+                                            } else {
+                                                alert('File size must be less than 10MB');
+                                            }
+                                        });
+                                    }
+                                }"
+                                @dragover.prevent="dragging = true"
+                                @dragleave.prevent="dragging = false"
+                                @drop.prevent="handleDrop($event)"
+                                :class="{'border-sky-400 bg-sky-50 dark:bg-sky-900/20': dragging}"
+                                class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg p-6 text-center transition-colors duration-200">
+                                    <input type="file" wire:model="attachments" multiple 
+                                           accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                                           class="hidden" id="fileInput">
+                                    
+                                    <div class="space-y-2">
+                                        <x-heroicon-o-cloud-arrow-up class="mx-auto h-12 w-12 text-neutral-400" />
+                                        <div class="text-sm text-neutral-600 dark:text-neutral-400">
+                                            <label for="fileInput" class="cursor-pointer text-sky-600 hover:text-sky-500">
+                                                Click to upload
+                                            </label>
+                                            or drag and drop files here
+                                        </div>
+                                        <p class="text-xs text-neutral-500">PDF, DOC, XLS, TXT, ZIP, Images (max 10MB each)</p>
+                                    </div>
+                                </div>
+
+                                {{-- Upload Progress --}}
+                                <div wire:loading wire:target="attachments" class="mt-2">
+                                    <div class="flex items-center text-sm text-sky-600">
+                                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Uploading files...
+                                    </div>
+                                </div>
+
+                                {{-- File List --}}
+                                @if(!empty($attachments))
+                                    <div class="mt-3 space-y-2">
+                                        @foreach($attachments as $index => $file)
+                                            <div class="flex items-center justify-between p-2 bg-neutral-50 dark:bg-neutral-800 rounded border">
+                                                <div class="flex items-center space-x-2">
+                                                    <x-heroicon-o-document class="h-4 w-4 text-neutral-400" />
+                                                    <span class="text-sm text-neutral-600 dark:text-neutral-300">{{ $file->getClientOriginalName() }}</span>
+                                                    <span class="text-xs text-neutral-500">({{ number_format($file->getSize() / 1024, 1) }} KB)</span>
+                                                </div>
+                                                <button type="button" wire:click="removeAttachment({{ $index }})"
+                                                        class="text-red-500 hover:text-red-700 transition-colors">
+                                                    <x-heroicon-o-x-mark class="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                @error('attachments.*') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="flex items-center gap-2 mt-3">
+                                <button type="submit" 
+                                        class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200">
+                                    <x-heroicon-o-paper-airplane class="h-4 w-4 mr-1" />
+                                    Send Reply
+                                </button>
+                                <button type="button" wire:click="$set('activeInput', '')"
+                                        class="inline-flex items-center px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 text-sm font-medium transition-all duration-200">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
+        </div>
     </div>
+
+    {{-- Attachment Preview Modal (moved inside main wrapper) --}}
+    <div x-data="{ 
+        showModal: false, 
+        currentAttachment: null,
+        showAttachment(attachment) {
+            this.currentAttachment = attachment;
+            this.showModal = true;
+        }
+    }"
+    x-on:show-attachment.window="showAttachment($event.detail)"
+    x-show="showModal"
+    x-cloak
+    class="fixed inset-0 z-50 overflow-y-auto"
+    style="display: none;">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="showModal" 
+                 x-transition:enter="ease-out duration-300" 
+                 x-transition:enter-start="opacity-0" 
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200" 
+                 x-transition:leave-start="opacity-100" 
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
+                 @click="showModal = false"></div>
+
+            <div x-show="showModal" 
+                 x-transition:enter="ease-out duration-300" 
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200" 
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                
+                <div class="bg-white dark:bg-neutral-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-neutral-900 dark:text-neutral-100" x-text="currentAttachment?.original_name"></h3>
+                        <button @click="showModal = false" class="text-neutral-400 hover:text-neutral-600 transition-colors">
+                            <x-heroicon-o-x-mark class="h-6 w-6" />
+                        </button>
+                    </div>
+                    
+                    <div class="max-h-96 overflow-auto">
+                        <template x-if="currentAttachment?.is_image">
+                            <img :src="'/attachments/' + currentAttachment?.uuid + '/view'" 
+                                 :alt="currentAttachment?.original_name"
+                                 class="max-w-full h-auto rounded">
+                        </template>
+                        
+                        <template x-if="!currentAttachment?.is_image && currentAttachment?.mime_type === 'application/pdf'">
+                            <iframe :src="'/attachments/' + currentAttachment?.uuid + '/view'" 
+                                    class="w-full h-96 border rounded"></iframe>
+                        </template>
+                        
+                        <template x-if="!currentAttachment?.is_image && currentAttachment?.mime_type !== 'application/pdf'">
+                            <div class="text-center py-8">
+                                <x-heroicon-o-document class="mx-auto h-12 w-12 text-neutral-400" />
+                                <p class="mt-2 text-sm text-neutral-500">Preview not available for this file type</p>
+                                <a :href="'/attachments/' + currentAttachment?.uuid + '/download?download=true'"
+                                   class="mt-2 inline-flex items-center px-3 py-1 bg-sky-600 text-white text-sm rounded hover:bg-sky-700 transition-colors">
+                                    <x-heroicon-o-arrow-down-tray class="h-4 w-4 mr-1" />
+                                    Download
+                                </a>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <div class="bg-neutral-50 dark:bg-neutral-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <a :href="'/attachments/' + currentAttachment?.uuid + '/download?download=true'"
+                       class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                        <x-heroicon-o-arrow-down-tray class="h-4 w-4 mr-1" />
+                        Download
+                    </a>
+                    <button @click="showModal = false"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-neutral-300 dark:border-neutral-600 shadow-sm px-4 py-2 bg-white dark:bg-neutral-800 text-base font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </div>

@@ -4,17 +4,23 @@ namespace App\Livewire;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Models\Attachment;
 use App\Models\Department;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketNote;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ViewTicket extends Component
 {
+    use WithFileUploads;
+
     public Ticket $ticket;
 
     public string $activeInput = ''; // values: 'reply', 'note'
@@ -32,6 +38,8 @@ class ViewTicket extends Component
     ];
 
     public string $replyMessage = '';
+
+    public $attachments = [];
 
     public ?int $confirmingNoteId = null;
 
@@ -67,7 +75,9 @@ class ViewTicket extends Component
             'client',
             'messages',
             'messages.sender',
+            'messages.attachments',
             'notes.user',
+            'attachments',
         ]);
 
         $this->ticket->setRelation(
@@ -155,16 +165,18 @@ class ViewTicket extends Component
         }
 
         $this->validate([
-            'form.subject' => 'required|string|max:255',
             'form.type' => 'required|in:issue,feedback,bug,lead,task,incident,request',
             'form.status' => 'required|in:open,in_progress,awaiting_customer_response,awaiting_case_closure,sales_engagement,monitoring,solution_provided,closed,on_hold',
             'form.priority' => 'required|in:low,normal,high,urgent,critical',
             'form.assigned_to' => 'nullable|exists:users,id',
             'form.department_id' => 'required|exists:departments,id',
-            'form.description' => 'nullable|string',
         ]);
 
-        $this->ticket->update($this->form);
+        // Remove subject and description from update to prevent modification
+        $updateData = $this->form;
+        unset($updateData['subject'], $updateData['description']);
+        
+        $this->ticket->update($updateData);
         $this->ticket->refresh();
         $this->editMode = false;
 
@@ -187,16 +199,24 @@ class ViewTicket extends Component
 
         $this->validate([
             'replyMessage' => 'required|string|max:2000',
+            'attachments.*' => 'file|max:10240|mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,txt,zip,rar',
         ]);
 
-        TicketMessage::create([
+        $message = TicketMessage::create([
             'ticket_id' => $this->ticket->id,
             'sender_id' => Auth::id(),
             'message' => $this->replyMessage,
-            'created_at' => now(),
         ]);
 
+        // Handle file attachments
+        if (!empty($this->attachments)) {
+            foreach ($this->attachments as $file) {
+                $this->storeAttachment($file, $message);
+            }
+        }
+
         $this->replyMessage = '';
+        $this->attachments = [];
         $this->activeInput = ''; // hide input after submit
 
         // Update first response time if this is the first response
@@ -207,10 +227,10 @@ class ViewTicket extends Component
             ]);
         }
 
-        $this->ticket = $this->ticket->fresh(['messages.sender']);
+        $this->ticket = $this->ticket->fresh(['messages.sender', 'messages.attachments']);
         $this->ticket->setRelation(
             'messages',
-            $this->ticket->messages()->with('sender')->latest('created_at')->get()
+            $this->ticket->messages()->with(['sender', 'attachments'])->latest('created_at')->get()
         );
 
         session()->flash('message', 'Message sent successfully.');
@@ -234,7 +254,6 @@ class ViewTicket extends Component
             'user_id' => Auth::id(),
             'is_internal' => $this->noteInternal,
             'color' => $this->noteColor,
-            'created_at' => now(),
             'note' => $this->note,
         ]);
 
@@ -278,6 +297,45 @@ class ViewTicket extends Component
         $this->ticket->refresh()->load('notes.user');
         session()->flash('message', 'Note deleted successfully.');
         $this->dispatch('noteDeleted', ['ticket' => $this->ticket]);
+    }
+
+    public function removeAttachment($index)
+    {
+        unset($this->attachments[$index]);
+        $this->attachments = array_values($this->attachments);
+    }
+
+    private function storeAttachment($file, $attachable)
+    {
+        $originalName = $file->getClientOriginalName();
+        $extension = $file->getClientOriginalExtension();
+        $mimeType = $file->getMimeType();
+        $size = $file->getSize();
+        
+        // Generate a unique stored name for security
+        $storedName = Str::uuid() . '.' . $extension;
+        
+        // Store the file
+        $path = $file->storeAs('attachments', $storedName, 'local');
+        
+        // Determine if it's an image
+        $isImage = in_array($mimeType, ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+        
+        // Create attachment record
+        Attachment::create([
+            'attachable_type' => get_class($attachable),
+            'attachable_id' => $attachable->id,
+            'original_name' => $originalName,
+            'stored_name' => $storedName,
+            'path' => $path,
+            'disk' => 'local',
+            'mime_type' => $mimeType,
+            'size' => $size,
+            'extension' => $extension,
+            'is_public' => false,
+            'is_image' => $isImage,
+            'uploaded_by' => Auth::id(),
+        ]);
     }
 
     public function render()

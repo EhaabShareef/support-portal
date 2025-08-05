@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\AttachmentController;
 // Livewire Components
 use App\Livewire\Dashboard;
 use App\Livewire\ManageOrganizations;
@@ -44,7 +45,12 @@ Route::middleware('auth')->group(function () {
     // Ticket Routes
     Route::get('/tickets/create', CreateTicket::class)->name('tickets.create');
     Route::get('/tickets/manage', ManageTickets::class)->name('tickets.index');
-    Route::get('/tickets/{ticket}', ViewTicket::class)->name('tickets.view');
+    Route::get('/tickets/{ticket}', ViewTicket::class)->name('tickets.show');
+
+    // Attachment Routes
+    Route::get('/attachments/{uuid}/download', [AttachmentController::class, 'download'])->name('attachments.download');
+    Route::get('/attachments/{uuid}/view', [AttachmentController::class, 'view'])->name('attachments.view');
+    Route::delete('/attachments/{uuid}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
 
     // Admin Routes (only for Admin role)
     Route::middleware(['role:Admin'])->prefix('admin')->name('admin.')->group(function () {

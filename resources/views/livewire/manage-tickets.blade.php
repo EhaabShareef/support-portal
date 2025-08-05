@@ -47,7 +47,32 @@
         </div>
     @endif
 
+    {{-- Quick Filter Tabs --}}
+    <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-4 shadow-md mb-4">
+        <div class="flex flex-wrap gap-2">
+            <button wire:click="setQuickFilter('all')" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ $quickFilter === 'all' ? 'bg-sky-600 text-white shadow-md' : 'bg-white/60 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300 hover:bg-sky-100 dark:hover:bg-sky-900/30' }}">
+                All Tickets
+            </button>
+            <button wire:click="setQuickFilter('my_tickets')" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ $quickFilter === 'my_tickets' ? 'bg-sky-600 text-white shadow-md' : 'bg-white/60 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300 hover:bg-sky-100 dark:hover:bg-sky-900/30' }}">
+                My Tickets
+            </button>
+            @if(auth()->user()->department_id)
+            <button wire:click="setQuickFilter('my_department')" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ $quickFilter === 'my_department' ? 'bg-sky-600 text-white shadow-md' : 'bg-white/60 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300 hover:bg-sky-100 dark:hover:bg-sky-900/30' }}">
+                My Department
+            </button>
+            @endif
+            <button wire:click="setQuickFilter('unassigned')" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ $quickFilter === 'unassigned' ? 'bg-sky-600 text-white shadow-md' : 'bg-white/60 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300 hover:bg-sky-100 dark:hover:bg-sky-900/30' }}">
+                Unassigned
+            </button>
+        </div>
+    </div>
+
     {{-- Filters --}}
+    @if($showFilters)
     <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-4 shadow-md">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             <div class="relative">
@@ -100,16 +125,17 @@
             @endif
         </div>
     </div>
+    @endif
 
 
 
     {{-- Tickets Table --}}
     <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md overflow-hidden">
         @if($tickets->count() > 0)
-            {{-- Table Header --}}
-            <div class="bg-neutral-50 dark:bg-neutral-800/50 px-6 py-3 border-b border-neutral-200 dark:border-neutral-700">
+            {{-- Desktop Table Header --}}
+            <div class="hidden lg:block bg-neutral-50 dark:bg-neutral-800/50 px-6 py-3 border-b border-neutral-200 dark:border-neutral-700">
                 <div class="grid grid-cols-12 gap-4 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
-                    <div class="col-span-1">
+                    <div class="col-span-2">
                         <button wire:click="sortBy('ticket_number')" class="flex items-center hover:text-neutral-700 dark:hover:text-neutral-300">
                             Ticket
                             @if($sortBy === 'ticket_number')
@@ -117,7 +143,7 @@
                             @endif
                         </button>
                     </div>
-                    <div class="col-span-3">
+                    <div class="col-span-2">
                         <button wire:click="sortBy('subject')" class="flex items-center hover:text-neutral-700 dark:hover:text-neutral-300">
                             Subject
                             @if($sortBy === 'subject')
@@ -142,7 +168,8 @@
                             @endif
                         </button>
                     </div>
-                    <div class="col-span-2">Assigned</div>
+                    <div class="col-span-1">Assigned</div>
+                    <div class="col-span-1">Last Reply</div>
                     <div class="col-span-1">
                         <button wire:click="sortBy('created_at')" class="flex items-center hover:text-neutral-700 dark:hover:text-neutral-300">
                             Created
@@ -155,14 +182,14 @@
                 </div>
             </div>
 
-            {{-- Table Body --}}
-            <div class="divide-y divide-neutral-200 dark:divide-neutral-700">
+            {{-- Desktop Table Body --}}
+            <div class="hidden lg:block divide-y divide-neutral-200 dark:divide-neutral-700">
                 @foreach($tickets as $ticket)
                     <div wire:key="ticket-{{ $ticket->id }}" class="px-6 py-4 hover:bg-white/10 transition-colors duration-200">
                         <div class="grid grid-cols-12 gap-4 items-center">
                             {{-- Ticket Number --}}
-                            <div class="col-span-1">
-                                <div class="text-sm font-medium text-sky-600 dark:text-sky-400">
+                            <div class="col-span-2">
+                                <div class="text-xs font-medium text-sky-600 dark:text-sky-400">
                                     #{{ $ticket->ticket_number }}
                                 </div>
                                 <div class="text-xs text-neutral-500 dark:text-neutral-400">
@@ -171,13 +198,13 @@
                             </div>
 
                             {{-- Subject --}}
-                            <div class="col-span-3">
+                            <div class="col-span-2">
                                 <div class="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                                    {{ Str::limit($ticket->subject, 60) }}
+                                    {{ Str::limit($ticket->subject, 40) }}
                                 </div>
                                 @if($ticket->description)
                                 <div class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                                    {{ Str::limit(strip_tags($ticket->description), 80) }}
+                                    {{ Str::limit(strip_tags($ticket->description), 60) }}
                                 </div>
                                 @endif
                             </div>
@@ -185,10 +212,10 @@
                             {{-- Client --}}
                             <div class="col-span-2">
                                 <div class="text-sm text-neutral-800 dark:text-neutral-200">
-                                    {{ $ticket->client->name }}
+                                    {{ Str::limit($ticket->client->name, 20) }}
                                 </div>
                                 <div class="text-xs text-neutral-500 dark:text-neutral-400">
-                                    {{ $ticket->organization->name }}
+                                    {{ Str::limit($ticket->organization->name, 20) }}
                                 </div>
                             </div>
 
@@ -225,19 +252,30 @@
                             </div>
 
                             {{-- Assigned --}}
-                            <div class="col-span-2">
+                            <div class="col-span-1">
                                 @if($ticket->assigned)
                                     <div class="flex items-center gap-2">
                                         <div class="w-6 h-6 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center">
                                             <span class="text-white text-xs font-medium">{{ substr($ticket->assigned->name, 0, 1) }}</span>
                                         </div>
                                         <div class="text-sm text-neutral-800 dark:text-neutral-200">
-                                            {{ $ticket->assigned->name }}
+                                            {{ Str::limit($ticket->assigned->name, 15) }}
                                         </div>
                                     </div>
                                 @else
                                     <span class="text-xs text-neutral-500 dark:text-neutral-400">Unassigned</span>
                                 @endif
+                            </div>
+
+                            {{-- Last Reply --}}
+                            <div class="col-span-1">
+                                <div class="text-xs text-neutral-600 dark:text-neutral-400">
+                                    @if($ticket->messages->count() > 0)
+                                        {{ $ticket->messages->first()->created_at->diffForHumans() }}
+                                    @else
+                                        No replies
+                                    @endif
+                                </div>
                             </div>
 
                             {{-- Created --}}
@@ -250,22 +288,94 @@
                             {{-- Actions --}}
                             <div class="col-span-1">
                                 <div class="flex items-center gap-1">
-                                    <a href="{{ route('tickets.view', $ticket) }}" 
+                                    <a href="{{ route('tickets.show', $ticket) }}" 
                                        class="inline-flex items-center px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded transition-all duration-200">
                                         <x-heroicon-o-eye class="h-3 w-3" />
                                     </a>
-                                    @if($this->canEdit)
-                                    <button wire:click="openEditModal({{ $ticket->id }})" 
-                                            class="inline-flex items-center px-2 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded transition-all duration-200">
-                                        <x-heroicon-o-pencil class="h-3 w-3" />
-                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- Mobile Cards --}}
+            <div class="lg:hidden divide-y divide-neutral-200 dark:divide-neutral-700">
+                @foreach($tickets as $ticket)
+                    <div wire:key="mobile-ticket-{{ $ticket->id }}" class="p-4 hover:bg-white/10 transition-colors duration-200">
+                        <div class="space-y-3">
+                            {{-- Header Row --}}
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-sm font-medium text-sky-600 dark:text-sky-400">
+                                            #{{ $ticket->ticket_number }}
+                                        </span>
+                                        <span class="text-xs text-neutral-500 dark:text-neutral-400">
+                                            {{ ucfirst($ticket->type) }}
+                                        </span>
+                                    </div>
+                                    <h3 class="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                                        {{ $ticket->subject }}
+                                    </h3>
+                                </div>
+                                <a href="{{ route('tickets.show', $ticket) }}" 
+                                   class="ml-2 inline-flex items-center px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded transition-all duration-200">
+                                    <x-heroicon-o-eye class="h-4 w-4" />
+                                </a>
+                            </div>
+
+                            {{-- Client and Organization --}}
+                            <div class="text-sm text-neutral-600 dark:text-neutral-400">
+                                <span class="font-medium">{{ $ticket->client->name }}</span>
+                                <span class="mx-1">•</span>
+                                <span>{{ $ticket->organization->name }}</span>
+                            </div>
+
+                            {{-- Status and Priority Badges --}}
+                            <div class="flex items-center gap-2 flex-wrap">
+                                @php
+                                    $priorityColors = [
+                                        'low' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300',
+                                        'normal' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                                        'high' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+                                        'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+                                        'critical' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                                    ];
+                                    $statusColors = [
+                                        'open' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                                        'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                                        'awaiting_customer_response' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+                                        'closed' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300',
+                                        'on_hold' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'
+                                    ];
+                                @endphp
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$ticket->status] ?? $statusColors['open'] }}">
+                                    {{ $ticket->status_label }}
+                                </span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $priorityColors[$ticket->priority] ?? $priorityColors['normal'] }}">
+                                    {{ $ticket->priority_label }}
+                                </span>
+                            </div>
+
+                            {{-- Assignment and Dates --}}
+                            <div class="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+                                <div>
+                                    @if($ticket->assigned)
+                                        <div class="flex items-center gap-1">
+                                            <div class="w-4 h-4 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center">
+                                                <span class="text-white text-xs font-medium">{{ substr($ticket->assigned->name, 0, 1) }}</span>
+                                            </div>
+                                            <span>{{ $ticket->assigned->name }}</span>
+                                        </div>
+                                    @else
+                                        <span>Unassigned</span>
                                     @endif
-                                    @if($this->canDelete)
-                                    <button wire:confirm="Are you sure you want to delete this ticket?" 
-                                            wire:click="deleteTicket({{ $ticket->id }})"
-                                            class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200">
-                                        <x-heroicon-o-trash class="h-3 w-3" />
-                                    </button>
+                                </div>
+                                <div class="text-right">
+                                    <div>Created {{ $ticket->created_at->diffForHumans() }}</div>
+                                    @if($ticket->messages->count() > 0)
+                                        <div>Last reply {{ $ticket->messages->first()->created_at->diffForHumans() }}</div>
                                     @endif
                                 </div>
                             </div>
@@ -278,8 +388,8 @@
                 <x-heroicon-o-ticket class="mx-auto h-12 w-12 text-neutral-400 dark:text-neutral-600" />
                 <h3 class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">No tickets found</h3>
                 <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                    @if($search || $filterStatus || $filterPriority || $filterType || $filterOrg || $filterDept)
-                        Try adjusting your search criteria.
+                    @if($search || $filterStatus || $filterPriority || $filterType || $filterOrg || $filterDept || $quickFilter !== 'all')
+                        Try adjusting your search criteria or filters.
                     @else
                         Get started by creating your first ticket.
                     @endif
@@ -318,7 +428,7 @@
                     <div class="bg-white dark:bg-neutral-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-medium text-neutral-900 dark:text-neutral-100">
-                                {{ $editMode ? 'Edit Ticket' : 'Create New Ticket' }}
+                                Create New Ticket
                             </h3>
                             <button type="button" wire:click="closeModal" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
                                 <x-heroicon-o-x-mark class="h-6 w-6" />
@@ -432,7 +542,7 @@
                     <div class="bg-gray-50 dark:bg-neutral-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                         <button type="submit" 
                                 class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            {{ $editMode ? 'Update Ticket' : 'Create Ticket' }}
+                            Create Ticket
                         </button>
                         <button type="button" wire:click="closeModal"
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-neutral-600 shadow-sm px-4 py-2 bg-white dark:bg-neutral-800 text-base font-medium text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:mt-0 sm:w-auto sm:text-sm">
