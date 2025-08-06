@@ -143,6 +143,7 @@ class Dashboard extends Component
                 ->with('department')
                 ->get(),
             'recent_tickets' => Ticket::where('organization_id', $organizationId)
+                ->whereNotIn('status', ['closed', 'solution_provided']) // Hide closed tickets from recent list
                 ->with(['department', 'assigned'])
                 ->latest()
                 ->limit(5)
@@ -252,6 +253,7 @@ class Dashboard extends Component
     private function getRecentActivity($departmentId)
     {
         return Ticket::where('department_id', $departmentId)
+            ->whereNotIn('status', ['closed', 'solution_provided']) // Hide closed tickets from recent activity
             ->with(['client', 'assigned'])
             ->latest()
             ->limit(10)

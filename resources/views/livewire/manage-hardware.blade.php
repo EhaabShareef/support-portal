@@ -55,7 +55,7 @@
                             Asset Tag
                         </label>
                         <input type="text" 
-                               wire:model="form.asset_tag" 
+                               wire:model.defer="form.asset_tag" 
                                id="asset_tag"
                                class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                         @error('form.asset_tag') 
@@ -67,23 +67,12 @@
                         <label for="hardware_type" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                             Hardware Type *
                         </label>
-                        <select wire:model="form.hardware_type" 
+                        <select wire:model.defer="form.hardware_type" 
                                 id="hardware_type"
                                 class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                            <option value="desktop">Desktop</option>
-                            <option value="laptop">Laptop</option>
-                            <option value="server">Server</option>
-                            <option value="printer">Printer</option>
-                            <option value="scanner">Scanner</option>
-                            <option value="router">Router</option>
-                            <option value="switch">Switch</option>
-                            <option value="firewall">Firewall</option>
-                            <option value="storage">Storage</option>
-                            <option value="monitor">Monitor</option>
-                            <option value="projector">Projector</option>
-                            <option value="phone">Phone</option>
-                            <option value="tablet">Tablet</option>
-                            <option value="other">Other</option>
+                            @foreach(\App\Enums\HardwareType::options() as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
                         </select>
                         @error('form.hardware_type') 
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
@@ -98,7 +87,7 @@
                             Brand
                         </label>
                         <input type="text" 
-                               wire:model="form.brand" 
+                               wire:model.defer="form.brand" 
                                id="brand"
                                class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                         @error('form.brand') 
@@ -111,7 +100,7 @@
                             Model
                         </label>
                         <input type="text" 
-                               wire:model="form.model" 
+                               wire:model.defer="form.model" 
                                id="model"
                                class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                         @error('form.model') 
@@ -127,7 +116,7 @@
                             Serial Number
                         </label>
                         <input type="text" 
-                               wire:model="form.serial_number" 
+                               wire:model.defer="form.serial_number" 
                                id="serial_number"
                                class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                         @error('form.serial_number') 
@@ -139,14 +128,12 @@
                         <label for="status" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                             Status *
                         </label>
-                        <select wire:model="form.status" 
+                        <select wire:model.defer="form.status" 
                                 id="status"
                                 class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                            <option value="active">Active</option>
-                            <option value="maintenance">Maintenance</option>
-                            <option value="retired">Retired</option>
-                            <option value="disposed">Disposed</option>
-                            <option value="lost">Lost</option>
+                            @foreach(\App\Enums\HardwareStatus::options() as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
                         </select>
                         @error('form.status') 
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
@@ -160,7 +147,7 @@
                         <label for="contract_id" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                             Associated Contract
                         </label>
-                        <select wire:model="form.contract_id" 
+                        <select wire:model.defer="form.contract_id" 
                                 id="contract_id"
                                 class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                             <option value="">Select Contract (Optional)</option>
@@ -181,7 +168,7 @@
                             Location
                         </label>
                         <input type="text" 
-                               wire:model="form.location" 
+                               wire:model.defer="form.location" 
                                id="location"
                                placeholder="e.g., Office A, Floor 2, Room 201"
                                class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
@@ -198,7 +185,7 @@
                             Purchase Date
                         </label>
                         <input type="date" 
-                               wire:model="form.purchase_date" 
+                               wire:model.defer="form.purchase_date" 
                                id="purchase_date"
                                class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                         @error('form.purchase_date') 
@@ -211,7 +198,7 @@
                             Purchase Price (USD)
                         </label>
                         <input type="number" 
-                               wire:model="form.purchase_price" 
+                               wire:model.defer="form.purchase_price" 
                                id="purchase_price"
                                step="0.01"
                                min="0"
@@ -230,7 +217,7 @@
                             Warranty Start
                         </label>
                         <input type="date" 
-                               wire:model="form.warranty_start" 
+                               wire:model.defer="form.warranty_start" 
                                id="warranty_start"
                                class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                         @error('form.warranty_start') 
@@ -243,7 +230,7 @@
                             Warranty Expiration
                         </label>
                         <input type="date" 
-                               wire:model="form.warranty_expiration" 
+                               wire:model.defer="form.warranty_expiration" 
                                id="warranty_expiration"
                                class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                         @error('form.warranty_expiration') 
@@ -257,7 +244,7 @@
                     <label for="specifications" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                         Specifications
                     </label>
-                    <textarea wire:model="form.specifications" 
+                    <textarea wire:model.defer="form.specifications" 
                               id="specifications"
                               rows="3"
                               class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
@@ -272,7 +259,7 @@
                     <label for="remarks" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                         Remarks
                     </label>
-                    <textarea wire:model="form.remarks" 
+                    <textarea wire:model.defer="form.remarks" 
                               id="remarks"
                               rows="3"
                               class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"

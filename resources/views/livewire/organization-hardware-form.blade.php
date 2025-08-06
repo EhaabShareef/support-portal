@@ -31,20 +31,9 @@
                 <select wire:model="form.hardware_type" 
                         id="hardware_type"
                         class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                    <option value="desktop">Desktop</option>
-                    <option value="laptop">Laptop</option>
-                    <option value="server">Server</option>
-                    <option value="printer">Printer</option>
-                    <option value="scanner">Scanner</option>
-                    <option value="router">Router</option>
-                    <option value="switch">Switch</option>
-                    <option value="firewall">Firewall</option>
-                    <option value="storage">Storage</option>
-                    <option value="monitor">Monitor</option>
-                    <option value="projector">Projector</option>
-                    <option value="phone">Phone</option>
-                    <option value="tablet">Tablet</option>
-                    <option value="other">Other</option>
+                    @foreach(\App\Enums\HardwareType::options() as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
                 </select>
                 @error('form.hardware_type') 
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
@@ -103,11 +92,9 @@
                 <select wire:model="form.status" 
                         id="status"
                         class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                    <option value="active">Active</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="retired">Retired</option>
-                    <option value="disposed">Disposed</option>
-                    <option value="lost">Lost</option>
+                    @foreach(\App\Enums\HardwareStatus::options() as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
                 </select>
                 @error('form.status') 
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 

@@ -47,6 +47,17 @@ class ManageUsers extends Component
 
     public function mount(Organization $organization)
     {
+        // Check permissions
+        $user = auth()->user();
+        if (!$user->can('users.manage') && !$user->hasRole(['Admin', 'Super Admin'])) {
+            abort(403, 'You do not have permission to manage users.');
+        }
+
+        // Clients can only manage users in their own organization
+        if ($user->hasRole('Client') && $organization->id !== $user->organization_id) {
+            abort(403, 'You can only manage users in your own organization.');
+        }
+
         $this->organization = $organization;
     }
 

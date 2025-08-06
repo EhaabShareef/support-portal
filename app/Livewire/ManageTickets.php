@@ -36,6 +36,8 @@ class ManageTickets extends Component
 
     public string $quickFilter = 'all'; // 'all', 'my_tickets', 'my_department', 'unassigned'
 
+    public bool $showClosed = false; // Toggle to show/hide closed and solution_provided tickets
+
     // Form properties for creating tickets
     public bool $showCreateModal = false;
 
@@ -61,7 +63,7 @@ class ManageTickets extends Component
 
     public function updating($field)
     {
-        if (in_array($field, ['search', 'filterStatus', 'filterPriority', 'filterType', 'filterOrg', 'filterDept', 'filterAssigned', 'quickFilter'])) {
+        if (in_array($field, ['search', 'filterStatus', 'filterPriority', 'filterType', 'filterOrg', 'filterDept', 'filterAssigned', 'quickFilter', 'showClosed'])) {
             $this->resetPage();
         }
     }
@@ -201,6 +203,11 @@ class ManageTickets extends Component
                 }
                 // Super Admin and Admin can see all tickets (no additional filtering)
                 break;
+        }
+
+        // By default, hide closed and solution_provided tickets unless showClosed is true
+        if (!$this->showClosed) {
+            $query->whereNotIn('status', ['closed', 'solution_provided']);
         }
 
         if ($this->search) {

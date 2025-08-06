@@ -122,7 +122,89 @@ The system organizes permissions into the following modules:
 
 ## Recent Updates
 
-### 🎉 **v2.0.0 - Enhanced RBAC System** (Latest)
+### 🚀 **v2.1.0 - Organization Management Overhaul & Performance Optimization** (Latest)
+
+#### 🎯 **Major Features**
+
+- ✅ **Unified Organization Management**: Comprehensive overhaul of organization, contract, hardware, and user management with consistent UI/UX patterns
+- ✅ **Compact Dashboard Tabs**: Streamlined organization view with compact cards showing essential information only
+- ✅ **Dedicated Management Pages**: Separate management interfaces for contracts, hardware, users, and tickets with full CRUD operations
+- ✅ **Smooth Transitions**: Enhanced user experience with Alpine.js transitions and dismissible elements
+- ✅ **Centralized Validation**: Shared validation logic across organization components for consistency and maintainability
+
+#### 🔧 **Performance & Code Quality Improvements**
+
+- ✅ **Eliminated N+1 Queries**: Implemented comprehensive eager loading strategies across all organization components
+  - `ViewOrganization` now eager-loads `users.roles`, `hardware.contract`, `tickets.client/assigned/department`
+  - Optimized database queries for better performance with large datasets
+
+- ✅ **Centralized Business Logic**: 
+  - Created `HardwareValidationService` for consistent contract validation across all hardware forms
+  - Developed `ValidatesOrganizations` trait to eliminate duplicate validation rules
+  - Standardized hardware contract requirements enforcement
+
+- ✅ **Enhanced Authorization**: Strengthened security with explicit permission checks in component lifecycle hooks
+  - Added authorization verification in `ManageUsers` mount method
+  - Implemented organization-scoped access control for client users
+
+#### 🎨 **UI/UX Enhancements**
+
+- ✅ **Consistent Design Patterns**: Applied unified compact tab design across all organization modules
+  - **Contracts Tab**: Shows first 3 contracts with basic info, "Manage Contracts" button for full functionality
+  - **Hardware Tab**: Displays first 3 hardware items with essential details, dedicated management interface
+  - **Users Tab**: Lists first 3 users with role indicators, separate user management page
+  - **Tickets Tab**: Compact view showing Subject, Case Number, Status, Client, Owner, Department with view-only access
+
+- ✅ **Dismissible Elements**: Added user-controllable interface elements
+  - Guidelines banner in users tab can be dismissed with smooth transitions
+  - Better user experience with contextual help that doesn't obstruct workflow
+
+- ✅ **Improved Form UX**: Standardized Livewire bindings for consistent interactions
+  - `.defer` for form fields to reduce unnecessary network traffic
+  - `.live.debounce.300ms` for search fields with optimized response times
+  - `.live` for real-time filters
+
+#### 📊 **Data Management & Consistency**
+
+- ✅ **Hardware Type Standardization**: Created comprehensive enum system
+  - `HardwareType` enum with 14 hardware categories (Desktop, Laptop, Server, Printer, etc.)
+  - `HardwareStatus` enum with badge styling for visual consistency
+  - Eliminated hard-coded options across all forms, improving maintainability
+
+- ✅ **Role Filtering Optimization**: Replaced fragile array-based role filtering with proper model relationships
+  - Changed from `where('roles.0.name', 'Client')` to `hasRole('Client')` for better performance and reliability
+  - Improved query efficiency and reduced database load
+
+- ✅ **Model Documentation**: Updated PHPDoc blocks to reflect actual database schema
+  - Fixed `Organization` model documentation (`active_yn` → `is_active`)
+  - Added missing properties (`subscription_status`, `notes`)
+  - Removed unused fields (`custom_fields` from OrganizationHardware)
+
+#### 🛠️ **Technical Architecture**
+
+- ✅ **Service Layer Implementation**: 
+  - `HardwareValidationService`: Centralized hardware-contract validation logic
+  - Consistent business rule enforcement across all hardware entry points
+  - Reduced code duplication and improved error handling
+
+- ✅ **Trait-Based Validation**: 
+  - `ValidatesOrganizations` trait with reusable validation rules and messages
+  - Eliminates duplicate validation logic between `ManageOrganizations` and `ViewOrganization`
+  - Supports exclusion rules for edit operations
+
+- ✅ **Component Organization**: 
+  - Separate management components (`ManageContracts`, `ManageHardware`, `ManageUsers`) for focused functionality
+  - Compact overview tabs for quick information access
+  - Clear separation of concerns between overview and management interfaces
+
+#### 🔍 **Developer Experience**
+
+- ✅ **Maintainable Codebase**: Significant reduction in code duplication through shared services and traits
+- ✅ **Consistent Patterns**: Standardized approach to form handling, validation, and UI interactions
+- ✅ **Performance Optimization**: Strategic eager loading prevents N+1 queries in high-traffic scenarios
+- ✅ **Documentation**: Updated model PHPDoc blocks and inline code comments for better IDE support
+
+### 🎉 **v2.0.0 - Enhanced RBAC System** (Previous)
 
 - ✅ **Separate Role & User Management**: Independent role management interface with dedicated `/admin/roles` route
 - ✅ **Permission Grid Interface**: Matrix-style role-permission management with module-based organization
@@ -134,15 +216,6 @@ The system organizes permissions into the following modules:
 - ✅ **Role Descriptions**: Detailed descriptions for each role explaining their purpose and scope
 - ✅ **Database Schema Updates**: Added description column to roles table with proper migrations
 - ✅ **Comprehensive Seeding**: Dedicated `RolePermissionSeeder` for clean role/permission setup
-
-### 🔧 **Technical Improvements**
-
-- **Livewire Components**: New `ManageRoles` component with full CRUD operations
-- **Permission Management**: Matrix-style grid for bulk permission assignment per role
-- **User Model Enhancement**: Automatic Client role assignment on user creation
-- **Access Control**: Permission-based UI filtering throughout the application
-- **Database Optimization**: Proper indexing and relationships for RBAC tables
-- **Route Security**: Enhanced middleware protection for admin routes
 
 ## Contributing
 

@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Organization;
 use App\Models\OrganizationHardware;
 use App\Models\OrganizationContract;
+use App\Services\HardwareValidationService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -144,6 +145,13 @@ class ManageHardware extends Component
         
         $this->rules['form.serial_number'] = $serialNumberRule;
         $this->rules['form.asset_tag'] = $assetTagRule;
+
+        // Validate hardware contract requirements
+        $validation = HardwareValidationService::validateHardwareContract($this->organization, $this->form['contract_id']);
+        if (!$validation['valid']) {
+            $this->addError('form.contract_id', $validation['error']);
+            return;
+        }
         
         $this->validate();
 

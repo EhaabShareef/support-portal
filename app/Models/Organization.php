@@ -17,7 +17,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $tin_no
  * @property string $email
  * @property string $phone
- * @property bool $active_yn
+ * @property bool $is_active
+ * @property string $subscription_status
+ * @property string|null $notes
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrganizationContract> $contracts

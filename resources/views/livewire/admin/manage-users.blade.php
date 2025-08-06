@@ -282,7 +282,7 @@
                                 {{-- Name --}}
                                 <div>
                                     <label class="form-label">Full Name</label>
-                                    <input type="text" wire:model="form.name" class="form-input" />
+                                    <input type="text" wire:model.defer="form.name" class="form-input" />
                                     @error('form.name') <p class="form-error">{{ $message }}</p> @enderror
                                 </div>
 

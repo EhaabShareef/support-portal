@@ -6,7 +6,7 @@
             <p class="text-sm text-neutral-600 dark:text-neutral-400">Overview of client users for this organization</p>
         </div>
         
-        @if($organization->users->where('roles.0.name', 'Client')->count() > 0)
+        @if($organization->users->filter(fn($user) => $user->hasRole('Client'))->count() > 0)
             <a href="{{ route('users.manage', $organization) }}" 
                class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
                 <x-heroicon-o-users class="h-4 w-4 mr-2" />

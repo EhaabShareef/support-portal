@@ -28,7 +28,6 @@ class OrganizationHardware extends Model
         'status',
         'location',
         'remarks',
-        'custom_fields',
         'last_maintenance',
         'next_maintenance',
     ];

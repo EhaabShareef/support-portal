@@ -3,13 +3,14 @@
 namespace App\Livewire;
 
 use App\Models\Organization;
+use App\Traits\ValidatesOrganizations;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Computed;
 
 class ManageOrganizations extends Component
 {
-    use WithPagination;
+    use WithPagination, ValidatesOrganizations;
 
     public $search = '';
     public $statusFilter = 'all';
@@ -30,17 +31,7 @@ class ManageOrganizations extends Component
         'notes' => '',
     ];
 
-    protected $rules = [
-        'form.name' => 'required|string|max:255',
-        'form.company' => 'required|string|max:255',
-        'form.company_contact' => 'required|string|max:255',
-        'form.tin_no' => 'required|string|max:255|unique:organizations,tin_no',
-        'form.email' => 'required|email|unique:organizations,email',
-        'form.phone' => 'nullable|string|max:20',
-        'form.is_active' => 'boolean',
-        'form.subscription_status' => 'required|in:trial,active,suspended,cancelled',
-        'form.notes' => 'nullable|string',
-    ];
+    protected $rules = [];
 
     public function mount()
     {
@@ -134,14 +125,10 @@ class ManageOrganizations extends Component
 
     public function save()
     {
-        // Update validation rules for editing
-        $rules = $this->rules;
-        if ($this->form['id']) {
-            $rules['form.tin_no'] = 'required|string|max:255|unique:organizations,tin_no,' . $this->form['id'];
-            $rules['form.email'] = 'required|email|unique:organizations,email,' . $this->form['id'];
-        }
+        // Get validation rules with exclusion if editing
+        $rules = $this->getOrganizationValidationRulesWithExclusion($this->form['id'] ?? null);
 
-        $this->validate($rules);
+        $this->validate($rules, $this->getOrganizationValidationMessages());
 
         $organization = Organization::updateOrCreate(
             ['id' => $this->form['id']],

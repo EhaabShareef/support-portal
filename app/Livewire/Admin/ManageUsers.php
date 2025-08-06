@@ -314,7 +314,7 @@ class ManageUsers extends Component
             'users' => $query->withCount(['tickets', 'assignedTickets', 'permissions'])->latest()->paginate(15),
             'departments' => Department::orderBy('name')->get(),
             'organizations' => Organization::orderBy('name')->get(),
-            'availableRoles' => Role::orderBy('name')->get(),
+            'availableRoles' => Role::orderBy('name')->pluck('name'),
         ]);
     }
 }

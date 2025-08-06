@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Organization;
 use App\Models\OrganizationContract;
 use App\Models\OrganizationHardware;
+use App\Services\HardwareValidationService;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -142,24 +143,11 @@ class OrganizationHardwareForm extends Component
         $this->rules['form.serial_number'] = $serialNumberRule;
         $this->rules['form.asset_tag'] = $assetTagRule;
 
-        // Check if hardware requires an active hardware contract
-        if ($this->form['contract_id']) {
-            $contract = OrganizationContract::find($this->form['contract_id']);
-            if (!$contract || !$contract->includes_hardware || $contract->status !== 'active') {
-                $this->addError('form.contract_id', 'Hardware can only be assigned to active contracts that include hardware.');
-                return;
-            }
-        } else {
-            // Check if organization has any active hardware contracts
-            $hasHardwareContract = $this->organization->contracts()
-                ->where('status', 'active')
-                ->where('includes_hardware', true)
-                ->exists();
-                
-            if (!$hasHardwareContract) {
-                $this->addError('form.contract_id', 'This organization must have an active hardware contract to add hardware. Please create a hardware contract first.');
-                return;
-            }
+        // Validate hardware contract requirements
+        $validation = HardwareValidationService::validateHardwareContract($this->organization, $this->form['contract_id']);
+        if (!$validation['valid']) {
+            $this->addError('form.contract_id', $validation['error']);
+            return;
         }
         
         $this->validate();

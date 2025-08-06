@@ -6,12 +6,15 @@ use App\Models\Organization;
 use App\Models\OrganizationContract;
 use App\Models\OrganizationHardware;
 use App\Models\User;
+use App\Traits\ValidatesOrganizations;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ViewOrganization extends Component
 {
+    use ValidatesOrganizations;
+    
     public Organization $organization;
 
     public bool $editMode = false;
@@ -37,7 +40,7 @@ class ViewOrganization extends Component
             abort(403, 'You can only view your own organization.');
         }
 
-        $this->organization = $organization->load(['users', 'contracts', 'hardware', 'tickets']);
+        $this->organization = $organization->load(['users.roles', 'contracts', 'hardware.contract', 'tickets.client', 'tickets.assigned', 'tickets.department']);
         $this->syncForm();
     }
 
@@ -107,17 +110,8 @@ class ViewOrganization extends Component
             return;
         }
 
-        $validated = $this->validate([
-            'form.name' => 'required|string|max:255',
-            'form.company' => 'required|string|max:255',
-            'form.company_contact' => 'required|string|max:255',
-            'form.tin_no' => 'required|string|max:255|unique:organizations,tin_no,'.$this->organization->id,
-            'form.email' => 'required|email|unique:organizations,email,'.$this->organization->id,
-            'form.phone' => 'nullable|string|max:20',
-            'form.is_active' => 'boolean',
-            'form.subscription_status' => 'required|in:trial,active,suspended,cancelled',
-            'form.notes' => 'nullable|string',
-        ]);
+        $rules = $this->getOrganizationValidationRulesWithExclusion($this->organization->id);
+        $validated = $this->validate($rules, $this->getOrganizationValidationMessages());
 
         $this->organization->update($validated['form']);
         $this->organization->refresh();
@@ -191,7 +185,7 @@ class ViewOrganization extends Component
     public function refreshOrganization()
     {
         $this->organization->refresh();
-        $this->organization->load(['users', 'contracts', 'hardware', 'tickets']);
+        $this->organization->load(['users.roles', 'contracts', 'hardware.contract', 'tickets.client', 'tickets.assigned', 'tickets.department']);
     }
 
     public function deleteContract($contractId)
@@ -244,6 +238,7 @@ class ViewOrganization extends Component
     {
         return $this->organization->tickets()
             ->with(['client', 'department', 'assigned'])
+            ->whereNotIn('status', ['closed', 'solution_provided']) // Hide closed tickets by default
             ->when($this->ticketSearch, function ($query) {
                 $query->where(function ($q) {
                     $q->where('subject', 'like', '%'.$this->ticketSearch.'%')
