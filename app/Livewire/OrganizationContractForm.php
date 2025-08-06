@@ -2,21 +2,17 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
+use App\Models\Department;
 use App\Models\Organization;
 use App\Models\OrganizationContract;
-use App\Models\Department;
-use Livewire\WithPagination;
+use Livewire\Attributes\On;
+use Livewire\Component;
 
-class ManageContracts extends Component
+class OrganizationContractForm extends Component
 {
-    use WithPagination;
-
     public Organization $organization;
-
-    public $showForm = false;
-    public $deleteId = null;
-    public $editingContract = null;
+    public ?OrganizationContract $contract = null;
+    public bool $isEditing = false;
 
     public array $form = [
         'contract_number' => '',
@@ -48,30 +44,25 @@ class ManageContracts extends Component
         'form.terms_conditions' => 'nullable|string',
     ];
 
+    protected $messages = [
+        'form.contract_number.required' => 'Contract number is required',
+        'form.contract_number.unique' => 'This contract number already exists',
+        'form.department_id.required' => 'Department is required',
+        'form.department_id.exists' => 'Selected department does not exist',
+        'form.start_date.required' => 'Start date is required',
+        'form.end_date.after_or_equal' => 'End date must be after or equal to start date',
+    ];
+
     public function mount(Organization $organization)
     {
         $this->organization = $organization;
+        $this->resetToNew();
     }
-
-    public function render()
+    
+    private function resetToNew()
     {
-        $contracts = OrganizationContract::where('organization_id', $this->organization->id)
-            ->with('department')
-            ->orderByDesc('start_date')
-            ->paginate(10);
-
-        $departments = Department::orderBy('name')->get();
-
-        return view('livewire.manage-contracts', [
-            'contracts' => $contracts,
-            'departments' => $departments
-        ]);
-    }
-
-    public function create()
-    {
-        $this->reset(['form', 'editingContract']);
-        
+        $this->isEditing = false;
+        $this->contract = null;
         $this->form = [
             'contract_number' => 'CON-' . strtoupper(uniqid()),
             'department_id' => '',
@@ -86,38 +77,48 @@ class ManageContracts extends Component
             'csi_remarks' => null,
             'terms_conditions' => null,
         ];
-        
-        $this->showForm = true;
     }
 
-    public function edit($id)
+    #[On('newContract')]
+    public function newContract()
     {
-        $this->editingContract = OrganizationContract::findOrFail($id);
+        $this->resetToNew();
+    }
+
+    #[On('editContract')]
+    public function editContract($contractId)
+    {
+        $this->contract = OrganizationContract::findOrFail($contractId);
+        $this->isEditing = true;
+        $this->loadContractData();
+    }
+
+    private function loadContractData()
+    {
+        if (!$this->contract) return;
 
         $this->form = [
-            'contract_number' => $this->editingContract->contract_number,
-            'department_id' => $this->editingContract->department_id,
-            'type' => $this->editingContract->type,
-            'status' => $this->editingContract->status,
-            'includes_hardware' => $this->editingContract->includes_hardware,
-            'contract_value' => $this->editingContract->contract_value,
-            'currency' => $this->editingContract->currency,
-            'start_date' => $this->editingContract->start_date?->format('Y-m-d') ?? '',
-            'end_date' => $this->editingContract->end_date?->format('Y-m-d') ?? '',
-            'renewal_months' => $this->editingContract->renewal_months,
-            'csi_remarks' => $this->editingContract->csi_remarks,
-            'terms_conditions' => $this->editingContract->terms_conditions,
+            'contract_number' => $this->contract->contract_number,
+            'department_id' => $this->contract->department_id,
+            'type' => $this->contract->type,
+            'status' => $this->contract->status,
+            'includes_hardware' => $this->contract->includes_hardware,
+            'contract_value' => $this->contract->contract_value,
+            'currency' => $this->contract->currency,
+            'start_date' => $this->contract->start_date?->format('Y-m-d') ?? '',
+            'end_date' => $this->contract->end_date?->format('Y-m-d') ?? '',
+            'renewal_months' => $this->contract->renewal_months,
+            'csi_remarks' => $this->contract->csi_remarks,
+            'terms_conditions' => $this->contract->terms_conditions,
         ];
-
-        $this->showForm = true;
     }
 
     public function save()
     {
         // Add unique rule for contract number, excluding current contract if editing
         $contractNumberRule = 'required|string|max:255|unique:organization_contracts,contract_number';
-        if ($this->editingContract) {
-            $contractNumberRule .= ',' . $this->editingContract->id;
+        if ($this->isEditing && $this->contract) {
+            $contractNumberRule .= ',' . $this->contract->id;
         }
         
         $this->rules['form.contract_number'] = $contractNumberRule;
@@ -143,32 +144,34 @@ class ManageContracts extends Component
             }
         }
 
-        if ($this->editingContract) {
-            $this->editingContract->update($data);
+        if ($this->isEditing && $this->contract) {
+            $this->contract->update($data);
             $message = 'Contract updated successfully.';
         } else {
             OrganizationContract::create($data);
             $message = 'Contract created successfully.';
         }
 
-        $this->reset(['showForm', 'form', 'editingContract']);
+        $this->dispatch('contractSaved');
+        $this->dispatch('refreshOrganization');
         session()->flash('message', $message);
-    }
-
-    public function confirmDelete($id)
-    {
-        $this->deleteId = $id;
-    }
-
-    public function delete()
-    {
-        OrganizationContract::findOrFail($this->deleteId)->delete();
-        $this->reset('deleteId');
-        session()->flash('message', 'Contract deleted successfully.');
+        
+        // Reset form and dispatch close modal event
+        $this->reset(['form', 'isEditing', 'contract']);
     }
 
     public function cancel()
     {
-        $this->reset(['showForm', 'form', 'editingContract']);
+        $this->reset(['form', 'isEditing', 'contract']);
+        $this->dispatch('contractCancelled');
+    }
+
+    public function render()
+    {
+        $departments = Department::orderBy('name')->get();
+        
+        return view('livewire.organization-contract-form', [
+            'departments' => $departments,
+        ]);
     }
 }

@@ -3,7 +3,11 @@
 namespace App\Livewire;
 
 use App\Models\Organization;
+use App\Models\OrganizationContract;
+use App\Models\OrganizationHardware;
+use App\Models\User;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ViewOrganization extends Component
@@ -181,6 +185,58 @@ class ViewOrganization extends Component
     public function setActiveTab($tab)
     {
         $this->activeTab = $tab;
+    }
+
+    #[On('refreshOrganization')]
+    public function refreshOrganization()
+    {
+        $this->organization->refresh();
+        $this->organization->load(['users', 'contracts', 'hardware', 'tickets']);
+    }
+
+    public function deleteContract($contractId)
+    {
+        $contract = OrganizationContract::findOrFail($contractId);
+        
+        // Check if contract has hardware assigned
+        if ($contract->hardware()->count() > 0) {
+            session()->flash('error', 'Cannot delete contract with assigned hardware. Please remove hardware first.');
+            return;
+        }
+
+        $contract->delete();
+        $this->refreshOrganization();
+        session()->flash('message', 'Contract deleted successfully.');
+    }
+
+    public function deleteHardware($hardwareId)
+    {
+        $hardware = OrganizationHardware::findOrFail($hardwareId);
+        $hardware->delete();
+        $this->refreshOrganization();
+        session()->flash('message', 'Hardware deleted successfully.');
+    }
+
+    public function deleteUser($userId)
+    {
+        $user = User::findOrFail($userId);
+        
+        // Only allow deletion of Client users from this organization
+        if (!$user->hasRole('Client') || $user->organization_id !== $this->organization->id) {
+            session()->flash('error', 'You can only delete client users belonging to this organization.');
+            return;
+        }
+
+        // Check if user has any tickets
+        if ($user->tickets()->count() > 0 || $user->assignedTickets()->count() > 0) {
+            session()->flash('error', 'Cannot delete user with existing tickets. Please reassign or resolve tickets first.');
+            return;
+        }
+
+        $userName = $user->name;
+        $user->delete();
+        $this->refreshOrganization();
+        session()->flash('message', "User '{$userName}' deleted successfully.");
     }
 
     #[Computed]

@@ -217,9 +217,9 @@
 
         {{-- Right Column - Tabbed Content --}}
         <div class="lg:col-span-2">
-            <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md">
+            <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md min-h-[800px] flex flex-col">
                 {{-- Tab Navigation --}}
-                <div class="border-b border-neutral-200 dark:border-neutral-700">
+                <div class="border-b border-neutral-200 dark:border-neutral-700 flex-shrink-0">
                     <nav class="flex space-x-8 px-6 py-4" aria-label="Tabs">
                         @foreach([
                             'users' => ['icon' => 'users', 'label' => 'Users', 'count' => $organization->users()->count()],
@@ -241,8 +241,8 @@
                     </nav>
                 </div>
 
-                {{-- Tab Content --}}
-                <div class="p-6">
+                {{-- Tab Content - Flexible height container --}}
+                <div class="p-6 flex-1 overflow-y-auto">
                     @if($activeTab === 'users')
                         @include('livewire.partials.organization.users-tab', ['organization' => $organization])
                     @elseif($activeTab === 'contracts')

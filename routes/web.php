@@ -11,10 +11,11 @@ use App\Livewire\ManageOrganizations;
 use App\Livewire\ViewOrganization;
 use App\Livewire\ManageContracts;
 use App\Livewire\ManageHardware;
+use App\Livewire\ManageUsers;
 use App\Livewire\CreateTicket;
 use App\Livewire\ManageTickets;
 use App\Livewire\ViewTicket;
-use App\Livewire\Admin\ManageUsers;
+use App\Livewire\Admin\ManageUsers as AdminManageUsers;
 use App\Livewire\Admin\ViewUser;
 use App\Livewire\Admin\ManageRoles;
 use App\Livewire\Admin\ManageSettings;
@@ -40,8 +41,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/organizations', ManageOrganizations::class)->name('organizations.index');
     Route::get('/organizations/{organization}', ViewOrganization::class)->name('organizations.show');
 
+    // Contract Routes
+    Route::get('/contracts', function() { return redirect()->route('organizations.index'); });
+    Route::get('/contracts/{contract}', function() { return redirect()->route('organizations.index'); })->name('contracts.show');
     Route::get('/contracts/manage/{organization}', ManageContracts::class)->name('contracts.manage');
+
+    // Hardware Routes
+    Route::get('/hardware', function() { return redirect()->route('organizations.index'); });
+    Route::get('/hardware/{hardware}', function() { return redirect()->route('organizations.index'); })->name('hardware.show');
     Route::get('/hardware/manage/{organization}', ManageHardware::class)->name('hardware.manage');
+
+    // User Routes (Organization-specific)
+    Route::get('/users', function() { return redirect()->route('organizations.index'); });
+    Route::get('/users/manage/{organization}', ManageUsers::class)->name('users.manage');
 
     // Ticket Routes
     Route::get('/tickets/create', CreateTicket::class)->name('tickets.create');
@@ -55,7 +67,7 @@ Route::middleware('auth')->group(function () {
 
     // Admin Routes (only for Admin role)
     Route::middleware(['role:Admin'])->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/users', ManageUsers::class)->name('users.index');
+        Route::get('/users', AdminManageUsers::class)->name('users.index');
         Route::get('/users/{user}', ViewUser::class)->name('users.view');
         Route::get('/roles', ManageRoles::class)->name('roles.index');
         Route::get('/settings', ManageSettings::class)->name('settings');

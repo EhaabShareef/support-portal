@@ -3,19 +3,16 @@
 namespace App\Livewire;
 
 use App\Models\Organization;
-use App\Models\OrganizationHardware;
 use App\Models\OrganizationContract;
+use App\Models\OrganizationHardware;
+use Livewire\Attributes\On;
 use Livewire\Component;
-use Livewire\WithPagination;
 
-class ManageHardware extends Component
+class OrganizationHardwareForm extends Component
 {
-    use WithPagination;
-
     public Organization $organization;
-    public $showForm = false;
-    public $deleteId = null;
-    public $editingHardware = null;
+    public ?OrganizationHardware $hardware = null;
+    public bool $isEditing = false;
 
     public array $form = [
         'asset_tag' => '',
@@ -55,34 +52,24 @@ class ManageHardware extends Component
         'form.next_maintenance' => 'nullable|date',
     ];
 
+    protected $messages = [
+        'form.hardware_type.required' => 'Hardware type is required',
+        'form.contract_id.exists' => 'Selected contract does not exist',
+        'form.warranty_expiration.after_or_equal' => 'Warranty expiration must be after or equal to warranty start date',
+        'form.serial_number.unique' => 'This serial number already exists',
+        'form.asset_tag.unique' => 'This asset tag already exists',
+    ];
+
     public function mount(Organization $organization)
     {
         $this->organization = $organization;
+        $this->resetToNew();
     }
-
-    public function render()
+    
+    private function resetToNew()
     {
-        $hardwareList = OrganizationHardware::where('organization_id', $this->organization->id)
-            ->with('contract')
-            ->latest('purchase_date')
-            ->paginate(10);
-
-        $contracts = $this->organization->contracts()
-            ->where('status', 'active')
-            ->where('includes_hardware', true)
-            ->orderBy('contract_number')
-            ->get();
-
-        return view('livewire.manage-hardware', [
-            'hardwareList' => $hardwareList,
-            'contracts' => $contracts
-        ]);
-    }
-
-    public function create()
-    {
-        $this->reset(['form', 'editingHardware']);
-        
+        $this->isEditing = false;
+        $this->hardware = null;
         $this->form = [
             'asset_tag' => 'HW-' . strtoupper(uniqid()),
             'contract_id' => null,
@@ -101,34 +88,44 @@ class ManageHardware extends Component
             'last_maintenance' => null,
             'next_maintenance' => null,
         ];
-        
-        $this->showForm = true;
     }
 
-    public function edit($id)
+    #[On('newHardware')]
+    public function newHardware()
     {
-        $this->editingHardware = OrganizationHardware::findOrFail($id);
+        $this->resetToNew();
+    }
+
+    #[On('editHardware')]
+    public function editHardware($hardwareId)
+    {
+        $this->hardware = OrganizationHardware::findOrFail($hardwareId);
+        $this->isEditing = true;
+        $this->loadHardwareData();
+    }
+
+    private function loadHardwareData()
+    {
+        if (!$this->hardware) return;
 
         $this->form = [
-            'asset_tag' => $this->editingHardware->asset_tag,
-            'contract_id' => $this->editingHardware->contract_id,
-            'hardware_type' => $this->editingHardware->hardware_type,
-            'brand' => $this->editingHardware->brand,
-            'model' => $this->editingHardware->model,
-            'serial_number' => $this->editingHardware->serial_number,
-            'specifications' => $this->editingHardware->specifications,
-            'purchase_date' => $this->editingHardware->purchase_date?->format('Y-m-d') ?? '',
-            'purchase_price' => $this->editingHardware->purchase_price,
-            'warranty_start' => $this->editingHardware->warranty_start?->format('Y-m-d') ?? '',
-            'warranty_expiration' => $this->editingHardware->warranty_expiration?->format('Y-m-d') ?? '',
-            'status' => $this->editingHardware->status,
-            'location' => $this->editingHardware->location,
-            'remarks' => $this->editingHardware->remarks,
-            'last_maintenance' => $this->editingHardware->last_maintenance?->format('Y-m-d') ?? '',
-            'next_maintenance' => $this->editingHardware->next_maintenance?->format('Y-m-d') ?? '',
+            'asset_tag' => $this->hardware->asset_tag,
+            'contract_id' => $this->hardware->contract_id,
+            'hardware_type' => $this->hardware->hardware_type,
+            'brand' => $this->hardware->brand,
+            'model' => $this->hardware->model,
+            'serial_number' => $this->hardware->serial_number,
+            'specifications' => $this->hardware->specifications,
+            'purchase_date' => $this->hardware->purchase_date?->format('Y-m-d') ?? '',
+            'purchase_price' => $this->hardware->purchase_price,
+            'warranty_start' => $this->hardware->warranty_start?->format('Y-m-d') ?? '',
+            'warranty_expiration' => $this->hardware->warranty_expiration?->format('Y-m-d') ?? '',
+            'status' => $this->hardware->status,
+            'location' => $this->hardware->location,
+            'remarks' => $this->hardware->remarks,
+            'last_maintenance' => $this->hardware->last_maintenance?->format('Y-m-d') ?? '',
+            'next_maintenance' => $this->hardware->next_maintenance?->format('Y-m-d') ?? '',
         ];
-
-        $this->showForm = true;
     }
 
     public function save()
@@ -137,13 +134,33 @@ class ManageHardware extends Component
         $serialNumberRule = 'nullable|string|max:255|unique:organization_hardware,serial_number';
         $assetTagRule = 'nullable|string|max:255|unique:organization_hardware,asset_tag';
         
-        if ($this->editingHardware) {
-            $serialNumberRule .= ',' . $this->editingHardware->id;
-            $assetTagRule .= ',' . $this->editingHardware->id;
+        if ($this->isEditing && $this->hardware) {
+            $serialNumberRule .= ',' . $this->hardware->id;
+            $assetTagRule .= ',' . $this->hardware->id;
         }
         
         $this->rules['form.serial_number'] = $serialNumberRule;
         $this->rules['form.asset_tag'] = $assetTagRule;
+
+        // Check if hardware requires an active hardware contract
+        if ($this->form['contract_id']) {
+            $contract = OrganizationContract::find($this->form['contract_id']);
+            if (!$contract || !$contract->includes_hardware || $contract->status !== 'active') {
+                $this->addError('form.contract_id', 'Hardware can only be assigned to active contracts that include hardware.');
+                return;
+            }
+        } else {
+            // Check if organization has any active hardware contracts
+            $hasHardwareContract = $this->organization->contracts()
+                ->where('status', 'active')
+                ->where('includes_hardware', true)
+                ->exists();
+                
+            if (!$hasHardwareContract) {
+                $this->addError('form.contract_id', 'This organization must have an active hardware contract to add hardware. Please create a hardware contract first.');
+                return;
+            }
+        }
         
         $this->validate();
 
@@ -174,32 +191,38 @@ class ManageHardware extends Component
             }
         }
 
-        if ($this->editingHardware) {
-            $this->editingHardware->update($data);
+        if ($this->isEditing && $this->hardware) {
+            $this->hardware->update($data);
             $message = 'Hardware updated successfully.';
         } else {
             OrganizationHardware::create($data);
             $message = 'Hardware created successfully.';
         }
 
-        $this->reset(['showForm', 'form', 'editingHardware']);
+        $this->dispatch('hardwareSaved');
+        $this->dispatch('refreshOrganization');
         session()->flash('message', $message);
-    }
-
-    public function confirmDelete($id)
-    {
-        $this->deleteId = $id;
-    }
-
-    public function delete()
-    {
-        OrganizationHardware::findOrFail($this->deleteId)->delete();
-        $this->reset('deleteId');
-        session()->flash('message', 'Hardware deleted successfully.');
+        
+        // Reset form and dispatch close modal event
+        $this->reset(['form', 'isEditing', 'hardware']);
     }
 
     public function cancel()
     {
-        $this->reset(['showForm', 'form', 'editingHardware']);
+        $this->reset(['form', 'isEditing', 'hardware']);
+        $this->dispatch('hardwareCancelled');
+    }
+
+    public function render()
+    {
+        $contracts = $this->organization->contracts()
+            ->where('status', 'active')
+            ->where('includes_hardware', true)
+            ->orderBy('contract_number')
+            ->get();
+        
+        return view('livewire.organization-hardware-form', [
+            'contracts' => $contracts,
+        ]);
     }
 }
