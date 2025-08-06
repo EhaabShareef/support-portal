@@ -513,8 +513,7 @@
 
                     {{-- Reply Form --}}
                     @if($activeInput === 'reply')
-                    <div class="border-t border-neutral-200 dark:border-neutral-700 pt-4 px-4 py-6">
-                    <div class="border-t border-neutral-200 dark:border-neutral-700 pt-4">
+                    <div class="border-t border-neutral-200 dark:border-neutral-700 px-6 py-4">
                         <form wire:submit="sendMessage">
                             <div>
                                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Your Reply</label>

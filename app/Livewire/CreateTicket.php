@@ -14,36 +14,43 @@ class CreateTicket extends Component
     public array $form = [
         'subject'   => '',
         'type'      => 'issue',
-        'org_id'    => '',
+        'organization_id' => '',
         'client_id' => '',
-        'dept_id'   => '',
+        'department_id' => '',
         'status'    => 'in progress',
-        'priority'  => 'Normal',
-        'owner_id'  => '',
+        'priority'  => 'normal',
+        'assigned_to' => '',
     ];
 
     public function rules(): array
     {
         return [
-            'form.subject'   => 'required|string|max:50',
-            'form.type'      => 'required|in:issue,feedback,bug,lead,task',
-            'form.org_id'    => 'required|exists:organizations,id',
-            'form.client_id' => 'nullable', // removed validation — will set it manually
-            'form.dept_id'   => 'required|exists:departments,id',
-            'form.priority'  => 'required|in:Low,Normal,High,Serious Business Impact',
-            'form.owner_id' => 'nullable|exists:users,id',
-
+            'form.subject'   => 'required|string|max:255',
+            'form.type'      => 'required|in:issue,feedback,bug,lead,task,incident,request',
+            'form.organization_id' => 'required|exists:organizations,id',
+            'form.client_id' => 'nullable', // will be set to authenticated user
+            'form.department_id' => 'required|exists:departments,id',
+            'form.priority'  => 'required|in:low,normal,high,urgent,critical',
+            'form.assigned_to' => 'nullable|exists:users,id',
         ];
     }
 
     public function submit()
     {
+        $user = auth()->user();
         $validated = $this->validate()['form'];
-        $validated['client_id'] = auth()->id();
+        
+        // Override security-sensitive fields
+        $validated['client_id'] = $user->id;
         $validated['status'] = 'open';
+        
+        // For clients, force their organization
+        if ($user->hasRole('Client')) {
+            $validated['organization_id'] = $user->organization_id;
+        }
 
-        if (empty($validated['owner_id'])) {
-            $validated['owner_id'] = null;
+        if (empty($validated['assigned_to'])) {
+            $validated['assigned_to'] = null;
         }
 
         $ticket = Ticket::create($validated);

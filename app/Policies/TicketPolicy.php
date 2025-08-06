@@ -28,13 +28,21 @@ class TicketPolicy
             return true;
         }
 
-        // Agent can view tickets in their department
-        if ($user->hasRole('Agent') && $user->department_id === $ticket->dept_id) {
-            return true;
+        // Agent can view tickets in their department or department group
+        if ($user->hasRole('Agent')) {
+            // Check if same department
+            if ($user->department_id === $ticket->department_id) {
+                return true;
+            }
+            // Check if same department group
+            if ($user->department?->department_group_id && 
+                $user->department->department_group_id === $ticket->department?->department_group_id) {
+                return true;
+            }
         }
 
         // Client can view tickets from their organization
-        if ($user->hasRole('Client') && $user->organization_id === $ticket->org_id) {
+        if ($user->hasRole('Client') && $user->organization_id === $ticket->organization_id) {
             return true;
         }
 
@@ -60,9 +68,17 @@ class TicketPolicy
             return true;
         }
 
-        // Agent can update tickets in their department
-        if ($user->hasRole('Agent') && $user->department_id === $ticket->dept_id) {
-            return true;
+        // Agent can update tickets in their department or department group
+        if ($user->hasRole('Agent')) {
+            // Check if same department
+            if ($user->department_id === $ticket->department_id) {
+                return true;
+            }
+            // Check if same department group
+            if ($user->department?->department_group_id && 
+                $user->department->department_group_id === $ticket->department?->department_group_id) {
+                return true;
+            }
         }
 
         return false;
@@ -87,9 +103,17 @@ class TicketPolicy
             return true;
         }
 
-        // Agent can assign tickets in their department
-        if ($user->hasRole('Agent') && $user->department_id === $ticket->dept_id) {
-            return true;
+        // Agent can assign tickets in their department or department group
+        if ($user->hasRole('Agent')) {
+            // Check if same department
+            if ($user->department_id === $ticket->department_id) {
+                return true;
+            }
+            // Check if same department group
+            if ($user->department?->department_group_id && 
+                $user->department->department_group_id === $ticket->department?->department_group_id) {
+                return true;
+            }
         }
 
         return false;

@@ -103,6 +103,12 @@ class User extends Authenticatable
         return $this->belongsTo(Organization::class);
     }
 
+    // Department Group (via Department)
+    public function getDepartmentGroupAttribute()
+    {
+        return $this->department?->departmentGroup;
+    }
+
     public function tickets()
     {
         return $this->hasMany(Ticket::class, 'client_id');

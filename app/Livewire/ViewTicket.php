@@ -64,8 +64,17 @@ class ViewTicket extends Component
             abort(403, 'You can only view tickets from your organization.');
         }
 
-        if ($user->hasRole('Agent') && $ticket->department_id !== $user->department_id) {
-            abort(403, 'You can only view tickets from your department.');
+        if ($user->hasRole('Agent')) {
+            $hasAccess = $ticket->department_id === $user->department_id;
+            
+            // Also check department group access
+            if (!$hasAccess && $user->department?->department_group_id) {
+                $hasAccess = $user->department->department_group_id === $ticket->department?->department_group_id;
+            }
+            
+            if (!$hasAccess) {
+                abort(403, 'You can only view tickets from your department or department group.');
+            }
         }
 
         $this->ticket = $ticket->load([
@@ -122,9 +131,18 @@ class ViewTicket extends Component
             return $this->ticket->organization_id === $user->organization_id;
         }
 
-        // Agents can reply to tickets in their department
+        // Agents can reply to tickets in their department or department group
         if ($user->hasRole('Agent')) {
-            return $this->ticket->department_id === $user->department_id;
+            // Check same department first
+            if ($this->ticket->department_id === $user->department_id) {
+                return true;
+            }
+            // Check same department group
+            if ($user->department?->department_group_id && 
+                $user->department->department_group_id === $this->ticket->department?->department_group_id) {
+                return true;
+            }
+            return false;
         }
 
         // Admins can reply to any ticket
@@ -364,11 +382,23 @@ class ViewTicket extends Component
                 $q->whereIn('name', ['Agent', 'Admin', 'Super Admin']);
             })->orderBy('name')->get();
         } elseif ($user->hasRole('Agent')) {
-            $departments = Department::where('id', $user->department_id)->get();
-            $users = User::where('department_id', $user->department_id)
-                ->whereHas('roles', function ($q) {
+            if ($user->department?->department_group_id) {
+                // Show all departments in the same group
+                $departments = Department::where('department_group_id', $user->department->department_group_id)
+                    ->orderBy('name')->get();
+                $users = User::whereHas('department', function ($q) use ($user) {
+                    $q->where('department_group_id', $user->department->department_group_id);
+                })->whereHas('roles', function ($q) {
                     $q->whereIn('name', ['Agent', 'Admin', 'Super Admin']);
                 })->orderBy('name')->get();
+            } else {
+                // Fallback to just their department
+                $departments = Department::where('id', $user->department_id)->get();
+                $users = User::where('department_id', $user->department_id)
+                    ->whereHas('roles', function ($q) {
+                        $q->whereIn('name', ['Agent', 'Admin', 'Super Admin']);
+                    })->orderBy('name')->get();
+            }
         }
 
         return view('livewire.view-ticket', [

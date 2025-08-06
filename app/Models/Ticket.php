@@ -127,6 +127,12 @@ class Ticket extends Model
         return $this->morphMany(Attachment::class, 'attachable');
     }
 
+    // Department Group (via Department) - using accessor for simplicity
+    public function getDepartmentGroupAttribute()
+    {
+        return $this->department?->departmentGroup;
+    }
+
     // Priority enum
     public function getPriorityEnum(): ?TicketPriority
     {
@@ -228,6 +234,13 @@ class Ticket extends Model
     public function scopeForOrganization($query, $organizationId)
     {
         return $query->where('organization_id', $organizationId);
+    }
+
+    public function scopeForDepartmentGroup($query, $departmentGroupId)
+    {
+        return $query->whereHas('department', function ($q) use ($departmentGroupId) {
+            $q->where('department_group_id', $departmentGroupId);
+        });
     }
 
     // Helper methods
