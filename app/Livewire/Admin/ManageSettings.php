@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Department;
 use App\Models\DepartmentGroup;
 use App\Models\Setting;
+use App\Models\ScheduleEventType;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -55,10 +56,23 @@ class ManageSettings extends Component
 
     public string $validationRulesText = '';
 
+    // Schedule Event Types
+    public bool $showEventTypeModal = false;
+    public bool $eventTypeEditMode = false;
+    public ?int $selectedEventTypeId = null;
+    public array $eventTypeForm = [
+        'code' => '',
+        'label' => '',
+        'color' => 'bg-blue-500',
+        'is_active' => true,
+        'sort_order' => 0,
+    ];
+
     // Delete confirmations
     public ?int $confirmingDeptGroupDelete = null;
     public ?int $confirmingDeptDelete = null;
     public ?int $confirmingSettingDelete = null;
+    public ?int $confirmingEventTypeDelete = null;
 
     public function mount()
     {
@@ -90,6 +104,12 @@ class ManageSettings extends Component
     public function availableDeptGroups()
     {
         return DepartmentGroup::active()->ordered()->get();
+    }
+
+    #[Computed]
+    public function scheduleEventTypes()
+    {
+        return ScheduleEventType::ordered()->get();
     }
 
     public function setActiveTab($tab)
@@ -340,11 +360,95 @@ class ManageSettings extends Component
         $this->resetErrorBag('settingForm');
     }
 
+    // Schedule Event Types CRUD
+    public function createEventType()
+    {
+        $this->resetEventTypeForm();
+        $this->eventTypeEditMode = false;
+        $this->showEventTypeModal = true;
+    }
+
+    public function editEventType($id)
+    {
+        $eventType = ScheduleEventType::findOrFail($id);
+        $this->selectedEventTypeId = $id;
+        $this->eventTypeForm = $eventType->toArray();
+        $this->eventTypeEditMode = true;
+        $this->showEventTypeModal = true;
+    }
+
+    public function saveEventType()
+    {
+        $rules = [
+            'eventTypeForm.code' => 'required|string|max:10',
+            'eventTypeForm.label' => 'required|string|max:255',
+            'eventTypeForm.color' => 'required|string|max:50',
+            'eventTypeForm.is_active' => 'boolean',
+            'eventTypeForm.sort_order' => 'integer|min:0',
+        ];
+
+        if (!$this->eventTypeEditMode) {
+            $rules['eventTypeForm.code'] .= '|unique:schedule_event_types,code';
+        } else {
+            $rules['eventTypeForm.code'] .= '|unique:schedule_event_types,code,' . $this->selectedEventTypeId;
+        }
+
+        $validated = $this->validate($rules);
+
+        if ($this->eventTypeEditMode) {
+            ScheduleEventType::findOrFail($this->selectedEventTypeId)->update($validated['eventTypeForm']);
+            session()->flash('message', 'Schedule event type updated successfully.');
+        } else {
+            $validated['eventTypeForm']['created_by'] = auth()->id();
+            ScheduleEventType::create($validated['eventTypeForm']);
+            session()->flash('message', 'Schedule event type created successfully.');
+        }
+
+        $this->closeEventTypeModal();
+    }
+
+    public function confirmDeleteEventType($id)
+    {
+        $eventType = ScheduleEventType::withCount('schedules')->findOrFail($id);
+        if ($eventType->schedules_count > 0) {
+            session()->flash('error', 'Cannot delete event type with associated schedules.');
+            return;
+        }
+        $this->confirmingEventTypeDelete = $id;
+    }
+
+    public function deleteEventType()
+    {
+        ScheduleEventType::findOrFail($this->confirmingEventTypeDelete)->delete();
+        $this->confirmingEventTypeDelete = null;
+        session()->flash('message', 'Schedule event type deleted successfully.');
+    }
+
+    public function closeEventTypeModal()
+    {
+        $this->showEventTypeModal = false;
+        $this->resetEventTypeForm();
+    }
+
+    private function resetEventTypeForm()
+    {
+        $this->eventTypeForm = [
+            'code' => '',
+            'label' => '',
+            'color' => 'bg-blue-500',
+            'is_active' => true,
+            'sort_order' => 0,
+        ];
+        $this->selectedEventTypeId = null;
+        $this->resetErrorBag('eventTypeForm');
+    }
+
     public function cancelDelete()
     {
         $this->confirmingDeptGroupDelete = null;
         $this->confirmingDeptDelete = null;
         $this->confirmingSettingDelete = null;
+        $this->confirmingEventTypeDelete = null;
     }
 
     public function render()

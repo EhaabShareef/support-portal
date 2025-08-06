@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Enums\TicketType;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Models\Ticket;
@@ -53,12 +54,38 @@ class ManageTickets extends Component
 
     protected $rules = [
         'form.subject' => 'required|string|max:255',
-        'form.type' => 'required|in:issue,feedback,bug,lead,task,incident,request',
-        'form.priority' => 'required|in:low,normal,high,urgent,critical',
+        'form.type' => 'required|in:issue,feedback,bug,lead,task,incident,request', // Will be updated dynamically
+        'form.priority' => 'required|in:low,normal,high,urgent,critical', // Will be updated dynamically  
         'form.description' => 'nullable|string',
         'form.organization_id' => 'required|exists:organizations,id',
         'form.client_id' => 'required|exists:users,id',
         'form.department_id' => 'required|exists:departments,id',
+    ];
+
+    public function rules()
+    {
+        return [
+            'form.subject' => 'required|string|max:255',
+            'form.type' => TicketType::validationRule(),
+            'form.priority' => TicketPriority::validationRule(),
+            'form.description' => 'nullable|string',
+            'form.organization_id' => 'required|exists:organizations,id',
+            'form.client_id' => 'required|exists:users,id',
+            'form.department_id' => 'required|exists:departments,id',
+        ];
+    }
+
+    protected $messages = [
+        'form.subject.required' => 'Please enter a subject for the ticket.',
+        'form.subject.max' => 'Subject must not exceed 255 characters.',
+        'form.type.required' => 'Please select a ticket type.',
+        'form.priority.required' => 'Please select a priority level.',
+        'form.organization_id.required' => 'Please select an organization.',
+        'form.organization_id.exists' => 'The selected organization is invalid.',
+        'form.client_id.required' => 'Please select a client for this ticket.',
+        'form.client_id.exists' => 'The selected client is invalid.',
+        'form.department_id.required' => 'Please select a department.',
+        'form.department_id.exists' => 'The selected department is invalid.',
     ];
 
     public function updating($field)
@@ -150,38 +177,63 @@ class ManageTickets extends Component
 
     public function save()
     {
-        $user = auth()->user();
-        $this->validate();
+        try {
+            $user = auth()->user();
+            $this->validate();
 
-        // Set defaults for new tickets
-        $ticketData = $this->form;
-        $ticketData['status'] = 'open';
-        $ticketData['assigned_to'] = null; // Keep unassigned
+            // Set defaults for new tickets
+            $ticketData = $this->form;
+            $ticketData['status'] = 'open';
+            $ticketData['assigned_to'] = null; // Keep unassigned
 
-        // Enforce security constraints based on user role
-        if ($user->hasRole('Client')) {
-            // Clients can only create tickets for their own organization
-            $ticketData['organization_id'] = $user->organization_id;
-            $ticketData['client_id'] = $user->id;
-        } elseif ($user->hasRole('Agent')) {
-            // Agents create tickets with proper organization/client assignment
-            $ticketData['client_id'] = $user->id; // Default to agent as client unless specified
+            // Enforce security constraints based on user role
+            if ($user->hasRole('Client')) {
+                // Clients can only create tickets for their own organization
+                $ticketData['organization_id'] = $user->organization_id;
+                $ticketData['client_id'] = $user->id;
+            } elseif ($user->hasRole('Agent')) {
+                // Agents create tickets on behalf of clients - use selected client_id
+                // Keep the client_id from form validation (already validated to exist)
+                if (empty($ticketData['client_id'])) {
+                    $this->addError('form.client_id', 'Please select a client for this ticket.');
+                    return;
+                }
+            }
+
+            Ticket::create($ticketData);
+            session()->flash('message', 'Ticket created successfully.');
+
+            $this->closeModal();
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to create ticket via ManageTickets', [
+                'user_id' => auth()->id(),
+                'form_data' => $this->form,
+                'error' => $e->getMessage()
+            ]);
+            
+            session()->flash('error', 'Failed to create ticket. Please try again or contact support if the problem persists.');
         }
-
-        Ticket::create($ticketData);
-        session()->flash('message', 'Ticket created successfully.');
-
-        $this->closeModal();
     }
 
 
     public function render()
     {
         $user = auth()->user();
-        $query = Ticket::query()->with(['organization', 'department', 'client', 'assigned'])
+        $query = Ticket::query()
+            ->with([
+                'organization:id,name',
+                'department:id,name,department_group_id',
+                'department.departmentGroup:id,name',
+                'client:id,name,email',
+                'assigned:id,name',
+            ])
             ->withCount('messages')
             ->with(['messages' => function($q) {
-                $q->latest()->limit(1);
+                $q->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
+                  ->with('sender:id,name')
+                  ->latest()
+                  ->limit(1);
             }]);
 
         // Apply quick filter first
@@ -316,15 +368,7 @@ class ManageTickets extends Component
             'agents' => $agents,
             'statusOptions' => TicketStatus::options(),
             'priorityOptions' => TicketPriority::options(),
-            'typeOptions' => [
-                'issue' => 'Issue',
-                'feedback' => 'Feedback',
-                'bug' => 'Bug',
-                'lead' => 'Lead',
-                'task' => 'Task',
-                'incident' => 'Incident',
-                'request' => 'Request',
-            ],
+            'typeOptions' => TicketType::options(),
             'showFilters' => $this->quickFilter === 'all',
         ]);
     }

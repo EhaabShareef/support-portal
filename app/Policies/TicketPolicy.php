@@ -15,7 +15,7 @@ class TicketPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['Admin', 'Agent', 'Client']);
+        return $user->hasAnyRole(['Super Admin', 'Admin', 'Agent', 'Client']);
     }
 
     /**
@@ -23,8 +23,8 @@ class TicketPolicy
      */
     public function view(User $user, Ticket $ticket): bool
     {
-        // Admin can view all tickets
-        if ($user->hasRole('Admin')) {
+        // Super Admin and Admin can view all tickets
+        if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
             return true;
         }
 
@@ -54,8 +54,8 @@ class TicketPolicy
      */
     public function create(User $user): bool
     {
-        // Admin and Client can create tickets
-        return $user->hasAnyRole(['Admin', 'Client']);
+        // Super Admin, Admin, Agent and Client can create tickets
+        return $user->hasAnyRole(['Super Admin', 'Admin', 'Agent', 'Client']);
     }
 
     /**
@@ -63,8 +63,8 @@ class TicketPolicy
      */
     public function update(User $user, Ticket $ticket): bool
     {
-        // Admin can update any ticket
-        if ($user->hasRole('Admin')) {
+        // Super Admin and Admin can update any ticket
+        if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
             return true;
         }
 
@@ -89,8 +89,8 @@ class TicketPolicy
      */
     public function delete(User $user, Ticket $ticket): bool
     {
-        // Only Admin can delete tickets
-        return $user->hasRole('Admin');
+        // Only Super Admin and Admin can delete tickets
+        return $user->hasRole('Super Admin') || $user->hasRole('Admin');
     }
 
     /**
@@ -98,8 +98,8 @@ class TicketPolicy
      */
     public function assign(User $user, Ticket $ticket): bool
     {
-        // Admin can assign any ticket
-        if ($user->hasRole('Admin')) {
+        // Super Admin and Admin can assign any ticket
+        if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
             return true;
         }
 

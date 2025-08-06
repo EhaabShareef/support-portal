@@ -56,4 +56,9 @@ enum TicketStatus: string
             array_map(fn ($case) => $case->label(), self::cases())
         );
     }
+
+    public static function validationRule(): string
+    {
+        return 'required|in:' . implode(',', self::values());
+    }
 }

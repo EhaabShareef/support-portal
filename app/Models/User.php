@@ -119,6 +119,21 @@ class User extends Authenticatable
         return $this->hasMany(Ticket::class, 'assigned_to');
     }
 
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class);
+    }
+
+    public function createdSchedules()
+    {
+        return $this->hasMany(Schedule::class, 'created_by');
+    }
+
+    public function createdScheduleEventTypes()
+    {
+        return $this->hasMany(ScheduleEventType::class, 'created_by');
+    }
+
     /**
      * Check if user has admin role (workaround for teams configuration)
      */

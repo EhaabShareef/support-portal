@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Enums\TicketType;
 use App\Models\Attachment;
 use App\Models\Department;
 use App\Models\Ticket;
@@ -78,26 +79,36 @@ class ViewTicket extends Component
         }
 
         $this->ticket = $ticket->load([
-            'organization',
+            'organization:id,name',
             'organization.contracts' => function($query) use ($ticket) {
-                $query->where('department_id', $ticket->department_id)
+                $query->select(['id', 'organization_id', 'department_id', 'contract_number', 'type', 'status', 'start_date', 'end_date', 'contract_value', 'currency'])
+                      ->where('department_id', $ticket->department_id)
                       ->where('status', 'active')
                       ->orderBy('start_date', 'desc')
                       ->limit(1);
             },
-            'department',
-            'assigned',
-            'client',
-            'messages',
-            'messages.sender',
-            'messages.attachments',
-            'notes.user',
-            'attachments',
+            'department:id,name,department_group_id',
+            'department.departmentGroup:id,name',
+            'assigned:id,name',
+            'client:id,name,email,organization_id',
+            'notes' => function($query) {
+                $query->select(['id', 'ticket_id', 'user_id', 'note', 'color', 'is_internal', 'created_at'])
+                      ->with('user:id,name')
+                      ->latest();
+            },
+            'attachments:id,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image',
         ]);
 
         $this->ticket->setRelation(
             'messages',
-            $ticket->messages()->with('sender')->latest('created_at')->get()
+            $ticket->messages()
+                   ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
+                   ->with([
+                       'sender:id,name',
+                       'attachments:id,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+                   ])
+                   ->latest('created_at')
+                   ->get()
         );
 
         $this->form = [
@@ -188,82 +199,118 @@ class ViewTicket extends Component
 
     public function updateTicket()
     {
-        if (! $this->canEdit) {
-            session()->flash('error', 'You do not have permission to edit this ticket.');
+        try {
+            if (! $this->canEdit) {
+                session()->flash('error', 'You do not have permission to edit this ticket.');
+                return;
+            }
 
-            return;
+            $this->validate([
+                'form.type' => TicketType::validationRule(),
+                'form.status' => TicketStatus::validationRule(),
+                'form.priority' => TicketPriority::validationRule(),
+                'form.assigned_to' => 'nullable|exists:users,id',
+                'form.department_id' => 'required|exists:departments,id',
+            ]);
+
+            // Remove subject and description from update to prevent modification
+            $updateData = $this->form;
+            unset($updateData['subject'], $updateData['description']);
+            
+            $this->ticket->update($updateData);
+            $this->ticket->refresh();
+            $this->editMode = false;
+
+            session()->flash('message', 'Ticket updated successfully.');
+
+            // Refresh messages with optimized eager loading
+            $this->ticket->setRelation(
+                'messages',
+                $this->ticket->messages()
+                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
+                             ->with([
+                                 'sender:id,name',
+                                 'attachments:id,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+                             ])
+                             ->latest('created_at')
+                             ->get()
+            );
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to update ticket', [
+                'user_id' => auth()->id(),
+                'ticket_id' => $this->ticket->id,
+                'form_data' => $this->form,
+                'error' => $e->getMessage()
+            ]);
+            
+            session()->flash('error', 'Failed to update ticket. Please try again or contact support if the problem persists.');
         }
-
-        $this->validate([
-            'form.type' => 'required|in:issue,feedback,bug,lead,task,incident,request',
-            'form.status' => 'required|in:open,in_progress,awaiting_customer_response,awaiting_case_closure,sales_engagement,monitoring,solution_provided,closed,on_hold',
-            'form.priority' => 'required|in:low,normal,high,urgent,critical',
-            'form.assigned_to' => 'nullable|exists:users,id',
-            'form.department_id' => 'required|exists:departments,id',
-        ]);
-
-        // Remove subject and description from update to prevent modification
-        $updateData = $this->form;
-        unset($updateData['subject'], $updateData['description']);
-        
-        $this->ticket->update($updateData);
-        $this->ticket->refresh();
-        $this->editMode = false;
-
-        session()->flash('message', 'Ticket updated successfully.');
-
-        // Refresh messages
-        $this->ticket->setRelation(
-            'messages',
-            $this->ticket->messages()->with('sender')->latest('created_at')->get()
-        );
     }
 
     public function sendMessage()
     {
-        if (! $this->canReply) {
-            session()->flash('error', 'You do not have permission to reply to this ticket.');
-
-            return;
-        }
-
-        $this->validate([
-            'replyMessage' => 'required|string|max:2000',
-            'attachments.*' => 'file|max:10240|mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,txt,zip,rar',
-        ]);
-
-        $message = TicketMessage::create([
-            'ticket_id' => $this->ticket->id,
-            'sender_id' => Auth::id(),
-            'message' => $this->replyMessage,
-        ]);
-
-        // Handle file attachments
-        if (!empty($this->attachments)) {
-            foreach ($this->attachments as $file) {
-                $this->storeAttachment($file, $message);
+        try {
+            if (! $this->canReply) {
+                session()->flash('error', 'You do not have permission to reply to this ticket.');
+                return;
             }
-        }
 
-        $this->replyMessage = '';
-        $this->attachments = [];
-        $this->activeInput = ''; // hide input after submit
-
-        // Update first response time if this is the first response
-        if (! $this->ticket->first_response_at && auth()->user()->hasRole(['Agent', 'Admin', 'Super Admin'])) {
-            $this->ticket->update([
-                'first_response_at' => now(),
-                'response_time_minutes' => $this->ticket->created_at->diffInMinutes(now()),
+            $this->validate([
+                'replyMessage' => 'required|string|max:2000',
+                'attachments.*' => 'file|max:10240|mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,txt,zip,rar',
             ]);
+
+            $message = TicketMessage::create([
+                'ticket_id' => $this->ticket->id,
+                'sender_id' => Auth::id(),
+                'message' => $this->replyMessage,
+            ]);
+
+            // Handle file attachments
+            if (!empty($this->attachments)) {
+                foreach ($this->attachments as $file) {
+                    $this->storeAttachment($file, $message);
+                }
+            }
+
+            $this->replyMessage = '';
+            $this->attachments = [];
+            $this->activeInput = ''; // hide input after submit
+
+            // Update first response time if this is the first response
+            if (! $this->ticket->first_response_at && auth()->user()->hasRole(['Agent', 'Admin', 'Super Admin'])) {
+                $this->ticket->update([
+                    'first_response_at' => now(),
+                    'response_time_minutes' => $this->ticket->created_at->diffInMinutes(now()),
+                ]);
+            }
+
+            $this->ticket = $this->ticket->fresh();
+            $this->ticket->setRelation(
+                'messages',
+                $this->ticket->messages()
+                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
+                             ->with([
+                                 'sender:id,name',
+                                 'attachments:id,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+                             ])
+                             ->latest('created_at')
+                             ->get()
+            );
+
+            session()->flash('message', 'Message sent successfully.');
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to send message', [
+                'user_id' => auth()->id(),
+                'ticket_id' => $this->ticket->id,
+                'message' => $this->replyMessage,
+                'error' => $e->getMessage()
+            ]);
+            
+            session()->flash('error', 'Failed to send message. Please try again or contact support if the problem persists.');
         }
-
-        $this->ticket = $this->ticket->fresh(['messages.sender', 'messages.attachments']);
-        $this->ticket->setRelation(
-            'messages',
-            $this->ticket->messages()->with(['sender', 'attachments'])->latest('created_at')->get()
-        );
-
-        session()->flash('message', 'Message sent successfully.');
     }
 
     public function addNote()
@@ -293,7 +340,11 @@ class ViewTicket extends Component
         $this->noteInputKey = uniqid();
         $this->activeInput = ''; // hide input after submit
 
-        $this->ticket->refresh()->load('notes.user');
+        $this->ticket->refresh()->load(['notes' => function($query) {
+            $query->select(['id', 'ticket_id', 'user_id', 'note', 'color', 'is_internal', 'created_at'])
+                  ->with('user:id,name')
+                  ->latest();
+        }]);
         session()->flash('message', 'Note added successfully.');
         $this->dispatch('noteAdded', ['ticket' => $this->ticket]);
     }
@@ -324,7 +375,11 @@ class ViewTicket extends Component
 
         $this->confirmingNoteId = null;
 
-        $this->ticket->refresh()->load('notes.user');
+        $this->ticket->refresh()->load(['notes' => function($query) {
+            $query->select(['id', 'ticket_id', 'user_id', 'note', 'color', 'is_internal', 'created_at'])
+                  ->with('user:id,name')
+                  ->latest();
+        }]);
         session()->flash('message', 'Note deleted successfully.');
         $this->dispatch('noteDeleted', ['ticket' => $this->ticket]);
     }
@@ -406,15 +461,7 @@ class ViewTicket extends Component
             'users' => $users,
             'statusOptions' => TicketStatus::options(),
             'priorityOptions' => TicketPriority::options(),
-            'typeOptions' => [
-                'issue' => 'Issue',
-                'feedback' => 'Feedback',
-                'bug' => 'Bug',
-                'lead' => 'Lead',
-                'task' => 'Task',
-                'incident' => 'Incident',
-                'request' => 'Request',
-            ],
+            'typeOptions' => TicketType::options(),
         ]);
     }
 

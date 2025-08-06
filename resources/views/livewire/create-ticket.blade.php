@@ -51,18 +51,32 @@
                 <select wire:model.defer="form.type" 
                         id="type"
                         class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                    <option value="issue">Issue</option>
-                    <option value="feedback">Feedback</option>
-                    <option value="bug">Bug</option>
-                    <option value="lead">Lead</option>
-                    <option value="task">Task</option>
-                    <option value="incident">Incident</option>
-                    <option value="request">Request</option>
+                    @foreach($typeOptions as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
                 </select>
                 @error('form.type') 
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
                 @enderror
             </div>
+
+            {{-- Client Selection (for Admins/Agents only) --}}
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Agent'))
+            <div>
+                <label for="client" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Client</label>
+                <select wire:model.defer="form.client_id" 
+                        id="client"
+                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+                    <option value="">Select Client</option>
+                    @foreach($clients as $client)
+                        <option value="{{ $client->id }}">{{ $client->name }} ({{ $client->organization?->name }})</option>
+                    @endforeach
+                </select>
+                @error('form.client_id') 
+                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                @enderror
+            </div>
+            @endif
 
             <div>
                 <label for="organization" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Organization</label>
@@ -114,11 +128,9 @@
                 <select wire:model.defer="form.priority" 
                         id="priority"
                         class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                    <option value="low">Low</option>
-                    <option value="normal">Normal</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                    <option value="critical">Critical</option>
+                    @foreach($priorityOptions as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
                 </select>
                 @error('form.priority') 
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 

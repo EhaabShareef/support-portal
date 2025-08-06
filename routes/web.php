@@ -19,6 +19,7 @@ use App\Livewire\Admin\ManageUsers as AdminManageUsers;
 use App\Livewire\Admin\ViewUser;
 use App\Livewire\Admin\ManageRoles;
 use App\Livewire\Admin\ManageSettings;
+use App\Livewire\ScheduleCalendar;
 
 
 Route::get('/', function () {
@@ -59,6 +60,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/create', CreateTicket::class)->name('tickets.create');
     Route::get('/tickets/manage', ManageTickets::class)->name('tickets.index');
     Route::get('/tickets/{ticket}', ViewTicket::class)->name('tickets.show');
+
+    // Schedule Routes (Admin and Client only)
+    Route::middleware(['role:Super Admin|Admin|Client'])->group(function () {
+        Route::get('/schedule', ScheduleCalendar::class)->name('schedule.index');
+    });
 
     // Attachment Routes
     Route::get('/attachments/{uuid}/download', [AttachmentController::class, 'download'])->name('attachments.download');

@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Enums\TicketPriority;
+use App\Enums\TicketType;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Models\Ticket;
@@ -24,57 +26,104 @@ class CreateTicket extends Component
 
     public function rules(): array
     {
+        $user = auth()->user();
+        
         return [
             'form.subject'   => 'required|string|max:255',
-            'form.type'      => 'required|in:issue,feedback,bug,lead,task,incident,request',
+            'form.type'      => TicketType::validationRule(),
             'form.organization_id' => 'required|exists:organizations,id',
-            'form.client_id' => 'nullable', // will be set to authenticated user
+            // Clients cannot select client, Admins/Agents can select on behalf of clients
+            'form.client_id' => $user->hasRole('Client') ? 'nullable' : 'required|exists:users,id',
             'form.department_id' => 'required|exists:departments,id',
-            'form.priority'  => 'required|in:low,normal,high,urgent,critical',
+            'form.priority'  => TicketPriority::validationRule(),
             'form.assigned_to' => 'nullable|exists:users,id',
         ];
     }
 
+    protected $messages = [
+        'form.subject.required' => 'Please enter a subject for your ticket.',
+        'form.subject.max' => 'Subject must not exceed 255 characters.',
+        'form.type.required' => 'Please select a ticket type.',
+        'form.organization_id.required' => 'Please select an organization.',
+        'form.organization_id.exists' => 'The selected organization is invalid.',
+        'form.client_id.required' => 'Please select a client for this ticket.',
+        'form.client_id.exists' => 'The selected client is invalid.',
+        'form.department_id.required' => 'Please select a department.',
+        'form.department_id.exists' => 'The selected department is invalid.',
+        'form.priority.required' => 'Please select a priority level.',
+        'form.assigned_to.exists' => 'The selected assignee is invalid.',
+    ];
+
     public function submit()
     {
-        $user = auth()->user();
-        $validated = $this->validate()['form'];
-        
-        // Override security-sensitive fields
-        $validated['client_id'] = $user->id;
-        $validated['status'] = 'open';
-        
-        // For clients, force their organization
-        if ($user->hasRole('Client')) {
-            $validated['organization_id'] = $user->organization_id;
+        try {
+            $user = auth()->user();
+            $validated = $this->validate()['form'];
+            
+            // Override security-sensitive fields
+            $validated['status'] = 'open';
+            
+            // For clients, force their organization and set them as the client
+            if ($user->hasRole('Client')) {
+                $validated['organization_id'] = $user->organization_id;
+                $validated['client_id'] = $user->id;
+            }
+            // For Admins/Agents, validate client selection
+            elseif (!$user->hasRole('Client') && empty($validated['client_id'])) {
+                $this->addError('form.client_id', 'Please select a client for this ticket.');
+                return;
+            }
+
+            if (empty($validated['assigned_to'])) {
+                $validated['assigned_to'] = null;
+            }
+
+            $ticket = Ticket::create($validated);
+
+            // Add dependent note about calling hotline
+            TicketNote::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => auth()->id(),
+                'is_internal' => false,
+                'color' => 'blue',
+                'note' => 'Please note: For urgent assistance or immediate support regarding this ticket, you may contact our technical hotline at [HOTLINE_NUMBER]. Our support team is available to provide additional guidance and ensure timely resolution of your request.',
+            ]);
+
+            session()->flash('message', 'Ticket created successfully.');
+
+            return redirect()->route('tickets.show', $ticket);
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to create ticket', [
+                'user_id' => auth()->id(),
+                'form_data' => $this->form,
+                'error' => $e->getMessage()
+            ]);
+            
+            session()->flash('error', 'Failed to create ticket. Please try again or contact support if the problem persists.');
+            return;
         }
-
-        if (empty($validated['assigned_to'])) {
-            $validated['assigned_to'] = null;
-        }
-
-        $ticket = Ticket::create($validated);
-
-        // Add dependent note about calling hotline
-        TicketNote::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => auth()->id(),
-            'is_internal' => false,
-            'color' => 'blue',
-            'note' => 'Please note: For urgent assistance or immediate support regarding this ticket, you may contact our technical hotline at [HOTLINE_NUMBER]. Our support team is available to provide additional guidance and ensure timely resolution of your request.',
-        ]);
-
-        session()->flash('message', 'Ticket created successfully.');
-
-        return redirect()->route('tickets.show', $ticket);
     }
 
     public function render()
     {
+        $user = auth()->user();
+        
+        // Get available clients for Admin/Agent ticket creation
+        $clients = collect();
+        if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Agent')) {
+            $clients = User::whereHas('roles', function ($q) {
+                $q->where('name', 'Client');
+            })->orderBy('name')->get();
+        }
+        
         return view('livewire.create-ticket', [
             'organizations' => Organization::all(),
             'departments' => Department::all(),
             'users' => User::all(),
+            'clients' => $clients,
+            'typeOptions' => TicketType::options(),
+            'priorityOptions' => TicketPriority::options(),
         ]);
     }
 }

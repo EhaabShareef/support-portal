@@ -42,6 +42,15 @@
                     <span>Organizations</span>
                 </a>
 
+                {{-- Schedule (Admin and Client only) --}}
+                @if(auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Client']))
+                <a href="{{ route('schedule.index') }}"
+                   class="nav-link {{ request()->routeIs('schedule.*') ? 'nav-link-active' : '' }}">
+                    <x-heroicon-o-calendar-days class="h-4 w-4" />
+                    <span>Schedule</span>
+                </a>
+                @endif
+
                 {{-- Admin Users (only for admins) --}}
                 @if(auth()->user()->isAdmin())
                 <a href="{{ route('admin.users.index') }}"
@@ -179,6 +188,16 @@
                     <x-heroicon-o-building-office-2 class="h-5 w-5" />
                     <span>Organizations</span>
                 </a>
+
+                {{-- Mobile Schedule (Admin and Client only) --}}
+                @if(auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Client']))
+                <a href="{{ route('schedule.index') }}"
+                   class="mobile-nav-link {{ request()->routeIs('schedule.*') ? 'mobile-nav-link-active' : '' }}"
+                   @click="mobileMenuOpen = false">
+                    <x-heroicon-o-calendar-days class="h-5 w-5" />
+                    <span>Schedule</span>
+                </a>
+                @endif
 
                 {{-- Mobile Admin Users --}}
                 @if(auth()->user()->isAdmin())
