@@ -16,10 +16,18 @@
     </div>
 
     {{-- Info Banner --}}
-    <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700/50">
+    <div x-data="{ showGuidelines: true }" 
+         x-show="showGuidelines" 
+         x-transition:enter="transition ease-out duration-300" 
+         x-transition:enter-start="opacity-0 transform -translate-y-2" 
+         x-transition:enter-end="opacity-100 transform translate-y-0" 
+         x-transition:leave="transition ease-in duration-200" 
+         x-transition:leave-start="opacity-100 transform translate-y-0" 
+         x-transition:leave-end="opacity-0 transform -translate-y-2"
+         class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700/50">
         <div class="flex items-start gap-3">
             <x-heroicon-o-information-circle class="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-            <div class="text-sm">
+            <div class="text-sm flex-1">
                 <p class="text-blue-800 dark:text-blue-200 font-medium mb-1">User Management Guidelines</p>
                 <ul class="text-blue-700 dark:text-blue-300 space-y-1 text-xs">
                     <li>• Only <strong>Client users</strong> can be created, edited, or deleted from this interface</li>
@@ -28,6 +36,10 @@
                     <li>• Users with existing tickets cannot be deleted until tickets are resolved or reassigned</li>
                 </ul>
             </div>
+            <button @click="showGuidelines = false" 
+                    class="flex-shrink-0 p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded transition-colors duration-200">
+                <x-heroicon-o-x-mark class="h-4 w-4" />
+            </button>
         </div>
     </div>
 

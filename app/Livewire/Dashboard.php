@@ -8,11 +8,11 @@ use App\Models\Organization;
 use App\Models\Department;
 use App\Models\OrganizationContract;
 use App\Models\OrganizationHardware;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Illuminate\Support\Facades\Auth;
 
 class Dashboard extends Component
 {
@@ -21,7 +21,7 @@ class Dashboard extends Component
     public function mount()
     {
         // Check user permissions
-        $user = auth()->user();
+        $user = Auth::user();
         if (!$user) {
             abort(403, 'Authentication required to access dashboard.');
         }

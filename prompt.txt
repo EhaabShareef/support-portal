@@ -1,9 +1,0 @@
-Design a visually rich and modern dashboard that aligns with the current UI style while delivering targeted insights based on user roles.
-
-For support agent users, include a GitHub-style contribution graph representing daily ticket closures—days with more activity appear in darker green. Beneath that, display a summary of all non-closed tickets with a breakdown by status (e.g., open, pending, in-progress), along with a count of tickets currently assigned to the logged-in user. Provide a quick-action button for creating new tickets to streamline the workflow.
-
-For clients, limit the dashboard to show only ticket summaries that belong to their organization. Present a breakdown of those tickets by current status, clearly indicating which are open, pending, or under review, without exposing any unrelated data or cross-organization metrics.
-
-For admins, expand the dashboard to include a department-level and department group-level breakdown of ticket distribution. Highlight top 3 performers from each department based on resolved tickets during the current week. Include a notification section that surfaces any contracts nearing expiry and hardware assets that are due for attention within the next 30 days. Add quick-action buttons that allow direct access to manage organizations, contracts, and hardware.
-
-Overall, the dashboard should blend functional clarity with a modern, flashy feel—using charts, colored summaries, and interactive elements—without disrupting the application's established design language.
