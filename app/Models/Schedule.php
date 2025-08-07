@@ -14,7 +14,6 @@ class Schedule extends Model
     protected $fillable = [
         'user_id',
         'event_type_id',
-        'date',
         'start_date',
         'end_date',
         'remarks',
@@ -22,7 +21,6 @@ class Schedule extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
         'start_date' => 'date',
         'end_date' => 'date',
     ];
@@ -51,18 +49,23 @@ class Schedule extends Model
 
     public function scopeForDate($query, $date)
     {
-        return $query->whereDate('date', $date);
+        return $query->where('start_date', '<=', $date)
+                    ->where('end_date', '>=', $date);
     }
 
     public function scopeForMonth($query, $year, $month)
     {
-        return $query->whereYear('date', $year)
-                    ->whereMonth('date', $month);
+        $startOfMonth = \Carbon\Carbon::create($year, $month, 1);
+        $endOfMonth = $startOfMonth->copy()->endOfMonth();
+        
+        return $query->where('start_date', '<=', $endOfMonth)
+                    ->where('end_date', '>=', $startOfMonth);
     }
 
     public function scopeForDateRange($query, $startDate, $endDate)
     {
-        return $query->whereBetween('date', [$startDate, $endDate]);
+        return $query->where('start_date', '<=', $endDate)
+                    ->where('end_date', '>=', $startDate);
     }
 
     public function scopeForNewDateRange($query, $startDate, $endDate)
@@ -106,26 +109,22 @@ class Schedule extends Model
     // Accessors
     public function getFormattedDateAttribute(): string
     {
-        return $this->date->format('M d, Y');
+        if ($this->start_date->equalTo($this->end_date)) {
+            return $this->start_date->format('M d, Y');
+        }
+        return $this->start_date->format('M d, Y') . ' - ' . $this->end_date->format('M d, Y');
     }
 
     public function getFormattedDateRangeAttribute(): string
     {
-        if ($this->start_date && $this->end_date) {
-            if ($this->start_date->equalTo($this->end_date)) {
-                return $this->start_date->format('M d, Y');
-            }
-            return $this->start_date->format('M d, Y') . ' - ' . $this->end_date->format('M d, Y');
+        if ($this->start_date->equalTo($this->end_date)) {
+            return $this->start_date->format('M d, Y');
         }
-        return $this->getFormattedDateAttribute();
+        return $this->start_date->format('M d, Y') . ' - ' . $this->end_date->format('M d, Y');
     }
 
     public function getDaysInMonthAttribute(): array
     {
-        if (!$this->start_date || !$this->end_date) {
-            return [$this->date->day];
-        }
-
         $days = [];
         $current = $this->start_date->copy();
         
@@ -139,10 +138,6 @@ class Schedule extends Model
 
     public function spansDay($day, $year = null, $month = null): bool
     {
-        if (!$this->start_date || !$this->end_date) {
-            return $this->date->day === (int) $day;
-        }
-
         $year = $year ?? $this->start_date->year;
         $month = $month ?? $this->start_date->month;
         

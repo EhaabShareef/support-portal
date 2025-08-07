@@ -113,32 +113,214 @@
                                     </div>
                                 </td>
 
-                                @for($day = 1; $day <= $this->daysInMonth; $day++)
-                                    <td class="px-1 py-2 text-center align-top min-h-16" style="min-height: 64px;">
-                                        <div class="flex flex-col gap-1 min-h-12">
-                                            @php
-                                                $daySchedules = $this->getSchedulesForUserAndDay($user->id, $day);
-                                            @endphp
-                                            
-                                            @foreach($daySchedules as $schedule)
-                                                <div class="inline-block px-1 rounded text-xs text-white {{ $schedule->eventType->color }} event-badge">
-                                                    {{ $schedule->eventType->code }}
-                                                    <div class="tooltip">
-                                                        <strong>{{ $schedule->eventType->label }}</strong>
-                                                        @if($schedule->remarks)
-                                                            <br>{{ $schedule->remarks }}
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            @endforeach
+                                @php
+                                    $skipDays = []; // Track which days are covered by spanning events
+                                @endphp
 
-                                            @if($daySchedules->count() > 2)
-                                                <div class="text-xs text-neutral-500">
-                                                    +{{ $daySchedules->count() - 2 }} more
-                                                </div>
+                                @for($day = 1; $day <= $this->daysInMonth; $day++)
+                                    @php
+                                        // Skip rendering this cell if it's covered by a spanning event
+                                        if (in_array($day, $skipDays)) {
+                                            continue;
+                                        }
+
+                                        $eventsStartingToday = $this->getEventsStartingOnDay($user->id, $day);
+                                        $regularEvents = collect(); // Events that don't span (single day or legacy)
+                                        $spanningEvents = collect(); // Events that span multiple days
+                                        
+                                        foreach ($eventsStartingToday as $event) {
+                                            if ($event->start_date && $event->end_date && !$event->start_date->equalTo($event->end_date)) {
+                                                $spanningEvents->push($event);
+                                            } else {
+                                                $regularEvents->push($event);
+                                            }
+                                        }
+                                        
+                                        // Sort spanning events by duration (longer events first) for better visual layout
+                                        $spanningEvents = $spanningEvents->sortByDesc(function($event) {
+                                            return $event->start_date->diffInDays($event->end_date);
+                                        });
+                                    @endphp
+
+                                    {{-- Handle spanning events --}}
+                                    @if($spanningEvents->isNotEmpty())
+                                        @foreach($spanningEvents as $index => $schedule)
+                                            @php
+                                                $colspan = $this->getEventColspan($schedule, $day);
+                                                // Mark the days covered by this spanning event as skip
+                                                for ($i = 1; $i < $colspan; $i++) {
+                                                    if (($day + $i) <= $this->daysInMonth) {
+                                                        $skipDays[] = $day + $i;
+                                                    }
+                                                }
+                                                
+                                                // Only render the first spanning event in a cell to avoid table structure issues
+                                                // Multiple spanning events on same day will be stacked vertically
+                                            @endphp
+                                            @if($index === 0)
+                                                {{-- Only create one cell for all spanning events to maintain table structure --}}
+                                                <td class="px-1 py-2 text-center align-top min-h-16 spanning-event-cell" 
+                                                    style="min-height: 64px;" 
+                                                    colspan="{{ $colspan }}">
+                                                    <div class="flex flex-col gap-1 min-h-12">
+                                                        {{-- Render all spanning events starting on this day --}}
+                                                        @foreach($spanningEvents as $spanEvent)
+                                                            <div class="inline-block px-2 py-1 rounded text-xs text-white {{ $spanEvent->eventType->color }} event-badge spanning-event event-with-actions group relative" 
+                                                                 style="width: 100%; text-align: center;">
+                                                                {{ $spanEvent->eventType->code }}
+                                                                
+                                                                {{-- Edit/Delete Actions (only for Admin/Super Admin) --}}
+                                                                @can('update', $spanEvent)
+                                                                    <div class="absolute top-0 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                                        <button wire:click="editScheduleEvent({{ $spanEvent->id }})" 
+                                                                                class="text-white hover:text-yellow-300 text-xs p-0.5 rounded hover:bg-black/20"
+                                                                                title="Edit Event">
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                                            </svg>
+                                                                        </button>
+                                                                        @can('delete', $spanEvent)
+                                                                            <button wire:click="deleteScheduleEvent({{ $spanEvent->id }})" 
+                                                                                    wire:confirm="Are you sure you want to delete this schedule event?"
+                                                                                    class="text-white hover:text-red-300 text-xs p-0.5 rounded hover:bg-black/20"
+                                                                                    title="Delete Event">
+                                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                                                </svg>
+                                                                            </button>
+                                                                        @endcan
+                                                                    </div>
+                                                                @endcan
+
+                                                                <div class="tooltip">
+                                                                    <strong>{{ $spanEvent->eventType->label }}</strong>
+                                                                    <br><small>{{ $spanEvent->start_date->format('M j') }} - {{ $spanEvent->end_date->format('M j') }}</small>
+                                                                    @if($spanEvent->remarks)
+                                                                        <br>{{ $spanEvent->remarks }}
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                        
+                                                        {{-- Show any regular events on the same starting day below spanning events --}}
+                                                        @foreach($regularEvents as $regularEvent)
+                                                            <div class="inline-block px-1 rounded text-xs text-white {{ $regularEvent->eventType->color }} event-badge event-with-actions group relative">
+                                                                {{ $regularEvent->eventType->code }}
+                                                                
+                                                                {{-- Edit/Delete Actions (only for Admin/Super Admin) --}}
+                                                                @can('update', $regularEvent)
+                                                                    <div class="absolute -top-1 -right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                                        <button wire:click="editScheduleEvent({{ $regularEvent->id }})" 
+                                                                                class="text-white hover:text-yellow-300 text-xs p-0.5 rounded hover:bg-black/20"
+                                                                                title="Edit Event">
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                                            </svg>
+                                                                        </button>
+                                                                        @can('delete', $regularEvent)
+                                                                            <button wire:click="deleteScheduleEvent({{ $regularEvent->id }})" 
+                                                                                    wire:confirm="Are you sure you want to delete this schedule event?"
+                                                                                    class="text-white hover:text-red-300 text-xs p-0.5 rounded hover:bg-black/20"
+                                                                                    title="Delete Event">
+                                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                                                </svg>
+                                                                            </button>
+                                                                        @endcan
+                                                                    </div>
+                                                                @endcan
+
+                                                                <div class="tooltip">
+                                                                    <strong>{{ $regularEvent->eventType->label }}</strong>
+                                                                    @if($regularEvent->remarks)
+                                                                        <br>{{ $regularEvent->remarks }}
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </td>
                                             @endif
-                                        </div>
-                                    </td>
+                                        @endforeach
+                                    @else
+                                        {{-- Regular cell for non-spanning events or empty days --}}
+                                        <td class="px-1 py-2 text-center align-top min-h-16" style="min-height: 64px;">
+                                            <div class="flex flex-col gap-1 min-h-12">
+                                                {{-- Show regular single-day events --}}
+                                                @foreach($regularEvents as $schedule)
+                                                    <div class="inline-block px-1 rounded text-xs text-white {{ $schedule->eventType->color }} event-badge event-with-actions group relative">
+                                                        {{ $schedule->eventType->code }}
+                                                        
+                                                        {{-- Edit/Delete Actions (only for Admin/Super Admin) --}}
+                                                        @can('update', $schedule)
+                                                            <div class="absolute -top-1 -right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                                <button wire:click="editScheduleEvent({{ $schedule->id }})" 
+                                                                        class="text-white hover:text-yellow-300 text-xs p-0.5 rounded hover:bg-black/20"
+                                                                        title="Edit Event">
+                                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                                    </svg>
+                                                                </button>
+                                                                @can('delete', $schedule)
+                                                                    <button wire:click="deleteScheduleEvent({{ $schedule->id }})" 
+                                                                            wire:confirm="Are you sure you want to delete this schedule event?"
+                                                                            class="text-white hover:text-red-300 text-xs p-0.5 rounded hover:bg-black/20"
+                                                                            title="Delete Event">
+                                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                                        </svg>
+                                                                    </button>
+                                                                @endcan
+                                                            </div>
+                                                        @endcan
+
+                                                        <div class="tooltip">
+                                                            <strong>{{ $schedule->eventType->label }}</strong>
+                                                            @if($schedule->remarks)
+                                                                <br>{{ $schedule->remarks }}
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+
+                                                @if($regularEvents->count() > 2)
+                                                    <div class="text-xs text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 relative"
+                                                         x-data="{ showMore: false }"
+                                                         @click.stop="showMore = !showMore"
+                                                         @click.outside="showMore = false">
+                                                        +{{ $regularEvents->count() - 2 }} more
+                                                        
+                                                        {{-- Popover with remaining events --}}
+                                                        <div x-show="showMore" 
+                                                             x-transition:enter="transition ease-out duration-200"
+                                                             x-transition:enter-start="opacity-0 scale-95"
+                                                             x-transition:enter-end="opacity-100 scale-100"
+                                                             x-transition:leave="transition ease-in duration-150"
+                                                             x-transition:leave-start="opacity-100 scale-100"
+                                                             x-transition:leave-end="opacity-0 scale-95"
+                                                             class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg p-3 min-w-48">
+                                                            <div class="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">All Events for Day {{ $day }}</div>
+                                                            <div class="space-y-1">
+                                                                @foreach($regularEvents as $schedule)
+                                                                    <div class="flex items-center gap-2 text-xs">
+                                                                        <span class="inline-block px-2 py-1 rounded text-white {{ $schedule->eventType->color }}">
+                                                                            {{ $schedule->eventType->code }}
+                                                                        </span>
+                                                                        <span class="text-neutral-700 dark:text-neutral-300">{{ $schedule->eventType->label }}</span>
+                                                                    </div>
+                                                                    @if($schedule->remarks)
+                                                                        <div class="text-xs text-neutral-600 dark:text-neutral-400 ml-6 italic">
+                                                                            "{{ $schedule->remarks }}"
+                                                                        </div>
+                                                                    @endif
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    @endif
                                 @endfor
                             </tr>
                         @endforeach
@@ -247,6 +429,66 @@
     .event-badge:hover .tooltip {
         visibility: visible;
         opacity: 1;
+    }
+
+    /* Spanning event specific styling */
+    .spanning-event-cell {
+        border-left: 1px solid rgba(0, 0, 0, 0.1);
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .dark .spanning-event-cell {
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .spanning-event {
+        min-height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+        border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    
+    .spanning-event:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Enhanced tooltip for spanning events */
+    .spanning-event .tooltip {
+        min-width: 120px;
+        text-align: left;
+    }
+    
+    /* Table cell border adjustments for spanning events */
+    .spanning-event-cell + td {
+        border-left: none;
+    }
+    
+    /* Ensure consistent height across spanned cells */
+    .spanning-event-cell {
+        vertical-align: top;
+        position: relative;
+    }
+    
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 768px) {
+        .spanning-event {
+            font-size: 10px;
+            padding: 2px 4px;
+            min-height: 16px;
+        }
+        
+        .spanning-event .tooltip {
+            font-size: 10px;
+            padding: 4px 6px;
+            min-width: 100px;
+        }
     }
 </style>
 @endpush

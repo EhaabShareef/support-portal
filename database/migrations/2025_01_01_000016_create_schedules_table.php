@@ -15,18 +15,16 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('event_type_id')->constrained('schedule_event_types')->onDelete('cascade');
-            $table->date('date');
+            $table->date('start_date');
+            $table->date('end_date');
             $table->text('remarks')->nullable();
-            $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
             
             // Indexes for performance
-            $table->index(['user_id', 'date']);
-            $table->index(['date', 'event_type_id']);
+            $table->index(['start_date', 'end_date'], 'idx_schedules_date_range');
+            $table->index(['user_id', 'start_date', 'end_date'], 'idx_schedules_user_date_range');
             $table->index('created_by');
-            
-            // Unique constraint to prevent duplicate entries
-            $table->unique(['user_id', 'date', 'event_type_id']);
         });
     }
 

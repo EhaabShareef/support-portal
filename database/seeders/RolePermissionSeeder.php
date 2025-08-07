@@ -84,6 +84,18 @@ class RolePermissionSeeder extends Seeder
             'articles.read',
             'articles.update',
             'articles.delete',
+
+            // Schedule management
+            'schedules.create',
+            'schedules.read',
+            'schedules.update',
+            'schedules.delete',
+
+            // Schedule event types management
+            'schedule-event-types.create',
+            'schedule-event-types.read',
+            'schedule-event-types.update',
+            'schedule-event-types.delete',
         ];
 
         foreach ($permissions as $permission) {
@@ -144,6 +156,12 @@ class RolePermissionSeeder extends Seeder
             // Articles and reports
             'articles.create', 'articles.read', 'articles.update', 'articles.delete',
             'reports.read',
+
+            // Schedule management
+            'schedules.create', 'schedules.read', 'schedules.update', 'schedules.delete',
+            
+            // Schedule event types management
+            'schedule-event-types.create', 'schedule-event-types.read', 'schedule-event-types.update', 'schedule-event-types.delete',
         ]);
 
         // Agent - department level support
@@ -177,6 +195,10 @@ class RolePermissionSeeder extends Seeder
             
             // Articles read access
             'articles.read',
+
+            // Schedule read access only
+            'schedules.read',
+            'schedule-event-types.read',
         ]);
 
         // Client - can create and view own tickets
@@ -197,6 +219,10 @@ class RolePermissionSeeder extends Seeder
             
             // Articles read access
             'articles.read',
+
+            // Schedule read access only
+            'schedules.read',
+            'schedule-event-types.read',
         ]);
 
         return [

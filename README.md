@@ -11,6 +11,7 @@ The application features a comprehensive **Role-Based Access Control (RBAC)** sy
 - 📋 **Contract Tracking** - View and manage client contracts
 - 🛠️ **Hardware Management** - Track hardware assets and support
 - 👥 **User Management** - Comprehensive user administration
+- 📅 **Schedule Management** - Team schedule calendar with event tracking
 - 🔐 **Role-Based Permissions** - Granular permission system with role management
 - 📱 **Mobile Responsive** - Fully responsive design for all devices
 - 🌙 **Dark Mode** - Toggle between light and dark themes
@@ -89,6 +90,8 @@ The system organizes permissions into the following modules:
 - **Messages** (create, read, update, delete)
 - **Articles** (create, read, update, delete)
 - **Reports** (read)
+- **Schedules** (create, read, update, delete)
+- **Schedule Event Types** (create, read, update, delete)
 
 ### 🎛️ **Management Interface**
 

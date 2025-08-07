@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('color', 20); // hex or tailwind class
             $table->boolean('is_active')->default(true);
             $table->integer('sort_order')->default(0);
-            $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
             
             // Indexes for performance

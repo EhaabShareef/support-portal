@@ -125,20 +125,16 @@ class ScheduleCalendar extends Component
         $month = $this->currentDate->month;
 
         $query = Schedule::with([
-            'user:id,name,department_id',
+            'user:id,name,department_id,organization_id',
             'user.department:id,name,department_group_id',
             'eventType:id,code,label,color'
         ])->overlapsMonth($year, $month);
 
         // Apply role-based filtering
         if ($user->hasRole('Client')) {
-            // Clients can only see schedules for their organization's users
+            // Improved client filtering using direct organization relationship
             $query->whereHas('user', function ($q) use ($user) {
-                $q->whereHas('department', function ($deptQ) use ($user) {
-                    $deptQ->whereHas('tickets', function ($ticketQ) use ($user) {
-                        $ticketQ->where('organization_id', $user->organization_id);
-                    });
-                });
+                $q->where('organization_id', $user->organization_id);
             });
         }
 
@@ -152,6 +148,28 @@ class ScheduleCalendar extends Component
         }
 
         return $query->get();
+    }
+
+    #[Computed]
+    public function schedulesGroupedByUserAndDay()
+    {
+        $schedulesGrouped = [];
+        
+        foreach ($this->schedules as $schedule) {
+            $userId = $schedule->user_id;
+            
+            // Calculate which days this schedule spans
+            for ($day = 1; $day <= $this->daysInMonth; $day++) {
+                if ($schedule->spansDay($day, $this->currentDate->year, $this->currentDate->month)) {
+                    if (!isset($schedulesGrouped[$userId][$day])) {
+                        $schedulesGrouped[$userId][$day] = collect();
+                    }
+                    $schedulesGrouped[$userId][$day]->push($schedule);
+                }
+            }
+        }
+        
+        return $schedulesGrouped;
     }
 
 
@@ -168,23 +186,10 @@ class ScheduleCalendar extends Component
     public function getSchedulesForUserAndDay($userId, $day)
     {
         try {
-            $schedulesCollection = $this->schedules;
+            $groupedSchedules = $this->schedulesGroupedByUserAndDay;
             
-            // Return empty collection if no schedules
-            if (!$schedulesCollection || $schedulesCollection->isEmpty()) {
-                return collect();
-            }
-            
-            // Filter schedules for the specific user and day
-            return $schedulesCollection->filter(function ($schedule) use ($userId, $day) {
-                // Check if this schedule belongs to the user
-                if ($schedule->user_id !== $userId) {
-                    return false;
-                }
-                
-                // Check if this schedule spans the given day
-                return $schedule->spansDay($day, $this->currentDate->year, $this->currentDate->month);
-            });
+            // Return schedules for this user and day, or empty collection if none exist
+            return $groupedSchedules[$userId][$day] ?? collect();
             
         } catch (\Exception $e) {
             // Log error and return empty collection
@@ -193,14 +198,129 @@ class ScheduleCalendar extends Component
         }
     }
 
+    // Helper methods for spanning events
+    public function getEventsStartingOnDay($userId, $day)
+    {
+        try {
+            $groupedSchedules = $this->schedulesGroupedByUserAndDay;
+            $daySchedules = $groupedSchedules[$userId][$day] ?? collect();
+            
+            return $daySchedules->filter(function ($schedule) use ($day) {
+                // Check if this is the start day of the event in current month
+                if ($schedule->start_date && $schedule->end_date) {
+                    $currentMonth = $this->currentDate->month;
+                    $currentYear = $this->currentDate->year;
+                    
+                    // If event starts in current month, check if it's the exact start day
+                    if ($schedule->start_date->year === $currentYear && $schedule->start_date->month === $currentMonth) {
+                        return $schedule->start_date->day === (int) $day;
+                    }
+                    
+                    // If event started before current month, it should start from day 1 of current month
+                    if ($schedule->start_date->lessThan($this->currentDate->copy()->startOfMonth())) {
+                        return $day === 1;
+                    }
+                }
+                
+                return false;
+            });
+            
+        } catch (\Exception $e) {
+            logger('Error in getEventsStartingOnDay: ' . $e->getMessage());
+            return collect();
+        }
+    }
+
+    public function getEventColspan($schedule, $day)
+    {
+        try {
+            if (!$schedule->start_date || !$schedule->end_date) {
+                return 1;
+            }
+            
+            $currentMonth = $this->currentDate->month;
+            $currentYear = $this->currentDate->year;
+            $daysInMonth = $this->daysInMonth;
+            
+            // Calculate start day in current month
+            $startDay = $day;
+            if ($schedule->start_date->year === $currentYear && $schedule->start_date->month === $currentMonth) {
+                $startDay = max($day, $schedule->start_date->day);
+            } else if ($schedule->start_date->lessThan($this->currentDate->copy()->startOfMonth())) {
+                $startDay = 1; // Event started before current month
+            }
+            
+            // Calculate end day in current month
+            $endDay = $daysInMonth;
+            if ($schedule->end_date->year === $currentYear && $schedule->end_date->month === $currentMonth) {
+                $endDay = min($daysInMonth, $schedule->end_date->day);
+            } else if ($schedule->end_date->greaterThan($this->currentDate->copy()->endOfMonth())) {
+                $endDay = $daysInMonth; // Event extends beyond current month
+            }
+            
+            $colspan = max(1, $endDay - $startDay + 1);
+            
+            // Ensure colspan doesn't exceed remaining days in month from current day
+            $maxColspan = $daysInMonth - $day + 1;
+            $colspan = min($colspan, $maxColspan);
+            
+            return $colspan;
+            
+        } catch (\Exception $e) {
+            logger('Error in getEventColspan: ' . $e->getMessage());
+            return 1;
+        }
+    }
+
+    public function isDayCoveredBySpanningEvent($userId, $day)
+    {
+        try {
+            $schedulesCollection = $this->schedules;
+            
+            if (!$schedulesCollection || $schedulesCollection->isEmpty()) {
+                return false;
+            }
+            
+            foreach ($schedulesCollection as $schedule) {
+                if ($schedule->user_id !== $userId) {
+                    continue;
+                }
+                
+                // Skip if this doesn't span the day
+                if (!$schedule->spansDay($day, $this->currentDate->year, $this->currentDate->month)) {
+                    continue;
+                }
+                
+                // Check if this event started on a previous day and spans over this day
+                if ($schedule->start_date && $schedule->end_date) {
+                    $currentMonth = $this->currentDate->month;
+                    $currentYear = $this->currentDate->year;
+                    
+                    $eventStartDay = 1; // Default for events starting before current month
+                    if ($schedule->start_date->year === $currentYear && $schedule->start_date->month === $currentMonth) {
+                        $eventStartDay = $schedule->start_date->day;
+                    }
+                    
+                    // If the event started before this day, then this day is covered
+                    if ($eventStartDay < $day) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+            
+        } catch (\Exception $e) {
+            logger('Error in isDayCoveredBySpanningEvent: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     // Schedule event creation methods
     public function createScheduleEvent()
     {
-        // Check permissions - only Admin can create events
-        if (!auth()->user()->hasAnyRole(['Super Admin', 'Admin'])) {
-            session()->flash('error', 'You do not have permission to create schedule events.');
-            return;
-        }
+        // Check permissions using policy
+        $this->authorize('create', Schedule::class);
 
         // Reset and prepare form
         $this->resetScheduleForm();
@@ -218,12 +338,56 @@ class ScheduleCalendar extends Component
         }
     }
 
+    public function editScheduleEvent($scheduleId)
+    {
+        try {
+            $schedule = Schedule::findOrFail($scheduleId);
+            
+            // Check permissions using policy
+            $this->authorize('update', $schedule);
+
+            // Populate form with schedule data
+            $this->scheduleForm = [
+                'user_id' => $schedule->user_id,
+                'event_type_id' => $schedule->event_type_id,
+                'start_date' => $schedule->start_date->format('Y-m-d'),
+                'end_date' => $schedule->end_date->format('Y-m-d'),
+                'remarks' => $schedule->remarks,
+            ];
+
+            $this->selectedScheduleId = $schedule->id;
+            $this->scheduleEditMode = true;
+            $this->showScheduleModal = true;
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to load schedule event: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteScheduleEvent($scheduleId)
+    {
+        try {
+            $schedule = Schedule::findOrFail($scheduleId);
+            
+            // Check permissions using policy
+            $this->authorize('delete', $schedule);
+
+            $schedule->delete();
+            session()->flash('message', 'Schedule event deleted successfully.');
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to delete schedule event: ' . $e->getMessage());
+        }
+    }
+
     public function saveScheduleEvent()
     {
-        // Check permissions
-        if (!auth()->user()->hasAnyRole(['Super Admin', 'Admin'])) {
-            session()->flash('error', 'You do not have permission to save schedule events.');
-            return;
+        // Check permissions using policy
+        if ($this->scheduleEditMode) {
+            $schedule = Schedule::findOrFail($this->selectedScheduleId);
+            $this->authorize('update', $schedule);
+        } else {
+            $this->authorize('create', Schedule::class);
         }
 
         $validated = $this->validate([
@@ -265,7 +429,6 @@ class ScheduleCalendar extends Component
 
             // Prepare data for saving
             $scheduleData['created_by'] = auth()->id();
-            $scheduleData['date'] = $scheduleData['start_date']; // For backward compatibility
 
             if ($this->scheduleEditMode) {
                 Schedule::findOrFail($this->selectedScheduleId)->update($scheduleData);
