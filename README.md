@@ -32,8 +32,9 @@ The application features a comprehensive **Role-Based Access Control (RBAC)** sy
 4. Generate an application key: `php artisan key:generate`
 5. Run database migrations: `php artisan migrate`
 6. Seed the database with roles and permissions: `php artisan db:seed --class=RolePermissionSeeder`
-7. (Optional) Seed with sample data: `php artisan db:seed --class=BasicDataSeeder`
-8. Start development servers: `php artisan serve` and `npm run dev`
+7. Seed schedule event types: `php artisan db:seed --class=ScheduleEventTypeSeeder`
+8. (Optional) Seed with sample data: `php artisan db:seed --class=BasicDataSeeder`
+9. Start development servers: `php artisan serve` and `npm run dev`
 
 ## Project Structure
 

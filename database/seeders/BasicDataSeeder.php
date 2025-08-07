@@ -8,7 +8,6 @@ use App\Models\DepartmentGroup;
 use App\Models\Department;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Hash;
 
 class BasicDataSeeder extends Seeder
@@ -17,11 +16,8 @@ class BasicDataSeeder extends Seeder
     {
         $this->command->info('🌱 Seeding basic data...');
 
-        // Create permissions
-        $this->createPermissions();
-
-        // Create roles
-        $roles = $this->createRoles();
+        // Get existing roles (should be created by RolePermissionSeeder)
+        $roles = $this->getRoles();
 
         // Create sample organization
         $organization = $this->createOrganization();
@@ -38,189 +34,14 @@ class BasicDataSeeder extends Seeder
         $this->command->info('✅ Basic data seeded successfully!');
     }
 
-    private function createPermissions(): void
+    private function getRoles(): array
     {
-        $permissions = [
-            // User management
-            'users.create',
-            'users.read',
-            'users.update',
-            'users.delete',
-
-            // Organization management
-            'organizations.create',
-            'organizations.read',
-            'organizations.update',
-            'organizations.delete',
-
-            // Department management
-            'departments.create',
-            'departments.read',
-            'departments.update',
-            'departments.delete',
-
-            // Ticket management
-            'tickets.create',
-            'tickets.read',
-            'tickets.update',
-            'tickets.delete',
-
-            // Contract management
-            'contracts.create',
-            'contracts.read',
-            'contracts.update',
-            'contracts.delete',
-
-            // Hardware management
-            'hardware.create',
-            'hardware.read',
-            'hardware.update',
-            'hardware.delete',
-
-            // Settings management
-            'settings.read',
-            'settings.update',
-
-            // Note management
-            'notes.create',
-            'notes.read',
-            'notes.update',
-            'notes.delete',
-
-            // Message management
-            'messages.create',
-            'messages.read',
-            'messages.update',
-            'messages.delete',
-
-            // Reports
-            'reports.read',
-
-            // Knowledge base (articles)
-            'articles.create',
-            'articles.read',
-            'articles.update',
-            'articles.delete',
-        ];
-
-        foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
-        }
-    }
-
-    private function createRoles(): array
-    {
-        // Create role descriptions
-        $roleDescriptions = [
-            'Super Admin' => 'Full system access with all permissions',
-            'Admin' => 'Administrative access to manage users, organizations, and all modules',
-            'Agent' => 'Support agent with limited access to tickets and basic operations within their department',
-            'Client' => 'Client user with basic access to create and view tickets and articles',
-        ];
-
-        // Super Admin - has all permissions
-        $superAdmin = Role::firstOrCreate([
-            'name' => 'Super Admin', 
-            'guard_name' => 'web'
-        ]);
-        $superAdmin->update(['description' => $roleDescriptions['Super Admin']]);
-        $superAdmin->givePermissionTo(Permission::all());
-
-        // Admin - organization level admin
-        $admin = Role::firstOrCreate([
-            'name' => 'Admin', 
-            'guard_name' => 'web'
-        ]);
-        $admin->update(['description' => $roleDescriptions['Admin']]);
-        $admin->givePermissionTo([
-            // User management
-            'users.create', 'users.read', 'users.update',
-            
-            // Organization management
-            'organizations.read', 'organizations.update',
-            
-            // Department management
-            'departments.create', 'departments.read', 'departments.update', 'departments.delete',
-            
-            // Ticket management
-            'tickets.create', 'tickets.read', 'tickets.update', 'tickets.delete',
-            
-            // Contract management
-            'contracts.create', 'contracts.read', 'contracts.update', 'contracts.delete',
-            
-            // Hardware management
-            'hardware.create', 'hardware.read', 'hardware.update', 'hardware.delete',
-            
-            // Settings
-            'settings.read', 'settings.update',
-            
-            // Notes and messages
-            'notes.create', 'notes.read', 'notes.update', 'notes.delete',
-            'messages.create', 'messages.read', 'messages.update', 'messages.delete',
-            
-            // Articles and reports
-            'articles.create', 'articles.read', 'articles.update', 'articles.delete',
-            'reports.read',
-        ]);
-
-        // Agent - department level support
-        $agent = Role::firstOrCreate([
-            'name' => 'Agent', 
-            'guard_name' => 'web'
-        ]);
-        $agent->update(['description' => $roleDescriptions['Agent']]);
-        $agent->givePermissionTo([
-            // Basic user access
-            'users.read',
-            
-            // Organization read access
-            'organizations.read',
-            
-            // Department read access
-            'departments.read',
-            
-            // Ticket management (limited to department)
-            'tickets.create', 'tickets.read', 'tickets.update',
-            
-            // Contract read access
-            'contracts.read',
-            
-            // Hardware read access
-            'hardware.read',
-            
-            // Notes and messages
-            'notes.create', 'notes.read', 'notes.update',
-            'messages.create', 'messages.read', 'messages.update',
-            
-            // Articles read access
-            'articles.read',
-        ]);
-
-        // Client - can create and view own tickets
-        $client = Role::firstOrCreate([
-            'name' => 'Client', 
-            'guard_name' => 'web'
-        ]);
-        $client->update(['description' => $roleDescriptions['Client']]);
-        $client->givePermissionTo([
-            // Basic organization access
-            'organizations.read',
-            
-            // Basic ticket access
-            'tickets.create', 'tickets.read',
-            
-            // Basic message access
-            'messages.create', 'messages.read',
-            
-            // Articles read access
-            'articles.read',
-        ]);
-
+        // Get existing roles (these should already be created by RolePermissionSeeder)
         return [
-            'super_admin' => $superAdmin,
-            'admin' => $admin,
-            'agent' => $agent,
-            'client' => $client,
+            'super_admin' => Role::where('name', 'Super Admin')->firstOrFail(),
+            'admin' => Role::where('name', 'Admin')->firstOrFail(),
+            'agent' => Role::where('name', 'Agent')->firstOrFail(),
+            'client' => Role::where('name', 'Client')->firstOrFail(),
         ];
     }
 
@@ -356,25 +177,32 @@ class BasicDataSeeder extends Seeder
                 'sort_order' => 1,
             ],
             [
+                'name' => 'Admin',
+                'description' => 'System Administration',
+                'email' => 'admin@htm.com.mv',
+                'department_group_id' => $departmentGroups[0]->id, // Admin
+                'sort_order' => 1,
+            ],
+            [
                 'name' => 'Sales',
                 'description' => 'Sales Engagement',
                 'email' => 'sales@htm.com.mv',
                 'department_group_id' => $departmentGroups[0]->id, // Admin
-                'sort_order' => 1,
+                'sort_order' => 2,
             ],
             [
                 'name' => 'Finance',
                 'description' => 'Finance Department',
                 'email' => 'finance@htm.com.mv',
                 'department_group_id' => $departmentGroups[0]->id, // Admin
-                'sort_order' => 2,
+                'sort_order' => 3,
             ],
             [
                 'name' => 'Resource',
                 'description' => 'Human Resource',
                 'email' => 'resource@htm.com.mv',
                 'department_group_id' => $departmentGroups[0]->id, // Admin
-                'sort_order' => 3,
+                'sort_order' => 4,
             ],
         ];
 
@@ -389,7 +217,12 @@ class BasicDataSeeder extends Seeder
 
     private function createUsers(Organization $organization, array $departments, array $roles): void
     {
-        // Super Admin - assign to IT Support department
+        // Find admin department (first department in Admin group)
+        $adminDepartment = collect($departments)->first(function($dept) {
+            return $dept->name === 'Admin';
+        });
+
+        // Super Admin - assign to Admin department
         $superAdmin = User::firstOrCreate([
             'email' => 'superadmin@htm.com',
         ], [
@@ -397,14 +230,14 @@ class BasicDataSeeder extends Seeder
             'username' => 'superadmin',
             'password' => Hash::make('password'),
             'organization_id' => $organization->id,
-            'department_id' => $departments[0]->id, // IT Support
+            'department_id' => $adminDepartment->id, // Admin Department
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
         // Assign roles without team context (teams disabled)
         $superAdmin->assignRole($roles['super_admin']);
 
-        // IT Admin
+        // Admin - assign to Admin department
         $admin = User::firstOrCreate([
             'email' => 'admin@ht.com',
         ], [
@@ -412,13 +245,13 @@ class BasicDataSeeder extends Seeder
             'username' => 'admin',
             'password' => Hash::make('password'),
             'organization_id' => $organization->id,
-            'department_id' => $departments[0]->id, // IT Support
+            'department_id' => $adminDepartment->id, // Admin Department
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $admin->assignRole($roles['admin']);
 
-        // IT Agent
+        // Agent - assign to OPERA department (first technical department)
         $agent = User::firstOrCreate([
             'email' => 'agent@ht.com',
         ], [
@@ -426,13 +259,13 @@ class BasicDataSeeder extends Seeder
             'username' => 'agent',
             'password' => Hash::make('password'),
             'organization_id' => $organization->id,
-            'department_id' => $departments[0]->id, // IT Support
+            'department_id' => $departments[0]->id, // OPERA Department
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $agent->assignRole($roles['agent']);
 
-        // Sample Client - assign to Customer Support department
+        // Client - NO department assignment
         $client = User::firstOrCreate([
             'email' => 'client@ht.com',
         ], [
@@ -440,7 +273,7 @@ class BasicDataSeeder extends Seeder
             'username' => 'client',
             'password' => Hash::make('password'),
             'organization_id' => $organization->id,
-            'department_id' => $departments[3]->id, // Customer Support
+            'department_id' => null, // No department for clients
             'email_verified_at' => now(),
             'is_active' => true,
         ]);

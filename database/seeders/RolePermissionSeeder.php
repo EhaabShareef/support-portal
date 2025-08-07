@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\DB;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -12,28 +13,44 @@ class RolePermissionSeeder extends Seeder
     {
         $this->command->info('🌱 Seeding roles and permissions...');
 
-        // Create permissions
-        $this->createPermissions();
+        // Clear cache to avoid conflicts
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create/update roles
-        $this->createRoles();
+        DB::beginTransaction();
+        
+        try {
+            // Create permissions first
+            $this->createPermissions();
 
-        $this->command->info('✅ Roles and permissions seeded successfully!');
+            // Create roles and assign permissions
+            $this->createRoles();
+
+            DB::commit();
+            $this->command->info('✅ Roles and permissions seeded successfully!');
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            $this->command->error('❌ Error seeding roles and permissions: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     private function createPermissions(): void
     {
+        $this->command->info('Creating permissions...');
+        
         $permissions = [
             // User management
             'users.create',
-            'users.read',
+            'users.read', 
             'users.update',
             'users.delete',
+            'users.manage', // Added missing permission
 
             // Organization management
             'organizations.create',
             'organizations.read',
-            'organizations.update',
+            'organizations.update', 
             'organizations.delete',
 
             // Department management
@@ -47,6 +64,7 @@ class RolePermissionSeeder extends Seeder
             'tickets.read',
             'tickets.update',
             'tickets.delete',
+            'tickets.assign', // Added explicit assign permission
 
             // Contract management
             'contracts.create',
@@ -56,7 +74,7 @@ class RolePermissionSeeder extends Seeder
 
             // Hardware management
             'hardware.create',
-            'hardware.read',
+            'hardware.read', 
             'hardware.update',
             'hardware.delete',
 
@@ -67,7 +85,7 @@ class RolePermissionSeeder extends Seeder
             // Note management
             'notes.create',
             'notes.read',
-            'notes.update',
+            'notes.update', 
             'notes.delete',
 
             // Message management
@@ -96,30 +114,41 @@ class RolePermissionSeeder extends Seeder
             'schedule-event-types.read',
             'schedule-event-types.update',
             'schedule-event-types.delete',
+
+            // Dashboard access
+            'dashboard.access',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'web'
+            ]);
         }
+        
+        $this->command->info('Created ' . count($permissions) . ' permissions.');
     }
 
     private function createRoles(): array
     {
-        // Create role descriptions
+        $this->command->info('Creating roles and assigning permissions...');
+
+        // Role descriptions
         $roleDescriptions = [
             'Super Admin' => 'Full system access with all permissions',
             'Admin' => 'Administrative access to manage users, organizations, and all modules',
-            'Agent' => 'Support agent with limited access to tickets and basic operations within their department',
-            'Client' => 'Client user with basic access to create and view tickets and articles',
+            'Agent' => 'Support agent with department-based access to tickets and schedules',
+            'Client' => 'Client user with basic access to create tickets and view articles',
         ];
 
-        // Super Admin - has all permissions
+        // Super Admin - has ALL permissions
         $superAdmin = Role::firstOrCreate([
-            'name' => 'Super Admin', 
+            'name' => 'Super Admin',
             'guard_name' => 'web'
         ]);
         $superAdmin->update(['description' => $roleDescriptions['Super Admin']]);
         $superAdmin->syncPermissions(Permission::all());
+        $this->command->info('✓ Super Admin role created with all permissions');
 
         // Admin - organization level admin
         $admin = Role::firstOrCreate([
@@ -129,21 +158,21 @@ class RolePermissionSeeder extends Seeder
         $admin->update(['description' => $roleDescriptions['Admin']]);
         $admin->syncPermissions([
             // User management
-            'users.create', 'users.read', 'users.update',
+            'users.create', 'users.read', 'users.update', 'users.manage',
             
-            // Organization management
+            // Organization management (read and update only)
             'organizations.read', 'organizations.update',
             
-            // Department management
+            // Department management (full access)
             'departments.create', 'departments.read', 'departments.update', 'departments.delete',
             
-            // Ticket management
-            'tickets.create', 'tickets.read', 'tickets.update', 'tickets.delete',
+            // Ticket management (full access)
+            'tickets.create', 'tickets.read', 'tickets.update', 'tickets.delete', 'tickets.assign',
             
-            // Contract management
+            // Contract management (full access)
             'contracts.create', 'contracts.read', 'contracts.update', 'contracts.delete',
             
-            // Hardware management
+            // Hardware management (full access)
             'hardware.create', 'hardware.read', 'hardware.update', 'hardware.delete',
             
             // Settings
@@ -157,21 +186,25 @@ class RolePermissionSeeder extends Seeder
             'articles.create', 'articles.read', 'articles.update', 'articles.delete',
             'reports.read',
 
-            // Schedule management
+            // Schedule management (full access)
             'schedules.create', 'schedules.read', 'schedules.update', 'schedules.delete',
             
             // Schedule event types management
             'schedule-event-types.create', 'schedule-event-types.read', 'schedule-event-types.update', 'schedule-event-types.delete',
+            
+            // Dashboard access
+            'dashboard.access',
         ]);
+        $this->command->info('✓ Admin role created with administrative permissions');
 
         // Agent - department level support
         $agent = Role::firstOrCreate([
-            'name' => 'Agent', 
+            'name' => 'Agent',
             'guard_name' => 'web'
         ]);
         $agent->update(['description' => $roleDescriptions['Agent']]);
         $agent->syncPermissions([
-            // Basic user access
+            // Basic user access (read only)
             'users.read',
             
             // Organization read access
@@ -180,8 +213,8 @@ class RolePermissionSeeder extends Seeder
             // Department read access
             'departments.read',
             
-            // Ticket management (limited to department)
-            'tickets.create', 'tickets.read', 'tickets.update',
+            // Ticket management (create, read, update, assign)
+            'tickets.create', 'tickets.read', 'tickets.update', 'tickets.assign',
             
             // Contract read access
             'contracts.read',
@@ -189,29 +222,33 @@ class RolePermissionSeeder extends Seeder
             // Hardware read access
             'hardware.read',
             
-            // Notes and messages
+            // Notes and messages (create, read, update)
             'notes.create', 'notes.read', 'notes.update',
             'messages.create', 'messages.read', 'messages.update',
             
             // Articles read access
             'articles.read',
 
-            // Schedule read access only
+            // Schedule read access (agents can view schedules)
             'schedules.read',
             'schedule-event-types.read',
+            
+            // Dashboard access
+            'dashboard.access',
         ]);
+        $this->command->info('✓ Agent role created with department-level permissions');
 
-        // Client - can create and view own tickets
+        // Client - basic ticket creation and viewing
         $client = Role::firstOrCreate([
-            'name' => 'Client', 
-            'guard_name' => 'web'
+            'name' => 'Client',
+            'guard_name' => 'web' 
         ]);
         $client->update(['description' => $roleDescriptions['Client']]);
         $client->syncPermissions([
             // Basic organization access
             'organizations.read',
             
-            // Basic ticket access
+            // Basic ticket access (create and read only)
             'tickets.create', 'tickets.read',
             
             // Basic message access
@@ -220,10 +257,14 @@ class RolePermissionSeeder extends Seeder
             // Articles read access
             'articles.read',
 
-            // Schedule read access only
+            // Schedule read access (clients can view schedules)
             'schedules.read',
             'schedule-event-types.read',
+            
+            // Dashboard access
+            'dashboard.access',
         ]);
+        $this->command->info('✓ Client role created with basic permissions');
 
         return [
             'super_admin' => $superAdmin,

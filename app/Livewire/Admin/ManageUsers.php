@@ -67,6 +67,9 @@ class ManageUsers extends Component
             $rules['form.department_id'] = 'required|exists:departments,id';
         } elseif ($this->form['role'] === 'Client') {
             $rules['form.organization_id'] = 'required|exists:organizations,id';
+        } elseif (in_array($this->form['role'], ['Admin', 'Super Admin'])) {
+            // Admin users get admin department automatically, but allow override
+            $rules['form.department_id'] = 'nullable|exists:departments,id';
         }
 
         // For edit mode, adjust unique rules
@@ -106,10 +109,15 @@ class ManageUsers extends Component
 
         // Clear department/organization when role changes
         if ($field === 'form.role') {
-            if ($this->form['role'] !== 'Agent') {
+            if ($this->form['role'] === 'Agent') {
+                // Keep department selection for agents
+                $this->form['organization_id'] = '';
+            } elseif ($this->form['role'] === 'Client') {
+                // Clear department for clients (they don't have departments)
                 $this->form['department_id'] = '';
-            }
-            if ($this->form['role'] !== 'Client') {
+            } elseif (in_array($this->form['role'], ['Admin', 'Super Admin'])) {
+                // Set admin department by default for admin users
+                $this->setDefaultAdminDepartment();
                 $this->form['organization_id'] = '';
             }
         }
@@ -168,6 +176,24 @@ class ManageUsers extends Component
         $this->userId = null;
     }
 
+    private function setDefaultAdminDepartment()
+    {
+        $adminDeptId = $this->getDefaultAdminDepartmentId();
+        if ($adminDeptId) {
+            $this->form['department_id'] = $adminDeptId;
+        }
+    }
+
+    private function getDefaultAdminDepartmentId()
+    {
+        // Find admin department (in Admin department group)
+        $adminDept = Department::whereHas('departmentGroup', function($q) {
+            $q->where('name', 'Admin');
+        })->where('name', 'Admin')->first();
+        
+        return $adminDept?->id;
+    }
+
     public function save()
     {
         if ($this->editMode) {
@@ -195,8 +221,12 @@ class ManageUsers extends Component
             $userData['organization_id'] = null;
         } elseif ($this->form['role'] === 'Client') {
             $userData['organization_id'] = $this->form['organization_id'];
-            $userData['department_id'] = null;
-        } else { // Admin
+            $userData['department_id'] = null; // Clients have no departments
+        } elseif (in_array($this->form['role'], ['Admin', 'Super Admin'])) {
+            // Admin users get assigned to admin department or user-selected department
+            $userData['department_id'] = $this->form['department_id'] ?: $this->getDefaultAdminDepartmentId();
+            $userData['organization_id'] = null;
+        } else {
             $userData['department_id'] = null;
             $userData['organization_id'] = null;
         }
@@ -229,8 +259,12 @@ class ManageUsers extends Component
             $updateData['organization_id'] = null;
         } elseif ($this->form['role'] === 'Client') {
             $updateData['organization_id'] = $this->form['organization_id'];
-            $updateData['department_id'] = null;
-        } else { // Admin
+            $updateData['department_id'] = null; // Clients have no departments
+        } elseif (in_array($this->form['role'], ['Admin', 'Super Admin'])) {
+            // Admin users get assigned to admin department or user-selected department
+            $updateData['department_id'] = $this->form['department_id'] ?: $this->getDefaultAdminDepartmentId();
+            $updateData['organization_id'] = null;
+        } else {
             $updateData['department_id'] = null;
             $updateData['organization_id'] = null;
         }

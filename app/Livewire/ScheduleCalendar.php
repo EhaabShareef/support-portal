@@ -30,9 +30,9 @@ class ScheduleCalendar extends Component
 
     public function mount()
     {
-        // Check permissions - only Admin and Client can access
+        // Check permissions - Super Admin, Admin, Agent, and Client can access
         $user = auth()->user();
-        if (!$user->hasAnyRole(['Super Admin', 'Admin', 'Client'])) {
+        if (!$user->hasAnyRole(['Super Admin', 'Admin', 'Agent', 'Client'])) {
             abort(403, 'You do not have permission to access the schedule module.');
         }
 

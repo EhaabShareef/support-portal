@@ -12,15 +12,31 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('schedules', function (Blueprint $table) {
-            // Drop the old unique constraint first
-            $table->dropUnique(['user_id', 'date', 'event_type_id']);
-            
-            // Drop the legacy date column and its index
-            $table->dropIndex(['user_id', 'date']);
-            $table->dropIndex(['date', 'event_type_id']);
-            $table->dropColumn('date');
-        });
+        // Check if the columns and indexes exist before trying to drop them
+        if (Schema::hasColumn('schedules', 'date')) {
+            Schema::table('schedules', function (Blueprint $table) {
+                // Drop indexes and constraints if they exist
+                try {
+                    $table->dropUnique('schedules_user_id_date_event_type_id_unique');
+                } catch (\Exception $e) {
+                    // Index doesn't exist, continue
+                }
+                
+                try {
+                    $table->dropIndex('schedules_user_id_date_index');
+                } catch (\Exception $e) {
+                    // Index doesn't exist, continue
+                }
+                
+                try {
+                    $table->dropIndex('schedules_date_event_type_id_index');
+                } catch (\Exception $e) {
+                    // Index doesn't exist, continue
+                }
+                
+                $table->dropColumn('date');
+            });
+        }
 
         // Update foreign key constraints to include cascade rules
         Schema::table('schedules', function (Blueprint $table) {

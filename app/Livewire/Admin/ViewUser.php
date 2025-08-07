@@ -153,16 +153,57 @@ class ViewUser extends Component
             return;
         }
 
-        $validated = $this->validate([
+        // Validate based on user role
+        $rules = [
             'form.name' => 'required|string|max:255',
             'form.username' => 'required|string|max:255|unique:users,username,'.$this->user->id,
             'form.email' => 'required|email|unique:users,email,'.$this->user->id,
             'form.is_active' => 'boolean',
-            'form.department_id' => 'nullable|exists:departments,id',
-            'form.organization_id' => 'nullable|exists:organizations,id',
-        ]);
+        ];
 
-        $this->user->update($validated['form']);
+        // Role-specific validation
+        if ($this->user->hasRole('Agent')) {
+            $rules['form.department_id'] = 'required|exists:departments,id';
+            $rules['form.organization_id'] = 'nullable';
+        } elseif ($this->user->hasRole('Client')) {
+            $rules['form.organization_id'] = 'required|exists:organizations,id';
+            $rules['form.department_id'] = 'nullable'; // Will be set to null
+        } elseif ($this->user->hasAnyRole(['Admin', 'Super Admin'])) {
+            $rules['form.department_id'] = 'nullable|exists:departments,id';
+            $rules['form.organization_id'] = 'nullable';
+        } else {
+            $rules['form.department_id'] = 'nullable|exists:departments,id';
+            $rules['form.organization_id'] = 'nullable|exists:organizations,id';
+        }
+
+        $validated = $this->validate($rules);
+
+        // Process data based on user role
+        $updateData = $validated['form'];
+        
+        if ($this->user->hasRole('Client')) {
+            // Clients should not have departments
+            $updateData['department_id'] = null;
+        } elseif ($this->user->hasRole('Agent')) {
+            // Agents must have departments, organization can be null
+            $updateData['organization_id'] = null;
+        } elseif ($this->user->hasAnyRole(['Admin', 'Super Admin'])) {
+            // Admin users can have departments but no organization
+            $updateData['organization_id'] = null;
+            
+            // If no department specified, set admin department
+            if (empty($updateData['department_id'])) {
+                $adminDept = \App\Models\Department::whereHas('departmentGroup', function($q) {
+                    $q->where('name', 'Admin');
+                })->where('name', 'Admin')->first();
+                
+                if ($adminDept) {
+                    $updateData['department_id'] = $adminDept->id;
+                }
+            }
+        }
+
+        $this->user->update($updateData);
         $this->user->refresh();
 
         $this->editMode = false;
