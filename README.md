@@ -125,7 +125,97 @@ The system organizes permissions into the following modules:
 
 ## Recent Updates
 
-### 🚀 **v2.1.0 - Organization Management Overhaul & Performance Optimization** (Latest)
+### 🚀 **v3.0.0 - Schedule Management System & Advanced Calendar** (Latest)
+
+#### 📅 **Major Features**
+
+- ✅ **Comprehensive Schedule Management**: Full-featured team calendar system with event tracking
+  - Monthly calendar view with user rows organized by department groups
+  - Color-coded event badges with 18 predefined event types (PR, PO, WFH, DIL, SO, etc.)
+  - Date range support for multi-day events with seamless spanning visualization
+  - Interactive hover tooltips showing event details, dates, and remarks
+
+- ✅ **Advanced Event Management**: Robust CRUD operations with policy-based authorization
+  - Create, edit, and delete events directly from calendar cells
+  - Hover-based action buttons for intuitive event management
+  - Real-time validation preventing overlapping events per user
+  - Comprehensive permission system with role-based access control
+
+- ✅ **Professional Calendar Interface**: Modern, responsive design with enhanced UX
+  - Spanning events display as seamless containers across multiple days
+  - Interactive "+more" indicators with detailed event popovers
+  - Sticky headers and custom scrollbars for optimal navigation
+  - Department group filtering and event type filtering
+
+#### 🔧 **Technical Architecture Improvements**
+
+- ✅ **Database Schema Optimization**: Clean, performance-focused data structure
+  - Removed legacy `date` column, standardized on `start_date`/`end_date`
+  - Proper foreign key cascade rules for data integrity
+  - Optimized indexes for date range queries and user lookups
+  - Consolidated migrations following `2025_01_01_000X` naming convention
+
+- ✅ **Performance Optimization**: Eliminated N+1 queries and improved scalability
+  - Pre-grouped schedule data with `schedulesGroupedByUserAndDay` computed property
+  - Replaced per-cell filtering with efficient data structure lookup
+  - Optimized client user filtering with direct organization relationships
+  - Strategic eager loading for user, department, and event type relationships
+
+- ✅ **Authorization Enhancement**: Comprehensive policy-based security system
+  - `SchedulePolicy` and `ScheduleEventTypePolicy` with granular permissions
+  - Gates for module access control (`access-schedule-module`, `manage-schedules`)
+  - Role-based viewing restrictions (Clients see only their organization, Agents see department-level)
+  - Method-level authorization using Laravel's `authorize()` helper
+
+#### 🎨 **User Experience Enhancements**
+
+- ✅ **Interactive Calendar Elements**: Rich, responsive user interactions
+  - Edit/delete actions appear on hover with smooth transitions
+  - Confirmation dialogs for destructive operations
+  - Alpine.js powered popovers with event details and date ranges
+  - Visual feedback for all user actions with loading states
+
+- ✅ **Advanced Event Visualization**: Professional calendar appearance
+  - Multi-day events span seamlessly across date ranges instead of separate cells
+  - Event type dropdown with color preview and code display
+  - Enhanced tooltips showing event type, date range, and custom remarks
+  - Responsive design adapting to different screen sizes
+
+- ✅ **Robust Form Handling**: Comprehensive event creation and editing
+  - Date range picker with start/end date validation
+  - User selection dropdown with department information
+  - Event type selection with visual color coding
+  - Real-time form validation with detailed error messages
+
+#### 📊 **Data Management & Consistency**
+
+- ✅ **Schedule Event Types**: Comprehensive event categorization system
+  - 18 predefined event types with unique codes and colors
+  - Configurable through admin settings interface
+  - Proper seeding with default "SO" (Office Support) event type
+  - Color management with Tailwind CSS class support
+
+- ✅ **Business Logic Enforcement**: Robust validation and constraint handling
+  - One event per user per time period validation
+  - Overlap detection with comprehensive date range checking
+  - Required field validation with user-friendly error messages
+  - Consistent data integrity across all operations
+
+#### 🛠️ **Developer Experience**
+
+- ✅ **Clean Architecture**: Well-organized, maintainable codebase
+  - Separate policy classes for authorization logic
+  - Service provider registration for policies and gates
+  - Consistent method naming and parameter handling
+  - Comprehensive error handling with logging
+
+- ✅ **Migration Management**: Streamlined database versioning
+  - All migrations follow consistent `2025_01_01_000X` naming
+  - Consolidated schedule-related migrations for clean deployment
+  - Proper up/down migration methods with rollback support
+  - Foreign key constraints with cascade delete rules
+
+### 🚀 **v2.1.0 - Organization Management Overhaul & Performance Optimization** (Previous)
 
 #### 🎯 **Major Features**
 
