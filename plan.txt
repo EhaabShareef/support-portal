@@ -13,7 +13,7 @@ The tasks are:
 
 2. **Create department groups and departments** according to the following structure:
 
-   * `Admin`: Super Admin, Finance, Human Resource, Project Manage, Sales
+   * `Admin`: admin, Finance, Human Resource, Project Manage, Sales
    * `PMS`: Opera, Opera Cloud, Vision, R\&A, OXI, Technical
    * `POS`: Simphny, Simphony Cloud, RES 3700, RES 9700, R\&A
    * `MC`: Materials Control, Reporting
@@ -30,7 +30,7 @@ The tasks are:
      * `admin` for Admin and Email groups
      * `support` for all others
 
-4. **Ensure Super Admin user** (e.g., `superadmin@hospitalitytechnology.com.mv`) is seeded and assigned:
+4. **Ensure admin user** (e.g., `superadmin@hospitalitytechnology.com.mv`) is seeded and assigned:
 
    * Role: `admin`
    * **All available permissions** (full CRUD access on all modules)

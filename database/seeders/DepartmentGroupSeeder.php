@@ -21,7 +21,7 @@ class DepartmentGroupSeeder extends Seeder
         $departmentGroups = [
             [
                 'name' => 'Admin',
-                'description' => 'Administrative group including Super Admin, Finance, HR, Project Management, and Sales',
+                'description' => 'Administrative group including Admin, Finance, HR, Project Management, and Sales',
                 'color' => '#3b82f6', // blue
                 'is_active' => true,
                 'sort_order' => 1,

@@ -75,12 +75,10 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-8 w-8">
-                                        <div class="h-8 w-8 rounded-full {{ $role->name === 'Super Admin' ? 'bg-red-100 text-red-600' : ($role->name === 'Admin' ? 'bg-blue-100 text-blue-600' : ($role->name === 'Agent' ? 'bg-green-100 text-green-600' : 'bg-neutral-100 text-neutral-600')) }} flex items-center justify-center">
-                                            @if($role->name === 'Super Admin')
-                                                <x-heroicon-o-shield-exclamation class="h-4 w-4" />
-                                            @elseif($role->name === 'Admin')
+                                        <div class="h-8 w-8 rounded-full {{ $role->name === 'admin' ? 'bg-blue-100 text-blue-600' : ($role->name === 'support' ? 'bg-green-100 text-green-600' : 'bg-neutral-100 text-neutral-600') }} flex items-center justify-center">
+                                            @if($role->name === 'admin')
                                                 <x-heroicon-o-cog-6-tooth class="h-4 w-4" />
-                                            @elseif($role->name === 'Agent')
+                                            @elseif($role->name === 'support')
                                                 <x-heroicon-o-user-group class="h-4 w-4" />
                                             @else
                                                 <x-heroicon-o-user class="h-4 w-4" />
@@ -89,7 +87,7 @@
                                     </div>
                                     <div class="ml-4">
                                         <div class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ $role->name }}</div>
-                                        @if(in_array($role->name, ['Super Admin', 'Admin', 'Agent', 'Client']))
+                                        @if(in_array($role->name, ['admin', 'support', 'client']))
                                             <span class="text-xs text-neutral-500 dark:text-neutral-400">System Role</span>
                                         @endif
                                     </div>
@@ -116,7 +114,7 @@
                                         class="text-sky-600 hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-300 transition-colors">
                                         <x-heroicon-o-pencil class="h-4 w-4" />
                                     </button>
-                                    @if(!in_array($role->name, ['Super Admin', 'Admin', 'Agent', 'Client']))
+                                    @if(!in_array($role->name, ['admin', 'support', 'client']))
                                         <button wire:click="confirmDelete({{ $role->id }})" 
                                             class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors">
                                             <x-heroicon-o-trash class="h-4 w-4" />
@@ -172,7 +170,7 @@
                                                 <label for="name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Role Name</label>
                                                 <input wire:model="form.name" type="text" id="name" 
                                                     class="mt-1 block w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:focus:ring-sky-400 dark:focus:border-sky-400"
-                                                    {{ $editMode && $form['name'] === 'Super Admin' ? 'disabled' : '' }}>
+                                                    {{ $editMode && $form['name'] === 'admin' ? 'disabled' : '' }}>
                                                 @error('form.name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                             </div>
 
@@ -196,7 +194,7 @@
                                         </div>
 
                                         {{-- Permission Grid --}}
-                                        @if($editMode && $form['name'] !== 'Super Admin')
+                                        @if($editMode && $form['name'] !== 'admin')
                                             <div>
                                                 <h4 class="text-md font-medium text-neutral-900 dark:text-neutral-100 mb-4">Permissions</h4>
                                                 <div class="bg-neutral-50 dark:bg-neutral-700 rounded-lg p-4 max-h-96 overflow-y-auto">

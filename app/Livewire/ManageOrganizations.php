@@ -36,7 +36,7 @@ class ManageOrganizations extends Component
     public function mount()
     {
         // Check permissions
-        if (!auth()->user()->can('organizations.view')) {
+        if (!auth()->user()->can('organizations.read')) {
             abort(403, 'You do not have permission to view organizations.');
         }
     }
@@ -50,7 +50,7 @@ class ManageOrganizations extends Component
     #[Computed]
     public function canEdit()
     {
-        return auth()->user()->hasRole('admin') || auth()->user()->can('organizations.edit');
+        return auth()->user()->hasRole('admin') || auth()->user()->can('organizations.update');
     }
 
     #[Computed]

@@ -192,12 +192,7 @@ return [
     */
 
     'role_templates' => [
-        'Super Admin' => [
-            'description' => 'Full system access with all permissions',
-            'permissions' => '*', // All permissions
-        ],
-        
-        'Admin' => [
+        'admin' => [
             'description' => 'Administrative access to manage users, organizations, and all modules',
             'permissions' => [
                 'users.*',
@@ -217,8 +212,8 @@ return [
             ],
         ],
         
-        'Agent' => [
-            'description' => 'Support agent with department-based access to tickets and schedules',
+        'support' => [
+            'description' => 'Support staff with department-based access to tickets and schedules',
             'permissions' => [
                 'users.read',
                 'organizations.read',
@@ -235,7 +230,7 @@ return [
             ],
         ],
         
-        'Client' => [
+        'client' => [
             'description' => 'Client user with basic access to create tickets and view articles',
             'permissions' => [
                 'organizations.read',

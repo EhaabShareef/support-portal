@@ -30,9 +30,9 @@ class ScheduleCalendar extends Component
 
     public function mount()
     {
-        // Check permissions - Super Admin, Admin, Agent, and Client can access
+        // Check permissions - admin and client can access
         $user = auth()->user();
-        if (!$user->hasAnyRole(['Super Admin', 'Admin', 'Agent', 'Client'])) {
+        if (!$user->hasAnyRole(['admin', 'client'])) {
             abort(403, 'You do not have permission to access the schedule module.');
         }
 
@@ -93,11 +93,11 @@ class ScheduleCalendar extends Component
         $query = User::query()
             ->with(['department:id,name,department_group_id', 'department.departmentGroup:id,name'])
             ->whereHas('roles', function ($q) {
-                $q->whereIn('name', ['Super Admin', 'Admin', 'Agent']);
+                $q->whereIn('name', ['admin', 'support']);
             });
 
         // Apply role-based filtering
-        if ($user->hasRole('Client')) {
+        if ($user->hasRole('client')) {
             // Clients can only see users from their organization's departments
             $query->whereHas('department', function ($q) use ($user) {
                 $q->whereHas('tickets', function ($ticketQ) use ($user) {
@@ -131,7 +131,7 @@ class ScheduleCalendar extends Component
         ])->overlapsMonth($year, $month);
 
         // Apply role-based filtering
-        if ($user->hasRole('Client')) {
+        if ($user->hasRole('client')) {
             // Improved client filtering using direct organization relationship
             $query->whereHas('user', function ($q) use ($user) {
                 $q->where('organization_id', $user->organization_id);
@@ -178,7 +178,7 @@ class ScheduleCalendar extends Component
     {
         return User::with(['department:id,name'])
             ->whereHas('roles', function ($q) {
-                $q->whereIn('name', ['Super Admin', 'Admin', 'Agent']);
+                $q->whereIn('name', ['admin', 'support']);
             })->orderBy('name')->get();
     }
 

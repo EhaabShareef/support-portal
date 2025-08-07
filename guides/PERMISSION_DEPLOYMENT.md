@@ -147,10 +147,10 @@ When adding new modules or permissions, update `config/modules.php`:
    ```
 
 2. **Test critical user flows:**
-   - Super Admin: All access
-   - Admin: Management functions
-   - Agent: Department-limited access
-   - Client: Basic access only
+   - admin: All access
+   - admin: Management functions
+   - support: Department-limited access
+   - client: Basic access only
 
 3. **Verify database integrity:**
    ```sql
@@ -231,10 +231,10 @@ When adding new modules or permissions, update `config/modules.php`:
 
 2. **If users lose access:**
    ```bash
-   # Manually assign Super Admin role
+   # Manually assign admin role
    php artisan tinker
    >>> $user = App\Models\User::find(1);
-   >>> $user->assignRole('Super Admin');
+   >>> $user->assignRole('admin');
    ```
 
 3. **If seeder fails mid-process:**

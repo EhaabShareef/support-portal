@@ -73,8 +73,8 @@ Responsibilities:
 - Filters update the calendar reactively through Livewire.
 
 ## 5. Permissions
-- Only users with the **Admin** role may create, update or delete schedules or event types.
-- Agents and Clients can view their own schedules but not others.
+- Only users with the **admin** role may create, update or delete schedules or event types.
+- support and client can view their own schedules but not others.
 - Apply checks in Livewire `mount()` methods and on mutating actions.
 
 ## 6. Managing Event Types

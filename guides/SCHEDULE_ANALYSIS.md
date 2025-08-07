@@ -9,7 +9,7 @@
 - `ScheduleEventType` model manages color parsing (Tailwind class vs hex) and provides ordered active scope plus option helpers.
 
 ### Application Logic
-- `ScheduleCalendar` Livewire component renders the monthly calendar, applies department group and event type filters, and verifies role-based access for Admins, Super Admins and Clients.
+- `ScheduleCalendar` Livewire component renders the monthly calendar, applies department group and event type filters, and verifies role-based access for admin and client.
 - Overlap prevention and schedule creation/updating handled in `saveScheduleEvent()`.
 - `ManageSettings` component manages CRUD for schedule event types.
 

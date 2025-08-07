@@ -141,7 +141,7 @@ class PermissionService
      */
     public static function canAccessAdmin(): bool
     {
-        return self::hasAnyRole(['Super Admin', 'Admin']);
+        return self::hasRole('admin');
     }
 
     /**
@@ -149,7 +149,7 @@ class PermissionService
      */
     public static function isSuperAdmin(): bool
     {
-        return self::hasRole('Super Admin');
+        return self::hasRole('admin');
     }
 
     /**

@@ -139,14 +139,14 @@ If you must migrate existing data:
 php artisan migrate:fresh --seed
 
 # Test login credentials (all password: "password")
-# Admin: admin@company.com
-# IT Agent: itsupport@company.com  
-# Client: client@company.com
+# admin: admin@company.com
+# IT support: itsupport@company.com  
+# client: client@company.com
 
 # Verify role assignments
 php artisan tinker
 >>> User::find(1)->isAdmin()  // Should return true
->>> User::find(2)->hasRole('Agent')  // Should return true
+>>> User::find(2)->hasRole('support')  // Should return true
 ```
 
 ## Database Schema Overview

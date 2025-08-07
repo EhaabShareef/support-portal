@@ -64,7 +64,7 @@ class ManageRoles extends Component
     public function mount()
     {
         // Check permission
-        if (!auth()->user()->can('users.edit') && !auth()->user()->hasRole('admin')) {
+        if (!auth()->user()->can('users.update') && !auth()->user()->hasRole('admin')) {
             abort(403, 'You do not have permission to manage roles.');
         }
     }

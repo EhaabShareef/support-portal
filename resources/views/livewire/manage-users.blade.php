@@ -42,7 +42,7 @@
                     <li>• Only <strong>Client users</strong> can be managed from this interface</li>
                     <li>• All users created here will automatically belong to <strong>{{ $organization->name }}</strong></li>
                     <li>• Users will be assigned the <strong>Client</strong> role automatically</li>
-                    <li>• System users (Admin, Agent, Super Admin) are managed separately</li>
+                    <li>• System users (admin, support) are managed separately</li>
                 </ul>
             </div>
         </div>

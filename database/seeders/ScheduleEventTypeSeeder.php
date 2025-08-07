@@ -16,11 +16,11 @@ class ScheduleEventTypeSeeder extends Seeder
     {
         // Get first admin user for created_by
         $admin = User::whereHas('roles', function ($q) {
-            $q->where('name', 'Super Admin');
+            $q->where('name', 'admin');
         })->first();
 
         if (!$admin) {
-            $this->command->error('No Super Admin user found. Please create an admin user first.');
+            $this->command->error('No admin user found. Please create an admin user first.');
             return;
         }
 

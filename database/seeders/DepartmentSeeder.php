@@ -31,8 +31,8 @@ class DepartmentSeeder extends Seeder
         $departments = [
             // Admin Group
             [
-                'name' => 'Super Admin',
-                'description' => 'System Super Administration',
+                'name' => 'Admin',
+                'description' => 'System Administration',
                 'department_group_id' => $adminGroup->id,
                 'email' => 'superadmin@hospitalitytechnology.com.mv',
                 'is_active' => true,

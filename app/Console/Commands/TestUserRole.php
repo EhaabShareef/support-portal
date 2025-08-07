@@ -39,8 +39,8 @@ class TestUserRole extends Command
         $this->line("hasRole('Admin'): " . ($hasAdminRoleCapital ? 'YES' : 'NO'));
         
         // Check permissions
-        $hasAdminAccess = $user->can('admin.access');
-        $this->line("can('admin.access'): " . ($hasAdminAccess ? 'YES' : 'NO'));
+        $hasAdminAccess = $user->can('dashboard.access');
+        $this->line("can('dashboard.access'): " . ($hasAdminAccess ? 'YES' : 'NO'));
         
         // Test the @role blade directive logic
         $roleNames = $user->roles->pluck('name')->toArray();

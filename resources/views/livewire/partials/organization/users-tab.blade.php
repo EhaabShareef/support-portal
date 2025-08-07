@@ -32,7 +32,7 @@
                 <ul class="text-blue-700 dark:text-blue-300 space-y-1 text-xs">
                     <li>• Only <strong>Client users</strong> can be created, edited, or deleted from this interface</li>
                     <li>• All users created here will automatically belong to <strong>{{ $organization->name }}</strong></li>
-                    <li>• System users (Admin, Agent, Super Admin) are managed separately and are displayed for reference only</li>
+                    <li>• System users (admin, support) are managed separately and are displayed for reference only</li>
                     <li>• Users with existing tickets cannot be deleted until tickets are resolved or reassigned</li>
                 </ul>
             </div>
@@ -87,7 +87,7 @@
                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium {{ $user->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' }}">
                                 {{ $user->is_active ? 'Active' : 'Inactive' }}
                             </span>
-                            @can('users.view')
+                            @can('users.read')
                             <button class="inline-flex items-center p-1.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded transition-colors duration-200">
                                 <x-heroicon-o-eye class="h-3 w-3" />
                             </button>

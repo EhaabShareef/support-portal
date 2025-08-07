@@ -30,15 +30,15 @@ class AuthServiceProvider extends ServiceProvider
 
         // Define additional gates if needed
         Gate::define('access-schedule-module', function ($user) {
-            return $user->hasAnyRole(['Super Admin', 'Admin', 'Client']);
+            return $user->hasAnyRole(['admin', 'client']);
         });
 
         Gate::define('manage-schedules', function ($user) {
-            return $user->hasAnyRole(['Super Admin', 'Admin']);
+            return $user->hasRole('admin');
         });
 
         Gate::define('manage-schedule-event-types', function ($user) {
-            return $user->hasAnyRole(['Super Admin', 'Admin']);
+            return $user->hasRole('admin');
         });
     }
 }

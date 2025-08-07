@@ -35,10 +35,9 @@ class BasicDataSeeder extends Seeder
     {
         // Get existing roles (these should already be created by RolePermissionSeeder)
         return [
-            'super_admin' => Role::where('name', 'Super Admin')->firstOrFail(),
-            'admin' => Role::where('name', 'Admin')->firstOrFail(),
-            'agent' => Role::where('name', 'Agent')->firstOrFail(),
-            'client' => Role::where('name', 'Client')->firstOrFail(),
+            'admin' => Role::where('name', 'admin')->firstOrFail(),
+            'support' => Role::where('name', 'support')->firstOrFail(),
+            'client' => Role::where('name', 'client')->firstOrFail(),
         ];
     }
 

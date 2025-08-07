@@ -33,7 +33,7 @@
                 </button>
 
                 {{-- Create Schedule Event Button (Admin only) --}}
-                @if(auth()->user()->hasAnyRole(['Super Admin', 'Admin']))
+                @if(auth()->user()->hasRole('admin'))
                 <button wire:click="createScheduleEvent" 
                         type="button"
                         class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-all duration-200 ml-2">

@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('✅ Database rebuild completed successfully!');
         $this->command->info('');
         $this->command->info('🔑 Default login credentials:');
-        $this->command->info('📧 Super Admin: superadmin@hospitalitytechnology.com.mv / password');
+        $this->command->info('📧 Admin: superadmin@hospitalitytechnology.com.mv / password');
         $this->command->info('📧 Admin Manager: admin@hospitalitytechnology.com.mv / password');
         $this->command->info('📧 PMS Manager: pms@hospitalitytechnology.com.mv / password');
         $this->command->info('📧 POS Manager: pos@hospitalitytechnology.com.mv / password');

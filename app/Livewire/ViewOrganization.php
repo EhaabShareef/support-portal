@@ -31,7 +31,7 @@ class ViewOrganization extends Component
     {
         // Check permissions
         $user = auth()->user();
-        if (! $user->can('organizations.view')) {
+        if (! $user->can('organizations.read')) {
             abort(403, 'You do not have permission to view organizations.');
         }
 
@@ -54,7 +54,7 @@ class ViewOrganization extends Component
     public function canEdit()
     {
         $user = auth()->user();
-        if ($user->hasRole('admin') || $user->can('organizations.edit')) {
+        if ($user->hasRole('admin') || $user->can('organizations.update')) {
             return true;
         }
 
@@ -159,7 +159,7 @@ class ViewOrganization extends Component
 
     public function toggleActive()
     {
-        if (! auth()->user()->hasRole('admin') && ! auth()->user()->can('organizations.edit')) {
+        if (! auth()->user()->hasRole('admin') && ! auth()->user()->can('organizations.update')) {
             session()->flash('error', 'You do not have permission to change organization status.');
 
             return;

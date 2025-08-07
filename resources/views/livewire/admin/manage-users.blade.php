@@ -123,10 +123,9 @@
                                 @php
                                     $role = $user->roles->first();
                                     $roleColors = [
-                                        'Super Admin' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                                        'Admin' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
-                                        'Agent' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                                        'Client' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                                        'admin' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+                                        'support' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                                        'client' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
                                     ];
                                 @endphp
                                 @if($role)
@@ -312,8 +311,8 @@
                                     @error('form.role') <p class="form-error">{{ $message }}</p> @enderror
                                 </div>
 
-                                {{-- Department (for Agents) --}}
-                                @if($form['role'] === 'Agent')
+                                {{-- Department (for Support) --}}
+                                @if($form['role'] === 'support')
                                     <div>
                                         <label class="form-label">Department</label>
                                         <select wire:model="form.department_id" class="form-select">
@@ -327,7 +326,7 @@
                                 @endif
 
                                 {{-- Organization (for Clients) --}}
-                                @if($form['role'] === 'Client')
+                                @if($form['role'] === 'client')
                                     <div>
                                         <label class="form-label">Organization</label>
                                         <select wire:model="form.organization_id" class="form-select">

@@ -11,7 +11,7 @@ This system implements comprehensive user and role management with role-based ac
 - **Data Access**: Can view and manage all users, tickets, organizations
 - **Department/Organization**: Not tied to specific department or organization
 
-### 2. **Agent**
+### 2. **support**
 - **Purpose**: Support agents managing tickets within their departments
 - **Permissions**: Can view and update tickets, view organizations
 - **Data Access**: Limited to tickets within their assigned department
@@ -74,19 +74,19 @@ routes/
 ## Permissions Structure
 
 ### Ticket Permissions
-- `tickets.view` - View tickets
+- `tickets.read` - View tickets
 - `tickets.create` - Create new tickets
 - `tickets.update` - Update existing tickets
 - `tickets.delete` - Delete tickets
 
 ### User Management Permissions
-- `users.view` - View users
+- `users.read` - View users
 - `users.create` - Create new users
 - `users.update` - Update existing users
 - `users.delete` - Delete users
 
 ### Organization Permissions
-- `organizations.view` - View organizations
+- `organizations.read` - View organizations
 - `organizations.create` - Create organizations
 - `organizations.update` - Update organizations
 - `organizations.delete` - Delete organizations
@@ -105,8 +105,8 @@ routes/
 1. Click "Add User" button
 2. Fill in required information
 3. Select appropriate role (Admin/Agent/Client)
-4. For Agents: Must select a department
-5. For Clients: Must select an organization
+4. For support: Must select a department
+5. For client: Must select an organization
 6. Set password and activation status
 
 ### Data Access Patterns
@@ -119,7 +119,7 @@ User::all();
 Organization::all();
 ```
 
-#### Agent Users
+#### support Users
 ```php
 // Automatically filtered to their department
 Ticket::where('dept_id', auth()->user()->department_id);
@@ -139,9 +139,9 @@ Ticket::where('org_id', auth()->user()->organization_id);
 - `organization_id` - FK to organizations (for Clients)
 
 ### Role Assignment Logic
-- **Admin**: `department_id = null`, `organization_id = null`
-- **Agent**: `department_id = required`, `organization_id = null`
-- **Client**: `department_id = null`, `organization_id = required`
+- **admin**: `department_id = null`, `organization_id = null`
+- **support**: `department_id = required`, `organization_id = null`
+- **client**: `department_id = null`, `organization_id = required`
 
 ## Next Steps for Enhancement
 
@@ -156,7 +156,7 @@ Ticket::where('org_id', auth()->user()->organization_id);
 ## Security Considerations
 
 - All routes are protected by authentication middleware
-- Admin routes require `Admin` role
+- Admin routes require `admin` role
 - Passwords are automatically hashed
 - Form inputs are validated and sanitized
 - Authorization policies prevent unauthorized access

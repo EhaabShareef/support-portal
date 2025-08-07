@@ -56,7 +56,7 @@ class ViewTicket extends Component
     {
         // Check permissions
         $user = auth()->user();
-        if (! $user->can('tickets.view')) {
+        if (! $user->can('tickets.read')) {
             abort(403, 'You do not have permission to view tickets.');
         }
 
@@ -129,7 +129,7 @@ class ViewTicket extends Component
     {
         $user = auth()->user();
 
-        return $user->hasRole('admin') || $user->can('tickets.edit');
+        return $user->hasRole('admin') || $user->can('tickets.update');
     }
 
     #[Computed]

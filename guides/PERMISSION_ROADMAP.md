@@ -34,7 +34,7 @@ Located under a route such as `/admin/roles` using the existing Livewire compone
 
 1. **Create Roles**
    - Provide a simple form for role name, description, and guard (pre‑filled as `web`).
-   - Validate uniqueness and prevent editing of system roles like `Super Admin`.
+   - Validate uniqueness and prevent editing of system roles like `admin`.
 
 2. **Define Permissions per Role (CRUD grid)**
    - Generate permissions automatically from the modules list.

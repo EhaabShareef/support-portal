@@ -43,7 +43,7 @@
                 </a>
 
                 {{-- Schedule (Admin and Client only) --}}
-                @if(auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Client']))
+                @if(auth()->user()->hasAnyRole(['admin', 'client']))
                 <a href="{{ route('schedule.index') }}"
                    class="nav-link {{ request()->routeIs('schedule.*') ? 'nav-link-active' : '' }}">
                     <x-heroicon-o-calendar-days class="h-4 w-4" />
@@ -190,7 +190,7 @@
                 </a>
 
                 {{-- Mobile Schedule (Admin and Client only) --}}
-                @if(auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Client']))
+                @if(auth()->user()->hasAnyRole(['admin', 'client']))
                 <a href="{{ route('schedule.index') }}"
                    class="mobile-nav-link {{ request()->routeIs('schedule.*') ? 'mobile-nav-link-active' : '' }}"
                    @click="mobileMenuOpen = false">

@@ -69,7 +69,7 @@ The Support Portal implements a comprehensive RBAC system using **Spatie Laravel
 - **Single Role**: Each user has exactly one role for clarity and simplicity  
 - **Module-Based**: Permissions are organized by application modules (Users, Tickets, Organizations, etc.)
 - **CRUD Operations**: Standard Create, Read, Update, Delete permissions per module
-- **Department Isolation**: Agents are restricted to their assigned department
+- **Department Isolation**: Support staff are restricted to their assigned department
 
 ### 👥 **Default Roles**
 
@@ -107,7 +107,7 @@ The system organizes permissions into the following modules:
 
 ### 🔒 **Access Control Features**
 
-- **Department Isolation**: Agents can only access tickets from their assigned department
+- **Department Isolation**: Support staff can only access tickets from their assigned department
 - **Organization Isolation**: Clients can only access tickets from their organization
 - **Automatic Role Assignment**: New users automatically receive "Client" role by default
 - **Permission Inheritance**: Users inherit all permissions from their assigned role
@@ -124,7 +124,7 @@ The system organizes permissions into the following modules:
 ### 🛠️ **Developer Notes**
 
 - Permissions are checked using Spatie's `can()` method: `auth()->user()->can('tickets.create')`
-- Role checks use: `auth()->user()->hasRole('Agent')`
+- Role checks use: `auth()->user()->hasRole('support')`
 - Department restrictions are enforced in Livewire components and policies
 - All RBAC logic follows Laravel best practices and integrates seamlessly with the framework
 
@@ -135,7 +135,7 @@ The system organizes permissions into the following modules:
 The system is organized into 7 department groups with 22 total departments:
 
 #### **Admin Group** (Admin role)
-- Super Admin
+- Admin
 - Finance  
 - Human Resource
 - Project Manage
@@ -174,7 +174,7 @@ The system is organized into 7 department groups with 22 total departments:
 
 Each department group has a default manager user:
 
-- **Super Admin**: `superadmin@hospitalitytechnology.com.mv` (admin role)
+- **Admin**: `superadmin@hospitalitytechnology.com.mv` (admin role)
 - **Admin Manager**: `admin@hospitalitytechnology.com.mv` (admin role)
 - **PMS Manager**: `pms@hospitalitytechnology.com.mv` (support role)
 - **POS Manager**: `pos@hospitalitytechnology.com.mv` (support role)
@@ -200,7 +200,7 @@ Each department group has a default manager user:
 - ✅ **Streamlined Role System**: Simplified from 4 roles to 2 focused roles
   - **admin**: Full system access (50 permissions)
   - **support**: Limited access (36 permissions) - configurable via admin interface
-  - Eliminates confusion between Super Admin/Admin and Agent/Client roles
+  - Eliminates confusion between old role names and new standardized roles
 
 - ✅ **Professional Email Structure**: Standardized email format
   - Format: `groupname@hospitalitytechnology.com.mv`
@@ -241,7 +241,7 @@ Each department group has a default manager user:
 - ✅ **Role Assignment Logic**: 
   - Admin and Email groups get admin role (full system access)
   - All technical groups (PMS, POS, MC, BO, Hardware) get support role
-  - Super Admin user separate from department structure
+  - Admin user separate from department structure
   - Clear separation of administrative vs operational responsibilities
 
 #### 🎯 **Deployment & Maintenance**
@@ -290,7 +290,7 @@ Each department group has a default manager user:
 - ✅ **Authorization Enhancement**: Comprehensive policy-based security system
   - `SchedulePolicy` and `ScheduleEventTypePolicy` with granular permissions
   - Gates for module access control (`access-schedule-module`, `manage-schedules`)
-  - Role-based viewing restrictions (Clients see only their organization, Agents see department-level)
+  - Role-based viewing restrictions (Clients see only their organization, Support see department-level)
   - Method-level authorization using Laravel's `authorize()` helper
 
 #### 🎨 **User Experience Enhancements**
@@ -430,7 +430,7 @@ Each department group has a default manager user:
 - ✅ **Comprehensive Permission System**: 30+ granular permissions across 11 application modules
 - ✅ **Default Client Role Assignment**: New users automatically receive Client role with appropriate permissions
 - ✅ **Enhanced User Views**: ViewUser component now displays inherited permissions through roles
-- ✅ **Strengthened Department Access Control**: Agents strictly limited to their department's tickets
+- ✅ **Strengthened Department Access Control**: Support staff strictly limited to their department's tickets
 - ✅ **Updated Navigation**: Separate "Users" and "Roles" menu items for better organization
 - ✅ **Role Descriptions**: Detailed descriptions for each role explaining their purpose and scope
 - ✅ **Database Schema Updates**: Added description column to roles table with proper migrations

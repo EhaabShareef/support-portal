@@ -58,15 +58,15 @@ Clients cannot pick a department (empty collection) and the `save()` method trus
 
 ---
 
-### 2.2 Agent access limited to single department
+### 2.2 support access limited to single department
 **Files**: `app/Livewire/ManageTickets.php`, `app/Livewire/ViewTicket.php`
 
-Agents only see tickets where `department_id` equals their own, ignoring department‑group assignments【F:app/Livewire/ManageTickets.php†L174-L201】【F:app/Livewire/ViewTicket.php†L62-L68】.
+support only see tickets where `department_id` equals their own, ignoring department‑group assignments【F:app/Livewire/ManageTickets.php†L174-L201】【F:app/Livewire/ViewTicket.php†L62-L68】.
 
 **Steps**:
 1. Extend filtering in both components to allow agents whose department group matches the ticket’s department group.
 2. Add computed property on `User` for `department_group_id` and utilize it in queries.
-3. Write feature tests ensuring agents with group membership can access tickets in any department within that group.
+3. Write feature tests ensuring support with group membership can access tickets in any department within that group.
 
 ---
 
