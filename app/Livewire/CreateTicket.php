@@ -33,7 +33,7 @@ class CreateTicket extends Component
             'form.type'      => TicketType::validationRule(),
             'form.organization_id' => 'required|exists:organizations,id',
             // Clients cannot select client, Admins/Agents can select on behalf of clients
-            'form.client_id' => $user->hasRole('Client') ? 'nullable' : 'required|exists:users,id',
+            'form.client_id' => $user->hasRole('client') ? 'nullable' : 'required|exists:users,id',
             'form.department_id' => 'required|exists:departments,id',
             'form.priority'  => TicketPriority::validationRule(),
             'form.assigned_to' => 'nullable|exists:users,id',
@@ -64,12 +64,12 @@ class CreateTicket extends Component
             $validated['status'] = 'open';
             
             // For clients, force their organization and set them as the client
-            if ($user->hasRole('Client')) {
+            if ($user->hasRole('client')) {
                 $validated['organization_id'] = $user->organization_id;
                 $validated['client_id'] = $user->id;
             }
             // For Admins/Agents, validate client selection
-            elseif (!$user->hasRole('Client') && empty($validated['client_id'])) {
+            elseif (!$user->hasRole('client') && empty($validated['client_id'])) {
                 $this->addError('form.client_id', 'Please select a client for this ticket.');
                 return;
             }
@@ -111,9 +111,9 @@ class CreateTicket extends Component
         
         // Get available clients for Admin/Agent ticket creation
         $clients = collect();
-        if ($user->hasRole('Admin') || $user->hasRole('Super Admin') || $user->hasRole('Agent')) {
+        if ($user->hasRole('admin') || $user->hasRole('support')) {
             $clients = User::whereHas('roles', function ($q) {
-                $q->where('name', 'Client');
+                $q->where('name', 'client');
             })->orderBy('name')->get();
         }
         

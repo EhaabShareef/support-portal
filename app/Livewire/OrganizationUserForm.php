@@ -81,8 +81,8 @@ class OrganizationUserForm extends Component
     {
         $this->user = User::findOrFail($userId);
         
-        // Only allow editing Client users from this organization
-        if (!$this->user->hasRole('Client') || $this->user->organization_id !== $this->organization->id) {
+        // Only allow editing client users from this organization
+        if (!$this->user->hasRole('client') || $this->user->organization_id !== $this->organization->id) {
             session()->flash('error', 'You can only edit client users belonging to this organization.');
             return;
         }
@@ -154,8 +154,8 @@ class OrganizationUserForm extends Component
         }
 
         if ($this->isEditing && $this->user) {
-            // Only allow editing Client users from this organization
-            if (!$this->user->hasRole('Client') || $this->user->organization_id !== $this->organization->id) {
+            // Only allow editing client users from this organization
+            if (!$this->user->hasRole('client') || $this->user->organization_id !== $this->organization->id) {
                 $this->addError('form.name', 'You can only edit client users belonging to this organization.');
                 return;
             }
@@ -167,9 +167,9 @@ class OrganizationUserForm extends Component
             $data['uuid'] = Str::uuid();
             $user = User::create($data);
             
-            // Ensure user has Client role (User model boot method should handle this, but let's be explicit)
-            $clientRole = Role::where('name', 'Client')->first();
-            if ($clientRole && !$user->hasRole('Client')) {
+            // Ensure user has client role (User model boot method should handle this, but let's be explicit)
+            $clientRole = Role::where('name', 'client')->first();
+            if ($clientRole && !$user->hasRole('client')) {
                 $user->assignRole($clientRole);
             }
             

@@ -49,12 +49,12 @@ class ManageUsers extends Component
     {
         // Check permissions
         $user = auth()->user();
-        if (!$user->can('users.manage') && !$user->hasRole(['Admin', 'Super Admin'])) {
+        if (!$user->can('users.manage') && !$user->hasRole('admin')) {
             abort(403, 'You do not have permission to manage users.');
         }
 
         // Clients can only manage users in their own organization
-        if ($user->hasRole('Client') && $organization->id !== $user->organization_id) {
+        if ($user->hasRole('client') && $organization->id !== $user->organization_id) {
             abort(403, 'You can only manage users in your own organization.');
         }
 
@@ -65,7 +65,7 @@ class ManageUsers extends Component
     {
         $users = User::where('organization_id', $this->organization->id)
             ->whereHas('roles', function ($query) {
-                $query->where('name', 'Client');
+                $query->where('name', 'client');
             })
             ->with('roles')
             ->latest()
@@ -96,8 +96,8 @@ class ManageUsers extends Component
     {
         $this->editingUser = User::findOrFail($id);
 
-        // Only allow editing Client users from this organization
-        if (!$this->editingUser->hasRole('Client') || $this->editingUser->organization_id !== $this->organization->id) {
+        // Only allow editing client users from this organization
+        if (!$this->editingUser->hasRole('client') || $this->editingUser->organization_id !== $this->organization->id) {
             session()->flash('error', 'You can only edit client users belonging to this organization.');
             return;
         }
@@ -153,7 +153,7 @@ class ManageUsers extends Component
             $message = 'User updated successfully.';
         } else {
             $user = User::create($data);
-            $user->assignRole('Client'); // Assign Client role
+            $user->assignRole('client'); // Assign client role
             $message = 'User created successfully.';
         }
 
@@ -166,7 +166,7 @@ class ManageUsers extends Component
         $user = User::findOrFail($id);
         
         // Only allow deletion of Client users from this organization
-        if (!$user->hasRole('Client') || $user->organization_id !== $this->organization->id) {
+        if (!$user->hasRole('client') || $user->organization_id !== $this->organization->id) {
             session()->flash('error', 'You can only delete client users belonging to this organization.');
             return;
         }
@@ -179,7 +179,7 @@ class ManageUsers extends Component
         $user = User::findOrFail($this->deleteId);
         
         // Only allow deletion of Client users from this organization
-        if (!$user->hasRole('Client') || $user->organization_id !== $this->organization->id) {
+        if (!$user->hasRole('client') || $user->organization_id !== $this->organization->id) {
             session()->flash('error', 'You can only delete client users belonging to this organization.');
             $this->reset('deleteId');
             return;

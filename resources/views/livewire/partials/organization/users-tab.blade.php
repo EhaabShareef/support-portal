@@ -6,7 +6,7 @@
             <p class="text-sm text-neutral-600 dark:text-neutral-400">Overview of client users for this organization</p>
         </div>
         
-        @if($organization->users->filter(fn($user) => $user->hasRole('Client'))->count() > 0)
+        @if($organization->users->filter(fn($user) => $user->hasRole('client'))->count() > 0)
             <a href="{{ route('users.manage', $organization) }}" 
                class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
                 <x-heroicon-o-users class="h-4 w-4 mr-2" />
@@ -60,7 +60,7 @@
                                     <h4 class="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
                                         {{ $user->name }}
                                     </h4>
-                                    @if($user->hasRole('Client'))
+                                    @if($user->hasRole('client'))
                                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300">
                                             Client
                                         </span>

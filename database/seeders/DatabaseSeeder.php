@@ -11,20 +11,28 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->command->info('🚀 Starting database seeding...');
+        $this->command->info('🚀 Starting complete database rebuild...');
         
-        // Seed roles and permissions first
+        // Seed in correct order
         $this->call([
-            RolePermissionSeeder::class,
-            BasicDataSeeder::class,
+            RolePermissionSeeder::class,  // Clears all data, creates permissions and roles
+            DepartmentGroupSeeder::class, // Creates department groups
+            DepartmentSeeder::class,      // Creates departments
+            UserSeeder::class,           // Creates users with proper assignments
         ]);
         
-        $this->command->info('✅ Database seeding completed successfully!');
+        $this->command->info('✅ Database rebuild completed successfully!');
         $this->command->info('');
-        $this->command->info('Default login credentials:');
-        $this->command->info('📧 Super Admin: superadmin@htm.com / password');
-        $this->command->info('📧 Admin: admin@ht.com / password');
-        $this->command->info('📧 Agent: agent@ht.com / password');
-        $this->command->info('📧 Client: client@ht.com / password');
+        $this->command->info('🔑 Default login credentials:');
+        $this->command->info('📧 Super Admin: superadmin@hospitalitytechnology.com.mv / password');
+        $this->command->info('📧 Admin Manager: admin@hospitalitytechnology.com.mv / password');
+        $this->command->info('📧 PMS Manager: pms@hospitalitytechnology.com.mv / password');
+        $this->command->info('📧 POS Manager: pos@hospitalitytechnology.com.mv / password');
+        $this->command->info('📧 MC Manager: mc@hospitalitytechnology.com.mv / password');
+        $this->command->info('📧 BO Manager: bo@hospitalitytechnology.com.mv / password');
+        $this->command->info('📧 Hardware Manager: hardware@hospitalitytechnology.com.mv / password');
+        $this->command->info('📧 Email Manager: email@hospitalitytechnology.com.mv / password');
+        $this->command->info('');
+        $this->command->info('👥 Roles created: admin (full access), support (limited access)');
     }
 }

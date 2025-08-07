@@ -30,7 +30,7 @@ class Dashboard extends Component
     #[Computed]
     public function userRole()
     {
-        return auth()->user()->roles->first()?->name ?? 'Client';
+        return auth()->user()->roles->first()?->name ?? 'client';
     }
 
     #[Computed]
@@ -41,12 +41,11 @@ class Dashboard extends Component
         
         return Cache::remember("dashboard_data_{$user->id}_{$role}", 300, function() use ($user, $role) {
             switch ($role) {
-                case 'Super Admin':
-                case 'Admin':
+                case 'admin':
                     return $this->getAdminDashboardData($user);
-                case 'Agent':
+                case 'support':
                     return $this->getAgentDashboardData($user);
-                case 'Client':
+                case 'client':
                 default:
                     return $this->getClientDashboardData($user);
             }
@@ -229,7 +228,7 @@ class Dashboard extends Component
         
         $departmentAgents = User::where('department_id', $user->department_id)
             ->whereHas('roles', function($q) {
-                $q->where('name', 'Agent');
+                $q->where('name', 'support');
             })
             ->withCount(['assignedTickets as resolved_count' => function($q) use ($startOfWeek, $endOfWeek) {
                 $q->where('status', 'closed')

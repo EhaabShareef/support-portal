@@ -39,13 +39,17 @@ class ManageUsers extends Component
         'department_id' => '',
         'organization_id' => '',
         'is_active' => true,
-        'role' => 'Client', // Default to Client role
+        'role' => 'client', // Default to client role
     ];
 
     // Confirmation properties
     public $confirmingUserDeletion = false;
 
     public $userToDelete = null;
+
+    // View Access properties
+    public $showAccessModal = false;
+    public $viewingUserId = null;
 
     protected function rules()
     {
@@ -63,11 +67,11 @@ class ManageUsers extends Component
         ];
 
         // Role-specific validation
-        if ($this->form['role'] === 'Agent') {
+        if ($this->form['role'] === 'support') {
             $rules['form.department_id'] = 'required|exists:departments,id';
-        } elseif ($this->form['role'] === 'Client') {
+        } elseif ($this->form['role'] === 'client') {
             $rules['form.organization_id'] = 'required|exists:organizations,id';
-        } elseif (in_array($this->form['role'], ['Admin', 'Super Admin'])) {
+        } elseif ($this->form['role'] === 'admin') {
             // Admin users get admin department automatically, but allow override
             $rules['form.department_id'] = 'nullable|exists:departments,id';
         }
@@ -97,7 +101,7 @@ class ManageUsers extends Component
         'form.password.confirmed' => 'Passwords do not match',
         'form.role.required' => 'Role is required',
         'form.role.in' => 'Invalid role selected',
-        'form.department_id.required' => 'Department is required for Agents',
+        'form.department_id.required' => 'Department is required for Support',
         'form.organization_id.required' => 'Organization is required for Clients',
     ];
 
@@ -109,13 +113,13 @@ class ManageUsers extends Component
 
         // Clear department/organization when role changes
         if ($field === 'form.role') {
-            if ($this->form['role'] === 'Agent') {
+            if ($this->form['role'] === 'support') {
                 // Keep department selection for agents
                 $this->form['organization_id'] = '';
-            } elseif ($this->form['role'] === 'Client') {
+            } elseif ($this->form['role'] === 'client') {
                 // Clear department for clients (they don't have departments)
                 $this->form['department_id'] = '';
-            } elseif (in_array($this->form['role'], ['Admin', 'Super Admin'])) {
+            } elseif ($this->form['role'] === 'admin') {
                 // Set admin department by default for admin users
                 $this->setDefaultAdminDepartment();
                 $this->form['organization_id'] = '';
@@ -171,7 +175,7 @@ class ManageUsers extends Component
             'department_id' => '',
             'organization_id' => '',
             'is_active' => true,
-            'role' => 'Client', // Default to Client role
+            'role' => 'client', // Default to client role
         ];
         $this->userId = null;
     }
@@ -216,13 +220,13 @@ class ManageUsers extends Component
         ];
 
         // Set department/organization based on role
-        if ($this->form['role'] === 'Agent') {
+        if ($this->form['role'] === 'support') {
             $userData['department_id'] = $this->form['department_id'];
             $userData['organization_id'] = null;
-        } elseif ($this->form['role'] === 'Client') {
+        } elseif ($this->form['role'] === 'client') {
             $userData['organization_id'] = $this->form['organization_id'];
             $userData['department_id'] = null; // Clients have no departments
-        } elseif (in_array($this->form['role'], ['Admin', 'Super Admin'])) {
+        } elseif ($this->form['role'] === 'admin') {
             // Admin users get assigned to admin department or user-selected department
             $userData['department_id'] = $this->form['department_id'] ?: $this->getDefaultAdminDepartmentId();
             $userData['organization_id'] = null;
@@ -254,13 +258,13 @@ class ManageUsers extends Component
         ];
 
         // Set department/organization based on role
-        if ($this->form['role'] === 'Agent') {
+        if ($this->form['role'] === 'support') {
             $updateData['department_id'] = $this->form['department_id'];
             $updateData['organization_id'] = null;
-        } elseif ($this->form['role'] === 'Client') {
+        } elseif ($this->form['role'] === 'client') {
             $updateData['organization_id'] = $this->form['organization_id'];
             $updateData['department_id'] = null; // Clients have no departments
-        } elseif (in_array($this->form['role'], ['Admin', 'Super Admin'])) {
+        } elseif ($this->form['role'] === 'admin') {
             // Admin users get assigned to admin department or user-selected department
             $updateData['department_id'] = $this->form['department_id'] ?: $this->getDefaultAdminDepartmentId();
             $updateData['organization_id'] = null;
@@ -318,6 +322,111 @@ class ManageUsers extends Component
         $this->cancelDelete();
     }
 
+    /**
+     * Open the Access modal to view user permissions
+     */
+    public function openAccessModal($userId)
+    {
+        $this->viewingUserId = $userId;
+        $this->showAccessModal = true;
+    }
+
+    /**
+     * Close the Access modal
+     */
+    public function closeAccessModal()
+    {
+        $this->showAccessModal = false;
+        $this->viewingUserId = null;
+    }
+
+    /**
+     * Get user access information for the modal
+     */
+    public function getUserAccessInfo(): array
+    {
+        if (!$this->viewingUserId) {
+            return [];
+        }
+
+        $user = User::with(['roles', 'permissions', 'department', 'organization'])->findOrFail($this->viewingUserId);
+        
+        // Get all permissions (via roles and direct permissions)
+        $allPermissions = $user->getAllPermissions();
+        $rolePermissions = $user->getPermissionsViaRoles();
+        $directPermissions = $user->getDirectPermissions();
+        
+        // Organize permissions by module
+        $modules = config('modules.modules');
+        $actionLabels = config('modules.action_labels');
+        $organizedPermissions = [];
+        
+        foreach ($allPermissions as $permission) {
+            [$module, $action] = explode('.', $permission->name, 2);
+            
+            if (!isset($organizedPermissions[$module])) {
+                $organizedPermissions[$module] = [
+                    'label' => $modules[$module]['label'] ?? ucfirst($module),
+                    'icon' => $modules[$module]['icon'] ?? 'heroicon-o-cube',
+                    'permissions' => []
+                ];
+            }
+            
+            $organizedPermissions[$module]['permissions'][] = [
+                'name' => $permission->name,
+                'action' => $action,
+                'label' => $actionLabels[$action] ?? ucfirst($action),
+                'via_role' => $rolePermissions->contains('name', $permission->name),
+                'direct' => $directPermissions->contains('name', $permission->name)
+            ];
+        }
+
+        return [
+            'user' => $user,
+            'roles' => $user->roles,
+            'total_permissions' => $allPermissions->count(),
+            'role_permissions_count' => $rolePermissions->count(),
+            'direct_permissions_count' => $directPermissions->count(),
+            'organized_permissions' => $organizedPermissions,
+            'has_discrepancies' => $directPermissions->count() > 0
+        ];
+    }
+
+    /**
+     * Bulk action: Assign role to multiple users
+     */
+    public function bulkAssignRole($role, $userIds)
+    {
+        if (!is_array($userIds) || empty($userIds)) {
+            session()->flash('error', 'No users selected.');
+            return;
+        }
+
+        $users = User::whereIn('id', $userIds)->get();
+        
+        foreach ($users as $user) {
+            $user->syncRoles([$role]);
+        }
+
+        session()->flash('message', "Role '{$role}' assigned to " . count($users) . " users.");
+    }
+
+    /**
+     * Bulk action: Toggle user status
+     */
+    public function bulkToggleStatus($userIds, $status)
+    {
+        if (!is_array($userIds) || empty($userIds)) {
+            session()->flash('error', 'No users selected.');
+            return;
+        }
+
+        User::whereIn('id', $userIds)->update(['is_active' => $status]);
+        
+        $statusText = $status ? 'activated' : 'deactivated';
+        session()->flash('message', count($userIds) . " users {$statusText}.");
+    }
+
     public function render()
     {
         $query = User::query()
@@ -349,6 +458,7 @@ class ManageUsers extends Component
             'departments' => Department::orderBy('name')->get(),
             'organizations' => Organization::orderBy('name')->get(),
             'availableRoles' => Role::orderBy('name')->pluck('name'),
+            'userAccessInfo' => $this->showAccessModal ? $this->getUserAccessInfo() : [],
         ]);
     }
 }

@@ -180,13 +180,13 @@
 
                         {{-- Stats --}}
                         <div class="flex flex-wrap items-center gap-6 text-sm">
-                            @if($user->hasRole('Client') && $user->organization)
+                            @if($user->hasRole('client') && $user->organization)
                                 <div class="flex items-center gap-1 text-neutral-600 dark:text-neutral-400">
                                     <x-heroicon-o-ticket class="h-4 w-4" />
                                     <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $user->tickets_count ?? 0 }}</span> tickets
                                 </div>
                             @endif
-                            @if($user->hasRole('Agent'))
+                            @if($user->hasRole('support'))
                                 <div class="flex items-center gap-1 text-neutral-600 dark:text-neutral-400">
                                     <x-heroicon-o-clipboard-document-check class="h-4 w-4" />
                                     <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $user->assigned_tickets_count ?? 0 }}</span> assigned

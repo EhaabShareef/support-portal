@@ -61,7 +61,7 @@
             </div>
 
             {{-- Client Selection (for Admins/Agents only) --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Agent'))
+            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('support'))
             <div>
                 <label for="client" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Client</label>
                 <select wire:model.defer="form.client_id" 

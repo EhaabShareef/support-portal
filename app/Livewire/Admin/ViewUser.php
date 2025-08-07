@@ -24,7 +24,7 @@ class ViewUser extends Component
     public function mount(User $user)
     {
         // Check permissions - only admins can view user details
-        if (! auth()->user()->hasRole('Super Admin') && ! auth()->user()->hasRole('Admin')) {
+        if (! auth()->user()->hasRole('admin')) {
             abort(403, 'You do not have permission to view user details.');
         }
 
@@ -60,13 +60,13 @@ class ViewUser extends Component
     #[Computed]
     public function canEdit()
     {
-        return auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Admin');
+        return auth()->user()->hasRole('admin');
     }
 
     #[Computed]
     public function ticketHistory()
     {
-        if (! $this->user->hasRole('Client') || ! $this->user->organization) {
+        if (! $this->user->hasRole('client') || ! $this->user->organization) {
             return collect();
         }
 
@@ -162,13 +162,13 @@ class ViewUser extends Component
         ];
 
         // Role-specific validation
-        if ($this->user->hasRole('Agent')) {
+        if ($this->user->hasRole('support')) {
             $rules['form.department_id'] = 'required|exists:departments,id';
             $rules['form.organization_id'] = 'nullable';
-        } elseif ($this->user->hasRole('Client')) {
+        } elseif ($this->user->hasRole('client')) {
             $rules['form.organization_id'] = 'required|exists:organizations,id';
             $rules['form.department_id'] = 'nullable'; // Will be set to null
-        } elseif ($this->user->hasAnyRole(['Admin', 'Super Admin'])) {
+        } elseif ($this->user->hasRole('admin')) {
             $rules['form.department_id'] = 'nullable|exists:departments,id';
             $rules['form.organization_id'] = 'nullable';
         } else {
@@ -181,13 +181,13 @@ class ViewUser extends Component
         // Process data based on user role
         $updateData = $validated['form'];
         
-        if ($this->user->hasRole('Client')) {
+        if ($this->user->hasRole('client')) {
             // Clients should not have departments
             $updateData['department_id'] = null;
-        } elseif ($this->user->hasRole('Agent')) {
-            // Agents must have departments, organization can be null
+        } elseif ($this->user->hasRole('support')) {
+            // Support must have departments, organization can be null
             $updateData['organization_id'] = null;
-        } elseif ($this->user->hasAnyRole(['Admin', 'Super Admin'])) {
+        } elseif ($this->user->hasRole('admin')) {
             // Admin users can have departments but no organization
             $updateData['organization_id'] = null;
             

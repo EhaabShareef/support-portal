@@ -14,7 +14,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('Admin');
+        return $user->hasRole('admin');
     }
 
     /**
@@ -23,7 +23,7 @@ class UserPolicy
     public function view(User $user, User $model): bool
     {
         // Admin can view all users
-        if ($user->hasRole('Admin')) {
+        if ($user->hasRole('admin')) {
             return true;
         }
 
@@ -33,7 +33,7 @@ class UserPolicy
         }
 
         // Agents can view users in their department
-        if ($user->hasRole('Agent') && $user->department_id && $user->department_id === $model->department_id) {
+        if ($user->hasRole('support') && $user->department_id && $user->department_id === $model->department_id) {
             return true;
         }
 
@@ -45,7 +45,7 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('Admin');
+        return $user->hasRole('admin');
     }
 
     /**
@@ -54,7 +54,7 @@ class UserPolicy
     public function update(User $user, User $model): bool
     {
         // Admin can update any user
-        if ($user->hasRole('Admin')) {
+        if ($user->hasRole('admin')) {
             return true;
         }
 
@@ -73,7 +73,7 @@ class UserPolicy
     {
         // Only Admin can delete users
         // Cannot delete yourself
-        return $user->hasRole('Admin') && $user->id !== $model->id;
+        return $user->hasRole('admin') && $user->id !== $model->id;
     }
 
     /**
@@ -81,6 +81,6 @@ class UserPolicy
      */
     public function manageRoles(User $user): bool
     {
-        return $user->hasRole('Admin');
+        return $user->hasRole('admin');
     }
 }

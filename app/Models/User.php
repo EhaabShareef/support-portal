@@ -73,9 +73,9 @@ class User extends Authenticatable
         });
         
         static::created(function ($user) {
-            // Automatically assign Client role if no role is assigned
+            // Automatically assign client role if no role is assigned
             if ($user->roles()->count() === 0) {
-                $clientRole = \Spatie\Permission\Models\Role::where('name', 'Client')->first();
+                $clientRole = \Spatie\Permission\Models\Role::where('name', 'client')->first();
                 if ($clientRole) {
                     $user->assignRole($clientRole);
                 }
@@ -143,7 +143,7 @@ class User extends Authenticatable
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
             ->where('model_has_roles.model_id', $this->id)
             ->where('model_has_roles.model_type', 'App\\Models\\User')
-            ->where('roles.name', 'Admin')
+            ->where('roles.name', 'admin')
             ->exists();
     }
 }

@@ -63,7 +63,7 @@
                     <x-heroicon-o-key class="h-5 w-5 mr-2 inline" />
                     Permissions
                 </button>
-                @if($user->hasRole('Client'))
+                @if($user->hasRole('client'))
                 <button wire:click="setActiveTab('tickets')"
                     class="py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 {{ $activeTab === 'tickets' ? 'border-sky-500 text-sky-600 dark:text-sky-400' : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-400 dark:hover:text-neutral-300' }}">
                     <x-heroicon-o-ticket class="h-5 w-5 mr-2 inline" />
@@ -256,7 +256,7 @@
             @endif
 
             {{-- Tickets Tab --}}
-            @if($activeTab === 'tickets' && $user->hasRole('Client'))
+            @if($activeTab === 'tickets' && $user->hasRole('client'))
             <div class="space-y-6">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Ticket History</h3>

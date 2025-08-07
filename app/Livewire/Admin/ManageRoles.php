@@ -64,7 +64,7 @@ class ManageRoles extends Component
     public function mount()
     {
         // Check permission
-        if (!auth()->user()->can('users.edit') && !auth()->user()->hasRole('Super Admin')) {
+        if (!auth()->user()->can('users.edit') && !auth()->user()->hasRole('admin')) {
             abort(403, 'You do not have permission to manage roles.');
         }
     }
@@ -112,9 +112,9 @@ class ManageRoles extends Component
 
     public function saveRole()
     {
-        // Prevent modification of Super Admin role
-        if ($this->editMode && $this->form['name'] === 'Super Admin') {
-            session()->flash('error', 'Super Admin role cannot be modified.');
+        // Prevent modification of admin role
+        if ($this->editMode && $this->form['name'] === 'admin') {
+            session()->flash('error', 'Admin role cannot be modified.');
             return;
         }
 
@@ -156,7 +156,7 @@ class ManageRoles extends Component
         $role = Role::findOrFail($roleId);
         
         // Prevent deletion of system roles
-        if (in_array($role->name, ['Super Admin', 'Admin', 'Agent', 'Client'])) {
+        if (in_array($role->name, ['admin', 'support', 'client'])) {
             session()->flash('error', 'System roles cannot be deleted.');
             return;
         }
@@ -212,6 +212,108 @@ class ManageRoles extends Component
         }
     }
 
+    /**
+     * Toggle all permissions for a specific action across all modules
+     */
+    public function toggleAllPermissionsForAction($action)
+    {
+        $actionPermissions = Permission::where('name', 'like', '%.'. $action)->pluck('name')->toArray();
+        
+        $allSelected = count(array_intersect($actionPermissions, $this->selectedPermissions)) === count($actionPermissions);
+        
+        if ($allSelected) {
+            // Remove all action permissions
+            $this->selectedPermissions = array_diff($this->selectedPermissions, $actionPermissions);
+        } else {
+            // Add all action permissions
+            $this->selectedPermissions = array_unique(array_merge($this->selectedPermissions, $actionPermissions));
+        }
+    }
+
+    /**
+     * Check if all permissions for a module are selected
+     */
+    public function isModuleFullySelected($module): bool
+    {
+        $modulePermissions = Permission::where('name', 'like', $module . '.%')->pluck('name')->toArray();
+        return count(array_intersect($modulePermissions, $this->selectedPermissions)) === count($modulePermissions);
+    }
+
+    /**
+     * Check if all permissions for an action are selected
+     */
+    public function isActionFullySelected($action): bool
+    {
+        $actionPermissions = Permission::where('name', 'like', '%.'. $action)->pluck('name')->toArray();
+        return count(array_intersect($actionPermissions, $this->selectedPermissions)) === count($actionPermissions);
+    }
+
+    /**
+     * Check if a specific permission is selected
+     */
+    public function isPermissionSelected($module, $action): bool
+    {
+        return in_array("{$module}.{$action}", $this->selectedPermissions);
+    }
+
+    /**
+     * Get permission matrix data organized for UI display
+     */
+    public function getPermissionMatrix(): array
+    {
+        $modules = config('modules.modules');
+        $groups = config('modules.groups');
+        $actionLabels = config('modules.action_labels');
+        
+        $matrix = [];
+        
+        foreach ($groups as $groupKey => $group) {
+            $matrix[$groupKey] = [
+                'label' => $group['label'],
+                'description' => $group['description'],
+                'icon' => $group['icon'],
+                'modules' => []
+            ];
+            
+            foreach ($group['modules'] as $moduleKey) {
+                if (isset($modules[$moduleKey])) {
+                    $module = $modules[$moduleKey];
+                    $matrix[$groupKey]['modules'][$moduleKey] = [
+                        'label' => $module['label'],
+                        'description' => $module['description'],
+                        'icon' => $module['icon'],
+                        'actions' => []
+                    ];
+                    
+                    foreach ($module['actions'] as $action) {
+                        $matrix[$groupKey]['modules'][$moduleKey]['actions'][$action] = [
+                            'label' => $actionLabels[$action] ?? ucfirst($action),
+                            'permission' => "{$moduleKey}.{$action}",
+                            'selected' => $this->isPermissionSelected($moduleKey, $action)
+                        ];
+                    }
+                }
+            }
+        }
+        
+        return $matrix;
+    }
+
+    /**
+     * Get all unique actions across all modules
+     */
+    public function getAllActions(): array
+    {
+        $modules = config('modules.modules');
+        $actions = [];
+        
+        foreach ($modules as $module) {
+            $actions = array_merge($actions, $module['actions']);
+        }
+        
+        return array_unique($actions);
+    }
+
     public function render()
     {
         $query = Role::query();
@@ -225,14 +327,11 @@ class ManageRoles extends Component
                       ->orderBy('name')
                       ->paginate(10);
 
-        // Group permissions by module for the permission grid
-        $permissions = Permission::all()->groupBy(function ($permission) {
-            return explode('.', $permission->name)[0] ?? 'other';
-        });
-
         return view('livewire.admin.manage-roles', [
             'roles' => $roles,
-            'permissions' => $permissions,
+            'permissionMatrix' => $this->getPermissionMatrix(),
+            'allActions' => $this->getAllActions(),
+            'actionLabels' => config('modules.action_labels'),
         ]);
     }
 }

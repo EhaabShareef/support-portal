@@ -30,11 +30,15 @@ The application features a comprehensive **Role-Based Access Control (RBAC)** sy
 2. Install JavaScript dependencies: `npm install`
 3. Copy the example environment: `cp .env.example .env` and adjust settings
 4. Generate an application key: `php artisan key:generate`
-5. Run database migrations: `php artisan migrate`
-6. Seed the database with roles and permissions: `php artisan db:seed --class=RolePermissionSeeder`
-7. Seed schedule event types: `php artisan db:seed --class=ScheduleEventTypeSeeder`
-8. (Optional) Seed with sample data: `php artisan db:seed --class=BasicDataSeeder`
-9. Start development servers: `php artisan serve` and `npm run dev`
+5. **Fresh Setup**: Run complete database rebuild: `php artisan migrate:fresh --seed`
+   - This clears all data and rebuilds the complete organizational structure
+   - Creates 7 department groups, 22 departments, 2 roles, and 8 default users
+   - **Alternative**: For existing setups, run individual seeders in order:
+     - `php artisan db:seed --class=RolePermissionSeeder` (clears existing data)
+     - `php artisan db:seed --class=DepartmentGroupSeeder`
+     - `php artisan db:seed --class=DepartmentSeeder`
+     - `php artisan db:seed --class=UserSeeder`
+6. Start development servers: `php artisan serve` and `npm run dev`
 
 ## Project Structure
 
@@ -71,10 +75,10 @@ The Support Portal implements a comprehensive RBAC system using **Spatie Laravel
 
 | Role | Description | Access Level |
 |------|-------------|--------------|
-| **Super Admin** | Full system access with all permissions | System-wide |
-| **Admin** | Administrative access to manage users, organizations, and all modules | Organization-wide |
-| **Agent** | Support agent with limited access to tickets and operations within their department | Department-limited |
-| **Client** | Basic access to create and view tickets and articles | Organization-limited |
+| **admin** | Full system access with all 50 permissions across all modules | System-wide |
+| **support** | Limited access role with basic read, create, and update permissions (36 permissions) | Department-limited |
+
+**Note**: The system now uses a simplified 2-role structure. Additional roles can be created through the admin interface as needed.
 
 ### 🛡️ **Permission Modules**
 
@@ -111,10 +115,10 @@ The system organizes permissions into the following modules:
 
 ### 🚀 **Getting Started with RBAC**
 
-1. **Seed Roles & Permissions**: `php artisan db:seed --class=RolePermissionSeeder`
-2. **Access Role Management**: Navigate to `/admin/roles` (Admin+ required)
-3. **Manage Users**: Navigate to `/admin/users` (Admin+ required)
-4. **Create Custom Roles**: Use the permission grid to define new roles
+1. **Fresh Setup**: `php artisan migrate:fresh --seed` (rebuilds entire structure)
+2. **Access Role Management**: Navigate to `/admin/roles` (Admin role required)
+3. **Manage Users**: Navigate to `/admin/users` (Admin role required)
+4. **Create Custom Roles**: Use the permission grid to define new roles beyond admin/support
 5. **Assign Roles**: Select appropriate roles when creating/editing users
 
 ### 🛠️ **Developer Notes**
@@ -124,9 +128,130 @@ The system organizes permissions into the following modules:
 - Department restrictions are enforced in Livewire components and policies
 - All RBAC logic follows Laravel best practices and integrates seamlessly with the framework
 
+## Organizational Structure
+
+### 🏢 **Department Groups & Departments**
+
+The system is organized into 7 department groups with 22 total departments:
+
+#### **Admin Group** (Admin role)
+- Super Admin
+- Finance  
+- Human Resource
+- Project Manage
+- Sales
+
+#### **PMS Group** (Support role)
+- Opera
+- Opera Cloud
+- Vision
+- R&A (Reporting & Analytics)
+- OXI
+- Technical
+
+#### **POS Group** (Support role)
+- Simphny
+- Simphony Cloud
+- RES 3700
+- RES 9700
+- R&A (Reporting & Analytics)
+
+#### **MC Group** (Support role)
+- Materials Control
+- Reporting
+
+#### **BO Group** (Support role)
+- BackOffice
+
+#### **Hardware Group** (Support role)
+- Local
+- Oracle
+
+#### **Email Group** (Admin role)
+- Email Case
+
+### 👤 **Default Users**
+
+Each department group has a default manager user:
+
+- **Super Admin**: `superadmin@hospitalitytechnology.com.mv` (admin role)
+- **Admin Manager**: `admin@hospitalitytechnology.com.mv` (admin role)
+- **PMS Manager**: `pms@hospitalitytechnology.com.mv` (support role)
+- **POS Manager**: `pos@hospitalitytechnology.com.mv` (support role)
+- **MC Manager**: `mc@hospitalitytechnology.com.mv` (support role)
+- **BO Manager**: `bo@hospitalitytechnology.com.mv` (support role)
+- **Hardware Manager**: `hardware@hospitalitytechnology.com.mv` (support role)
+- **Email Manager**: `email@hospitalitytechnology.com.mv` (support role)
+
+**Default Password**: `password` (should be changed after first login)
+
 ## Recent Updates
 
-### 🚀 **v3.0.0 - Schedule Management System & Advanced Calendar** (Latest)
+### 🚀 **v4.0.0 - Complete Organizational Structure Rebuild** (Latest)
+
+#### 🏗️ **Major Restructuring**
+
+- ✅ **Fresh Database Architecture**: Complete rebuild of organizational structure from scratch
+  - 7 department groups following hospitality technology domains
+  - 22 departments with proper hierarchical organization
+  - Simplified 2-role system (admin/support) for clear access control
+  - 8 default users with proper department group assignments
+
+- ✅ **Streamlined Role System**: Simplified from 4 roles to 2 focused roles
+  - **admin**: Full system access (50 permissions)
+  - **support**: Limited access (36 permissions) - configurable via admin interface
+  - Eliminates confusion between Super Admin/Admin and Agent/Client roles
+
+- ✅ **Professional Email Structure**: Standardized email format
+  - Format: `groupname@hospitalitytechnology.com.mv`
+  - Proper domain alignment with Hospitality Technology branding
+  - Clear identification of department group responsibilities
+
+#### 🔧 **Technical Implementation**
+
+- ✅ **Complete Seeder Overhaul**: 
+  - `DepartmentGroupSeeder`: Creates 7 department groups with colors and descriptions
+  - `DepartmentSeeder`: Creates 22 departments with proper group assignments
+  - `RolePermissionSeeder`: Clears existing data, creates admin/support roles
+  - `UserSeeder`: Creates manager users for each department group
+  - `DatabaseSeeder`: Orchestrates complete rebuild process
+
+- ✅ **Data Integrity**: 
+  - Clears all existing users, roles, permissions, departments, and groups
+  - Rebuilds from scratch to ensure clean organizational structure
+  - Maintains referential integrity with proper foreign key relationships
+  - Transaction-safe seeding with rollback capabilities
+
+- ✅ **Migration Compatibility**: 
+  - Works with existing migration structure
+  - No breaking changes to existing database schema
+  - Maintains compatibility with all existing features
+
+#### 📊 **Business Logic Alignment**
+
+- ✅ **Domain-Specific Organization**: 
+  - **Admin**: Administrative functions (Finance, HR, Sales, Project Management)
+  - **PMS**: Property Management Systems (Opera, Vision, OXI, Technical)
+  - **POS**: Point of Sale Systems (Simphony, RES series)
+  - **MC**: Materials Control and Reporting
+  - **BO**: BackOffice operations
+  - **Hardware**: Local and Oracle hardware support
+  - **Email**: Email case management
+
+- ✅ **Role Assignment Logic**: 
+  - Admin and Email groups get admin role (full system access)
+  - All technical groups (PMS, POS, MC, BO, Hardware) get support role
+  - Super Admin user separate from department structure
+  - Clear separation of administrative vs operational responsibilities
+
+#### 🎯 **Deployment & Maintenance**
+
+- ✅ **One-Command Setup**: `php artisan migrate:fresh --seed` rebuilds everything
+- ✅ **Production Ready**: All seeders designed for safe production deployment
+- ✅ **Scalable Structure**: Easy to add new departments and department groups
+- ✅ **Permission System**: Maintains existing granular permission system with new role structure
+
+### 🚀 **v3.0.0 - Schedule Management System & Advanced Calendar** (Previous)
 
 #### 📅 **Major Features**
 

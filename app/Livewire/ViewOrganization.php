@@ -36,7 +36,7 @@ class ViewOrganization extends Component
         }
 
         // Clients can only view their own organization
-        if ($user->hasRole('Client') && $organization->id !== $user->organization_id) {
+        if ($user->hasRole('client') && $organization->id !== $user->organization_id) {
             abort(403, 'You can only view your own organization.');
         }
 
@@ -54,18 +54,18 @@ class ViewOrganization extends Component
     public function canEdit()
     {
         $user = auth()->user();
-        if ($user->hasRole('Super Admin') || $user->can('organizations.edit')) {
+        if ($user->hasRole('admin') || $user->can('organizations.edit')) {
             return true;
         }
 
         // Clients can edit their own organization
-        return $user->hasRole('Client') && $this->organization->id === $user->organization_id;
+        return $user->hasRole('client') && $this->organization->id === $user->organization_id;
     }
 
     #[Computed]
     public function canDelete()
     {
-        return auth()->user()->hasRole('Super Admin') || auth()->user()->can('organizations.delete');
+        return auth()->user()->hasRole('admin') || auth()->user()->can('organizations.delete');
     }
 
     protected function syncForm(): void
@@ -159,7 +159,7 @@ class ViewOrganization extends Component
 
     public function toggleActive()
     {
-        if (! auth()->user()->hasRole('Super Admin') && ! auth()->user()->can('organizations.edit')) {
+        if (! auth()->user()->hasRole('admin') && ! auth()->user()->can('organizations.edit')) {
             session()->flash('error', 'You do not have permission to change organization status.');
 
             return;
@@ -215,8 +215,8 @@ class ViewOrganization extends Component
     {
         $user = User::findOrFail($userId);
         
-        // Only allow deletion of Client users from this organization
-        if (!$user->hasRole('Client') || $user->organization_id !== $this->organization->id) {
+        // Only allow deletion of client users from this organization
+        if (!$user->hasRole('client') || $user->organization_id !== $this->organization->id) {
             session()->flash('error', 'You can only delete client users belonging to this organization.');
             return;
         }

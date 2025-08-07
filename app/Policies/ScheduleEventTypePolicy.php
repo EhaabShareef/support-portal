@@ -29,8 +29,8 @@ class ScheduleEventTypePolicy
      */
     public function create(User $user): bool
     {
-        // Only Super Admin and Admin can create schedule event types
-        return $user->hasAnyRole(['Super Admin', 'Admin']) && $user->can('schedule-event-types.create');
+        // Only Admin can create schedule event types
+        return $user->hasRole('admin') && $user->can('schedule-event-types.create');
     }
 
     /**
@@ -38,8 +38,8 @@ class ScheduleEventTypePolicy
      */
     public function update(User $user, ScheduleEventType $scheduleEventType): bool
     {
-        // Only Super Admin and Admin can update schedule event types
-        return $user->hasAnyRole(['Super Admin', 'Admin']) && $user->can('schedule-event-types.update');
+        // Only Admin can update schedule event types
+        return $user->hasRole('admin') && $user->can('schedule-event-types.update');
     }
 
     /**
@@ -47,9 +47,9 @@ class ScheduleEventTypePolicy
      */
     public function delete(User $user, ScheduleEventType $scheduleEventType): bool
     {
-        // Only Super Admin and Admin can delete schedule event types
+        // Only Admin can delete schedule event types
         // Additional check: can't delete if schedules are using this event type
-        if (!$user->hasAnyRole(['Super Admin', 'Admin']) || !$user->can('schedule-event-types.delete')) {
+        if (!$user->hasRole('admin') || !$user->can('schedule-event-types.delete')) {
             return false;
         }
 
@@ -62,8 +62,8 @@ class ScheduleEventTypePolicy
      */
     public function restore(User $user, ScheduleEventType $scheduleEventType): bool
     {
-        // Only Super Admin can restore deleted schedule event types
-        return $user->hasRole('Super Admin') && $user->can('schedule-event-types.delete');
+        // Only Admin can restore deleted schedule event types
+        return $user->hasRole('admin') && $user->can('schedule-event-types.delete');
     }
 
     /**
@@ -71,7 +71,7 @@ class ScheduleEventTypePolicy
      */
     public function forceDelete(User $user, ScheduleEventType $scheduleEventType): bool
     {
-        // Only Super Admin can force delete schedule event types
-        return $user->hasRole('Super Admin') && $user->can('schedule-event-types.delete');
+        // Only Admin can force delete schedule event types
+        return $user->hasRole('admin') && $user->can('schedule-event-types.delete');
     }
 }

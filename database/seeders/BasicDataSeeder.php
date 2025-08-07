@@ -28,9 +28,6 @@ class BasicDataSeeder extends Seeder
         // Create departments
         $departments = $this->createDepartments($departmentGroups);
 
-        // Create users
-        $this->createUsers($organization, $departments, $roles);
-
         $this->command->info('✅ Basic data seeded successfully!');
     }
 
@@ -215,68 +212,4 @@ class BasicDataSeeder extends Seeder
         return $createdDepartments;
     }
 
-    private function createUsers(Organization $organization, array $departments, array $roles): void
-    {
-        // Find admin department (first department in Admin group)
-        $adminDepartment = collect($departments)->first(function($dept) {
-            return $dept->name === 'Admin';
-        });
-
-        // Super Admin - assign to Admin department
-        $superAdmin = User::firstOrCreate([
-            'email' => 'superadmin@htm.com',
-        ], [
-            'name' => 'Super Admin',
-            'username' => 'superadmin',
-            'password' => Hash::make('password'),
-            'organization_id' => $organization->id,
-            'department_id' => $adminDepartment->id, // Admin Department
-            'email_verified_at' => now(),
-            'is_active' => true,
-        ]);
-        // Assign roles without team context (teams disabled)
-        $superAdmin->assignRole($roles['super_admin']);
-
-        // Admin - assign to Admin department
-        $admin = User::firstOrCreate([
-            'email' => 'admin@ht.com',
-        ], [
-            'name' => 'Administrator',
-            'username' => 'admin',
-            'password' => Hash::make('password'),
-            'organization_id' => $organization->id,
-            'department_id' => $adminDepartment->id, // Admin Department
-            'email_verified_at' => now(),
-            'is_active' => true,
-        ]);
-        $admin->assignRole($roles['admin']);
-
-        // Agent - assign to OPERA department (first technical department)
-        $agent = User::firstOrCreate([
-            'email' => 'agent@ht.com',
-        ], [
-            'name' => 'Support Agent',
-            'username' => 'agent',
-            'password' => Hash::make('password'),
-            'organization_id' => $organization->id,
-            'department_id' => $departments[0]->id, // OPERA Department
-            'email_verified_at' => now(),
-            'is_active' => true,
-        ]);
-        $agent->assignRole($roles['agent']);
-
-        // Client - NO department assignment
-        $client = User::firstOrCreate([
-            'email' => 'client@ht.com',
-        ], [
-            'name' => 'Client User',
-            'username' => 'client',
-            'password' => Hash::make('password'),
-            'organization_id' => $organization->id,
-            'department_id' => null, // No department for clients
-            'email_verified_at' => now(),
-            'is_active' => true,
-        ]);
-        $client->assignRole($roles['client']);
-    }
 }

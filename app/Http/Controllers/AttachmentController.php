@@ -92,8 +92,8 @@ class AttachmentController extends Controller
             return false;
         }
 
-        // Super admins can access anything
-        if ($user->hasRole('Super Admin')) {
+        // Admins can access anything
+        if ($user->hasRole('admin')) {
             return true;
         }
 
@@ -102,17 +102,17 @@ class AttachmentController extends Controller
             $ticket = $attachment->attachable;
             
             // Clients can only access attachments from their organization's tickets
-            if ($user->hasRole('Client')) {
+            if ($user->hasRole('client')) {
                 return $ticket->organization_id === $user->organization_id;
             }
 
-            // Agents can access attachments from their department's tickets
-            if ($user->hasRole('Agent')) {
+            // Support can access attachments from their department's tickets
+            if ($user->hasRole('support')) {
                 return $ticket->department_id === $user->department_id;
             }
 
             // Admins can access any ticket attachments
-            if ($user->hasRole('Admin')) {
+            if ($user->hasRole('admin')) {
                 return true;
             }
         }
@@ -122,15 +122,15 @@ class AttachmentController extends Controller
             $ticket = $message->ticket;
             
             // Same logic as above for ticket messages
-            if ($user->hasRole('Client')) {
+            if ($user->hasRole('client')) {
                 return $ticket->organization_id === $user->organization_id;
             }
 
-            if ($user->hasRole('Agent')) {
+            if ($user->hasRole('support')) {
                 return $ticket->department_id === $user->department_id;
             }
 
-            if ($user->hasRole('Admin')) {
+            if ($user->hasRole('admin')) {
                 return true;
             }
         }
@@ -145,8 +145,8 @@ class AttachmentController extends Controller
             return false;
         }
 
-        // Super admins and admins can delete anything
-        if ($user->hasRole(['Super Admin', 'Admin'])) {
+        // Admins can delete anything
+        if ($user->hasRole('admin')) {
             return true;
         }
 

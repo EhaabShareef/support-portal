@@ -15,7 +15,7 @@ class TicketPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['Super Admin', 'Admin', 'Agent', 'Client']);
+        return $user->can('tickets.read');
     }
 
     /**
@@ -23,13 +23,18 @@ class TicketPolicy
      */
     public function view(User $user, Ticket $ticket): bool
     {
-        // Super Admin and Admin can view all tickets
-        if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
+        // First check if user has basic read permission
+        if (!$user->can('tickets.read')) {
+            return false;
+        }
+
+        // Admin can view all tickets
+        if ($user->hasRole('admin')) {
             return true;
         }
 
-        // Agent can view tickets in their department or department group
-        if ($user->hasRole('Agent')) {
+        // Support can view tickets in their department or department group
+        if ($user->hasRole('support')) {
             // Check if same department
             if ($user->department_id === $ticket->department_id) {
                 return true;
@@ -42,7 +47,7 @@ class TicketPolicy
         }
 
         // Client can view tickets from their organization
-        if ($user->hasRole('Client') && $user->organization_id === $ticket->organization_id) {
+        if ($user->hasRole('client') && $user->organization_id === $ticket->organization_id) {
             return true;
         }
 
@@ -54,8 +59,7 @@ class TicketPolicy
      */
     public function create(User $user): bool
     {
-        // Super Admin, Admin, Agent and Client can create tickets
-        return $user->hasAnyRole(['Super Admin', 'Admin', 'Agent', 'Client']);
+        return $user->can('tickets.create');
     }
 
     /**
@@ -63,13 +67,18 @@ class TicketPolicy
      */
     public function update(User $user, Ticket $ticket): bool
     {
-        // Super Admin and Admin can update any ticket
-        if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
+        // First check if user has update permission
+        if (!$user->can('tickets.update')) {
+            return false;
+        }
+
+        // Admin can update any ticket
+        if ($user->hasRole('admin')) {
             return true;
         }
 
-        // Agent can update tickets in their department or department group
-        if ($user->hasRole('Agent')) {
+        // Support can update tickets in their department or department group
+        if ($user->hasRole('support')) {
             // Check if same department
             if ($user->department_id === $ticket->department_id) {
                 return true;
@@ -89,8 +98,7 @@ class TicketPolicy
      */
     public function delete(User $user, Ticket $ticket): bool
     {
-        // Only Super Admin and Admin can delete tickets
-        return $user->hasRole('Super Admin') || $user->hasRole('Admin');
+        return $user->can('tickets.delete');
     }
 
     /**
@@ -98,13 +106,18 @@ class TicketPolicy
      */
     public function assign(User $user, Ticket $ticket): bool
     {
-        // Super Admin and Admin can assign any ticket
-        if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
+        // First check if user has assign permission
+        if (!$user->can('tickets.assign')) {
+            return false;
+        }
+
+        // Admin can assign any ticket
+        if ($user->hasRole('admin')) {
             return true;
         }
 
-        // Agent can assign tickets in their department or department group
-        if ($user->hasRole('Agent')) {
+        // Support can assign tickets in their department or department group
+        if ($user->hasRole('support')) {
             // Check if same department
             if ($user->department_id === $ticket->department_id) {
                 return true;

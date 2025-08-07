@@ -77,7 +77,7 @@ class ManageSettings extends Component
     public function mount()
     {
         // Check permissions
-        if (!auth()->user()->hasRole('Super Admin') && !auth()->user()->hasRole('Admin')) {
+        if (!auth()->user()->hasRole('admin')) {
             abort(403, 'You do not have permission to manage settings.');
         }
     }

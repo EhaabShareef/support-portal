@@ -1,58 +1,60 @@
-Organization Module Code & UX Review
-Model Layer
-Outdated property names – The Organization model’s docblock still references active_yn, even though the model uses is_active, which may confuse developers and automated tools
+Review the current structure of **department groups**, **departments**, **roles**, and **users** in the project. Based on the attached reference data, you are to reset and rebuild this structure from scratch (unless the current structure is already fully compatible and solid). If needed, modify the migrations, models, and relationships to ensure correctness and flexibility going forward.
 
-Suggestion: Update docblocks or regenerate model PHPDoc blocks to mirror actual attributes.
+The tasks are:
 
-Unused/under-specified fields – OrganizationHardware exposes a custom_fields attribute in its fillable array, but none of the forms or components populate it, increasing maintenance overhead
+1. **Clear existing data** related to:
 
-Suggestion: Either implement UI/validation for custom_fields or remove the field to prevent confusion.
+   * Users
+   * Roles
+   * Permissions
+   * Departments
+   * Department groups
+     You can truncate relevant tables or recreate them as needed.
 
-Livewire Components
-Duplicate validation rules – ManageOrganizations and ViewOrganization both maintain similar validation logic for organization fields, leading to duplication
+2. **Create department groups and departments** according to the following structure:
 
-Suggestion: Extract shared validation into a trait or form request–style class used by both components.
+   * `Admin`: Super Admin, Finance, Human Resource, Project Manage, Sales
+   * `PMS`: Opera, Opera Cloud, Vision, R\&A, OXI, Technical
+   * `POS`: Simphny, Simphony Cloud, RES 3700, RES 9700, R\&A
+   * `MC`: Materials Control, Reporting
+   * `BO`: BackOffice
+   * `Hardware`: Local, Oracle
+   * `Email`: Email Case
 
-N+1 query risk – ViewOrganization loads users without their roles, yet the views rely on role data, causing extra queries when rendering the users tab
+3. **Seed one default user per department group** with the following format:
 
-Suggestion: Eager-load nested relations (users.roles) whenever role information is needed.
+   * Email: `groupname@hospitalitytechnology.com.mv` (e.g. `pms@hospitalitytechnology.com.mv`)
+   * Assign that user to the corresponding **department group**
+   * Assign role:
 
-Authorization gaps – ManageUsers doesn’t verify permissions when mounting, leaving access control to routing or outside logic
+     * `admin` for Admin and Email groups
+     * `support` for all others
 
-Suggestion: Add explicit permission checks (via policies or gates) within the component’s lifecycle hooks.
+4. **Ensure Super Admin user** (e.g., `superadmin@hospitalitytechnology.com.mv`) is seeded and assigned:
 
-Inconsistent business rules – OrganizationHardwareForm blocks hardware creation unless an active hardware contract exists, whereas ManageHardware allows hardware to be saved without that validation, creating conflicting rules for the same entity
+   * Role: `admin`
+   * **All available permissions** (full CRUD access on all modules)
 
-Suggestion: Centralize contract validation in a shared method or service so all hardware-entry paths enforce the same requirement.
+5. **Verify and fix relationships**:
 
-Blade Views & UI/UX
-Fragile role filtering – The users tab filters client users with where('roles.0.name', 'Client'), which depends on array offsets and triggers extra queries for each user
+   * Ensure that users are properly linked to departments and department groups (one-to-many or many-to-many as required)
+   * If the current migration structure doesn’t support this cleanly, update it accordingly
 
-Suggestion: Use a pre-filtered relation (e.g., users()->role('Client')) or eager-loaded roles to avoid N+1 queries and make the intent clearer.
+6. **Roles and permissions setup**:
 
-Duplicated hardware-type lists – Both organization-level and standalone hardware forms hard-code the same long list of device types, making updates error-prone
+   * Use Spatie’s Laravel Permission package
+   * Seed only two roles for now: `admin` and `support`
+   * Assign full permissions to `admin` role only during seeding
+   * All other roles will be configured later via the admin UI
 
-Suggestion: Extract hardware types into a shared config or enum and loop over them in views.
+7. **All changes should be fully seedable**:
 
-Form field inconsistency – The standalone Manage Users view omits the timezone field present in the reusable organization-user-form, creating different user data capabilities depending on entry point
+   * Update the `DatabaseSeeder.php` to include seeding of:
 
-Suggestion: Consolidate user forms or ensure both interfaces expose the same fields to keep user records consistent.
+     * Department groups
+     * Departments
+     * Roles
+     * Permissions
+     * Users with proper assignments
 
-Mixed Livewire bindings – The organizations index uses the Livewire 3 .live modifier for search and filters, while other forms rely on default wire:model, causing uneven interaction patterns and extra network chatter during typing
-
-Suggestion: Standardize on .defer for edit forms and .live/debounce for search fields across components.
-
-Structural & Flow Recommendations
-Unify management flows
-Multiple “manage” pages and modal-based Organization*Form components overlap in purpose (contracts, hardware, users). Consolidating to one approach (either dedicated pages or modal forms) would reduce duplication and simplify navigation.
-
-Centralize reusable lists and validation
-Extract hardware type options, subscription statuses, and common validation rules into configuration/constants to ensure updates occur in one place.
-
-Improve eager-loading strategy
-Loading all necessary nested relations (e.g., users with roles, hardware with contracts) at component mount prevents N+1 queries and ensures consistent data in child views.
-
-Standardize form UX
-Adopt consistent Livewire modifiers (wire:model.defer for forms, wire:model.live with debounce for search) and ensure every management interface exposes the same user attributes and validation.
-
-By addressing these consistency and maintainability issues, the Organization module will be easier to extend, less error-prone, and provide a more uniform experience across contracts, hardware, and user management.
+Ensure this implementation is clean, maintainable, and matches the domain structure of the application. Everything must work from a fresh migration and seed. This structure will become the base for the permission management and access control system, so correctness is critical.

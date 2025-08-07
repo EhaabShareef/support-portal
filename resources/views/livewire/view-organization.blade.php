@@ -152,7 +152,7 @@
                         @endif
 
                         {{-- Active/Inactive Toggle for Admins --}}
-                        @if(auth()->user()->hasRole('Super Admin') || auth()->user()->can('organizations.edit'))
+                        @if(auth()->user()->hasRole('admin') || auth()->user()->can('organizations.update'))
                             <button wire:key="toggle-btn-{{ $organization->id }}" wire:click="toggleActive"
                                 class="inline-flex items-center px-4 py-2 border {{ $organization->is_active ? 'border-orange-400 text-orange-400 hover:bg-orange-500' : 'border-green-400 text-green-400 hover:bg-green-500' }} hover:text-white rounded-md text-sm transition-all duration-200">
                                 @if($organization->is_active)

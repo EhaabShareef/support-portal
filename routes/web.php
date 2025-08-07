@@ -62,7 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/{ticket}', ViewTicket::class)->name('tickets.show');
 
     // Schedule Routes (Admin and Client only)
-    Route::middleware(['role:Super Admin|Admin|Client'])->group(function () {
+    Route::middleware(['role:admin|client'])->group(function () {
         Route::get('/schedule', ScheduleCalendar::class)->name('schedule.index');
     });
 
@@ -71,8 +71,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/attachments/{uuid}/view', [AttachmentController::class, 'view'])->name('attachments.view');
     Route::delete('/attachments/{uuid}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
 
-    // Admin Routes (only for Admin role)
-    Route::middleware(['role:Admin'])->prefix('admin')->name('admin.')->group(function () {
+    // Admin Routes (only for admin role)
+    Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/users', AdminManageUsers::class)->name('users.index');
         Route::get('/users/{user}', ViewUser::class)->name('users.view');
         Route::get('/roles', ManageRoles::class)->name('roles.index');

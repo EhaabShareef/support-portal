@@ -6,12 +6,16 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
         $this->command->info('🌱 Seeding roles and permissions...');
+
+        // Clear existing data first
+        $this->clearExistingData();
 
         // Clear cache to avoid conflicts
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
@@ -25,6 +29,9 @@ class RolePermissionSeeder extends Seeder
             // Create roles and assign permissions
             $this->createRoles();
 
+            // Clear cache again after seeding
+            app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
             DB::commit();
             $this->command->info('✅ Roles and permissions seeded successfully!');
             
@@ -35,242 +42,150 @@ class RolePermissionSeeder extends Seeder
         }
     }
 
+    private function clearExistingData(): void
+    {
+        $this->command->info('Clearing existing roles, permissions, and user assignments...');
+        
+        // Clear user data first
+        \App\Models\User::query()->delete();
+        
+        // Clear role-permission assignments
+        DB::table('role_has_permissions')->delete();
+        
+        // Clear user-role assignments
+        DB::table('model_has_roles')->delete();
+        
+        // Clear user-permission assignments
+        DB::table('model_has_permissions')->delete();
+        
+        // Delete all roles
+        Role::query()->delete();
+        
+        // Delete all permissions
+        Permission::query()->delete();
+        
+        $this->command->info('✅ Existing data cleared.');
+    }
+
     private function createPermissions(): void
     {
-        $this->command->info('Creating permissions...');
+        $this->command->info('Creating permissions from modules config...');
         
-        $permissions = [
-            // User management
-            'users.create',
-            'users.read', 
-            'users.update',
-            'users.delete',
-            'users.manage', // Added missing permission
+        $modules = config('modules.modules');
+        $permissions = [];
+        
+        // Generate permissions from modules configuration
+        foreach ($modules as $module => $config) {
+            foreach ($config['actions'] as $action) {
+                $permissions[] = "{$module}.{$action}";
+            }
+        }
 
-            // Organization management
-            'organizations.create',
-            'organizations.read',
-            'organizations.update', 
-            'organizations.delete',
-
-            // Department management
-            'departments.create',
-            'departments.read',
-            'departments.update',
-            'departments.delete',
-
-            // Ticket management
-            'tickets.create',
-            'tickets.read',
-            'tickets.update',
-            'tickets.delete',
-            'tickets.assign', // Added explicit assign permission
-
-            // Contract management
-            'contracts.create',
-            'contracts.read',
-            'contracts.update',
-            'contracts.delete',
-
-            // Hardware management
-            'hardware.create',
-            'hardware.read', 
-            'hardware.update',
-            'hardware.delete',
-
-            // Settings management
-            'settings.read',
-            'settings.update',
-
-            // Note management
-            'notes.create',
-            'notes.read',
-            'notes.update', 
-            'notes.delete',
-
-            // Message management
-            'messages.create',
-            'messages.read',
-            'messages.update',
-            'messages.delete',
-
-            // Reports
-            'reports.read',
-
-            // Knowledge base (articles)
-            'articles.create',
-            'articles.read',
-            'articles.update',
-            'articles.delete',
-
-            // Schedule management
-            'schedules.create',
-            'schedules.read',
-            'schedules.update',
-            'schedules.delete',
-
-            // Schedule event types management
-            'schedule-event-types.create',
-            'schedule-event-types.read',
-            'schedule-event-types.update',
-            'schedule-event-types.delete',
-
-            // Dashboard access
-            'dashboard.access',
-        ];
-
+        // Create permissions
+        $createdCount = 0;
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate([
+            $created = Permission::firstOrCreate([
                 'name' => $permission,
                 'guard_name' => 'web'
             ]);
+            
+            if ($created->wasRecentlyCreated) {
+                $createdCount++;
+            }
         }
         
-        $this->command->info('Created ' . count($permissions) . ' permissions.');
+        $this->command->info("Created {$createdCount} new permissions (total: " . count($permissions) . ").");
     }
 
     private function createRoles(): array
     {
-        $this->command->info('Creating roles and assigning permissions...');
+        $this->command->info('Creating admin and support roles...');
 
-        // Role descriptions
-        $roleDescriptions = [
-            'Super Admin' => 'Full system access with all permissions',
-            'Admin' => 'Administrative access to manage users, organizations, and all modules',
-            'Agent' => 'Support agent with department-based access to tickets and schedules',
-            'Client' => 'Client user with basic access to create tickets and view articles',
-        ];
+        $createdRoles = [];
 
-        // Super Admin - has ALL permissions
-        $superAdmin = Role::firstOrCreate([
-            'name' => 'Super Admin',
+        // Create Admin role with all permissions
+        $adminRole = Role::create([
+            'name' => 'admin',
             'guard_name' => 'web'
         ]);
-        $superAdmin->update(['description' => $roleDescriptions['Super Admin']]);
-        $superAdmin->syncPermissions(Permission::all());
-        $this->command->info('✓ Super Admin role created with all permissions');
+        
+        // Assign all permissions to admin
+        $allPermissions = Permission::all();
+        $adminRole->syncPermissions($allPermissions);
+        $createdRoles['admin'] = $adminRole;
+        $this->command->info("✓ Admin role created with " . $allPermissions->count() . " permissions");
 
-        // Admin - organization level admin
-        $admin = Role::firstOrCreate([
-            'name' => 'Admin', 
+        // Create Support role with limited permissions (will be configured later via UI)
+        $supportRole = Role::create([
+            'name' => 'support',
             'guard_name' => 'web'
         ]);
-        $admin->update(['description' => $roleDescriptions['Admin']]);
-        $admin->syncPermissions([
-            // User management
-            'users.create', 'users.read', 'users.update', 'users.manage',
-            
-            // Organization management (read and update only)
-            'organizations.read', 'organizations.update',
-            
-            // Department management (full access)
-            'departments.create', 'departments.read', 'departments.update', 'departments.delete',
-            
-            // Ticket management (full access)
-            'tickets.create', 'tickets.read', 'tickets.update', 'tickets.delete', 'tickets.assign',
-            
-            // Contract management (full access)
-            'contracts.create', 'contracts.read', 'contracts.update', 'contracts.delete',
-            
-            // Hardware management (full access)
-            'hardware.create', 'hardware.read', 'hardware.update', 'hardware.delete',
-            
-            // Settings
-            'settings.read', 'settings.update',
-            
-            // Notes and messages
-            'notes.create', 'notes.read', 'notes.update', 'notes.delete',
-            'messages.create', 'messages.read', 'messages.update', 'messages.delete',
-            
-            // Articles and reports
-            'articles.create', 'articles.read', 'articles.update', 'articles.delete',
-            'reports.read',
+        
+        // Support role gets basic read permissions only
+        $basicPermissions = Permission::where('name', 'like', '%.read')
+            ->orWhere('name', 'like', '%.create')
+            ->orWhere('name', 'like', '%.update')
+            ->get();
+        $supportRole->syncPermissions($basicPermissions);
+        $createdRoles['support'] = $supportRole;
+        $this->command->info("✓ Support role created with " . $basicPermissions->count() . " permissions");
 
-            // Schedule management (full access)
-            'schedules.create', 'schedules.read', 'schedules.update', 'schedules.delete',
-            
-            // Schedule event types management
-            'schedule-event-types.create', 'schedule-event-types.read', 'schedule-event-types.update', 'schedule-event-types.delete',
-            
-            // Dashboard access
-            'dashboard.access',
-        ]);
-        $this->command->info('✓ Admin role created with administrative permissions');
-
-        // Agent - department level support
-        $agent = Role::firstOrCreate([
-            'name' => 'Agent',
+        // Create Client role for external users
+        $clientRole = Role::create([
+            'name' => 'client',
             'guard_name' => 'web'
         ]);
-        $agent->update(['description' => $roleDescriptions['Agent']]);
-        $agent->syncPermissions([
-            // Basic user access (read only)
-            'users.read',
-            
-            // Organization read access
-            'organizations.read',
-            
-            // Department read access
-            'departments.read',
-            
-            // Ticket management (create, read, update, assign)
-            'tickets.create', 'tickets.read', 'tickets.update', 'tickets.assign',
-            
-            // Contract read access
-            'contracts.read',
-            
-            // Hardware read access
-            'hardware.read',
-            
-            // Notes and messages (create, read, update)
-            'notes.create', 'notes.read', 'notes.update',
-            'messages.create', 'messages.read', 'messages.update',
-            
-            // Articles read access
+        
+        // Client role gets very limited permissions - only ticket and dashboard access
+        $clientPermissions = Permission::whereIn('name', [
+            'tickets.create',
+            'tickets.read',
+            'tickets.update', // own tickets only
             'articles.read',
+            'dashboard.access'
+        ])->get();
+        $clientRole->syncPermissions($clientPermissions);
+        $createdRoles['client'] = $clientRole;
+        $this->command->info("✓ Client role created with " . $clientPermissions->count() . " permissions");
 
-            // Schedule read access (agents can view schedules)
-            'schedules.read',
-            'schedule-event-types.read',
-            
-            // Dashboard access
-            'dashboard.access',
-        ]);
-        $this->command->info('✓ Agent role created with department-level permissions');
+        return $createdRoles;
+    }
 
-        // Client - basic ticket creation and viewing
-        $client = Role::firstOrCreate([
-            'name' => 'Client',
-            'guard_name' => 'web' 
-        ]);
-        $client->update(['description' => $roleDescriptions['Client']]);
-        $client->syncPermissions([
-            // Basic organization access
-            'organizations.read',
-            
-            // Basic ticket access (create and read only)
-            'tickets.create', 'tickets.read',
-            
-            // Basic message access
-            'messages.create', 'messages.read',
-            
-            // Articles read access
-            'articles.read',
+    /**
+     * Resolve permission patterns into actual permission names
+     *
+     * @param mixed $permissions
+     * @return array
+     */
+    private function resolvePermissions($permissions): array
+    {
+        if ($permissions === '*') {
+            // Return all permissions
+            return Permission::pluck('name')->toArray();
+        }
 
-            // Schedule read access (clients can view schedules)
-            'schedules.read',
-            'schedule-event-types.read',
-            
-            // Dashboard access
-            'dashboard.access',
-        ]);
-        $this->command->info('✓ Client role created with basic permissions');
+        if (!is_array($permissions)) {
+            return [];
+        }
 
-        return [
-            'super_admin' => $superAdmin,
-            'admin' => $admin,
-            'agent' => $agent,
-            'client' => $client,
-        ];
+        $resolvedPermissions = [];
+
+        foreach ($permissions as $permission) {
+            if (Str::endsWith($permission, '.*')) {
+                // Wildcard pattern - get all permissions for module
+                $module = Str::beforeLast($permission, '.*');
+                $modulePermissions = Permission::where('name', 'like', $module . '.%')->pluck('name')->toArray();
+                $resolvedPermissions = array_merge($resolvedPermissions, $modulePermissions);
+            } else {
+                // Exact permission name
+                $resolvedPermissions[] = $permission;
+            }
+        }
+
+        // Remove duplicates and filter out non-existent permissions
+        $resolvedPermissions = array_unique($resolvedPermissions);
+        $existingPermissions = Permission::whereIn('name', $resolvedPermissions)->pluck('name')->toArray();
+
+        return $existingPermissions;
     }
 }

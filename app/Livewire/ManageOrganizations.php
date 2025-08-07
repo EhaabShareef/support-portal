@@ -44,19 +44,19 @@ class ManageOrganizations extends Component
     #[Computed]
     public function canCreate()
     {
-        return auth()->user()->hasRole('Super Admin') || auth()->user()->can('organizations.create');
+        return auth()->user()->hasRole('admin') || auth()->user()->can('organizations.create');
     }
 
     #[Computed]
     public function canEdit()
     {
-        return auth()->user()->hasRole('Super Admin') || auth()->user()->can('organizations.edit');
+        return auth()->user()->hasRole('admin') || auth()->user()->can('organizations.edit');
     }
 
     #[Computed]
     public function canDelete()
     {
-        return auth()->user()->hasRole('Super Admin') || auth()->user()->can('organizations.delete');
+        return auth()->user()->hasRole('admin') || auth()->user()->can('organizations.delete');
     }
 
     public function render()
@@ -82,7 +82,7 @@ class ManageOrganizations extends Component
 
         // Role-based filtering
         $user = auth()->user();
-        if ($user->hasRole('Client')) {
+        if ($user->hasRole('client')) {
             $query->where('id', $user->organization_id);
         }
 
@@ -114,7 +114,7 @@ class ManageOrganizations extends Component
         $organization = Organization::findOrFail($id);
         
         // Check if client can only edit their own organization
-        if (auth()->user()->hasRole('Client') && $organization->id !== auth()->user()->organization_id) {
+        if (auth()->user()->hasRole('client') && $organization->id !== auth()->user()->organization_id) {
             session()->flash('error', 'You can only edit your own organization.');
             return;
         }

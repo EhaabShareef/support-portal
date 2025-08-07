@@ -313,7 +313,7 @@
                                     {!! nl2br(e($note->note)) !!}
                                 </div>
                             </div>
-                            @if($note->user_id === auth()->id() || auth()->user()->hasRole(['Super Admin', 'Admin']))
+                            @if($note->user_id === auth()->id() || auth()->user()->hasRole('admin'))
                             <button wire:click="confirmDelete({{ $note->id }})" 
                                     class="ml-2 text-red-500 hover:text-red-700 transition-colors duration-200">
                                 <x-heroicon-o-trash class="h-4 w-4" />

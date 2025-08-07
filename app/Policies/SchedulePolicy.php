@@ -21,20 +21,20 @@ class SchedulePolicy
      */
     public function view(User $user, Schedule $schedule): bool
     {
-        // Super Admin and Admin can view all schedules
-        if ($user->hasAnyRole(['Super Admin', 'Admin'])) {
+        // Admin can view all schedules
+        if ($user->hasRole('admin')) {
             return $user->can('schedules.read');
         }
 
         // Client users can only view schedules for users in their organization
-        if ($user->hasRole('Client')) {
+        if ($user->hasRole('client')) {
             // Check if the schedule belongs to a user in the same organization
             return $user->can('schedules.read') && 
                    $schedule->user->organization_id === $user->organization_id;
         }
 
-        // Agent users can view schedules for users in their department
-        if ($user->hasRole('Agent')) {
+        // Support users can view schedules for users in their department
+        if ($user->hasRole('support')) {
             return $user->can('schedules.read') && 
                    $schedule->user->department_id === $user->department_id;
         }
@@ -47,8 +47,8 @@ class SchedulePolicy
      */
     public function create(User $user): bool
     {
-        // Only Super Admin and Admin can create schedules
-        return $user->hasAnyRole(['Super Admin', 'Admin']) && $user->can('schedules.create');
+        // Only Admin can create schedules
+        return $user->hasRole('admin') && $user->can('schedules.create');
     }
 
     /**
@@ -56,8 +56,8 @@ class SchedulePolicy
      */
     public function update(User $user, Schedule $schedule): bool
     {
-        // Only Super Admin and Admin can update schedules
-        return $user->hasAnyRole(['Super Admin', 'Admin']) && $user->can('schedules.update');
+        // Only Admin can update schedules
+        return $user->hasRole('admin') && $user->can('schedules.update');
     }
 
     /**
@@ -65,8 +65,8 @@ class SchedulePolicy
      */
     public function delete(User $user, Schedule $schedule): bool
     {
-        // Only Super Admin and Admin can delete schedules
-        return $user->hasAnyRole(['Super Admin', 'Admin']) && $user->can('schedules.delete');
+        // Only Admin can delete schedules
+        return $user->hasRole('admin') && $user->can('schedules.delete');
     }
 
     /**
@@ -74,8 +74,8 @@ class SchedulePolicy
      */
     public function restore(User $user, Schedule $schedule): bool
     {
-        // Only Super Admin can restore deleted schedules
-        return $user->hasRole('Super Admin') && $user->can('schedules.delete');
+        // Only Admin can restore deleted schedules
+        return $user->hasRole('admin') && $user->can('schedules.delete');
     }
 
     /**
@@ -83,7 +83,7 @@ class SchedulePolicy
      */
     public function forceDelete(User $user, Schedule $schedule): bool
     {
-        // Only Super Admin can force delete schedules
-        return $user->hasRole('Super Admin') && $user->can('schedules.delete');
+        // Only Admin can force delete schedules
+        return $user->hasRole('admin') && $user->can('schedules.delete');
     }
 }

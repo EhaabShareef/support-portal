@@ -19,9 +19,9 @@
         </div>
     </div>
 
-    @if($userRole === 'Super Admin' || $userRole === 'Admin')
+    @if($userRole === 'admin')
         @include('livewire.dashboard.admin-dashboard')
-    @elseif($userRole === 'Agent')
+    @elseif($userRole === 'support')
         @include('livewire.dashboard.agent-dashboard')
     @else
         @include('livewire.dashboard.client-dashboard')

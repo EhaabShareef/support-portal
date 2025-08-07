@@ -61,11 +61,11 @@ class ViewTicket extends Component
         }
 
         // Role-based access control
-        if ($user->hasRole('Client') && $ticket->organization_id !== $user->organization_id) {
+        if ($user->hasRole('client') && $ticket->organization_id !== $user->organization_id) {
             abort(403, 'You can only view tickets from your organization.');
         }
 
-        if ($user->hasRole('Agent')) {
+        if ($user->hasRole('support')) {
             $hasAccess = $ticket->department_id === $user->department_id;
             
             // Also check department group access
@@ -129,7 +129,7 @@ class ViewTicket extends Component
     {
         $user = auth()->user();
 
-        return $user->hasRole('Super Admin') || $user->can('tickets.edit');
+        return $user->hasRole('admin') || $user->can('tickets.edit');
     }
 
     #[Computed]
@@ -138,12 +138,12 @@ class ViewTicket extends Component
         $user = auth()->user();
 
         // Clients can only reply to their own organization's tickets
-        if ($user->hasRole('Client')) {
+        if ($user->hasRole('client')) {
             return $this->ticket->organization_id === $user->organization_id;
         }
 
-        // Agents can reply to tickets in their department or department group
-        if ($user->hasRole('Agent')) {
+        // Support can reply to tickets in their department or department group
+        if ($user->hasRole('support')) {
             // Check same department first
             if ($this->ticket->department_id === $user->department_id) {
                 return true;
@@ -157,13 +157,13 @@ class ViewTicket extends Component
         }
 
         // Admins can reply to any ticket
-        return $user->hasRole('Super Admin') || $user->hasRole('Admin');
+        return $user->hasRole('admin');
     }
 
     #[Computed]
     public function canAddNotes()
     {
-        return auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Admin') || auth()->user()->hasRole('Agent');
+        return auth()->user()->hasRole('admin') || auth()->user()->hasRole('support');
     }
 
     #[Computed]
@@ -279,7 +279,7 @@ class ViewTicket extends Component
             $this->activeInput = ''; // hide input after submit
 
             // Update first response time if this is the first response
-            if (! $this->ticket->first_response_at && auth()->user()->hasRole(['Agent', 'Admin', 'Super Admin'])) {
+            if (! $this->ticket->first_response_at && auth()->user()->hasRole(['support', 'admin'])) {
                 $this->ticket->update([
                     'first_response_at' => now(),
                     'response_time_minutes' => $this->ticket->created_at->diffInMinutes(now()),
@@ -365,7 +365,7 @@ class ViewTicket extends Component
             ->where('id', $noteId)
             ->first();
 
-        if (! $note || ($note->user_id !== Auth::id() && ! auth()->user()->hasRole(['Super Admin', 'Admin']))) {
+        if (! $note || ($note->user_id !== Auth::id() && ! auth()->user()->hasRole('admin'))) {
             session()->flash('error', 'Unauthorized to delete this note.');
 
             return;
@@ -431,12 +431,12 @@ class ViewTicket extends Component
         $departments = collect();
         $users = collect();
 
-        if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
+        if ($user->hasRole('admin')) {
             $departments = Department::orderBy('name')->get();
             $users = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['Agent', 'Admin', 'Super Admin']);
+                $q->whereIn('name', ['support', 'admin']);
             })->orderBy('name')->get();
-        } elseif ($user->hasRole('Agent')) {
+        } elseif ($user->hasRole('support')) {
             if ($user->department?->department_group_id) {
                 // Show all departments in the same group
                 $departments = Department::where('department_group_id', $user->department->department_group_id)
@@ -444,14 +444,14 @@ class ViewTicket extends Component
                 $users = User::whereHas('department', function ($q) use ($user) {
                     $q->where('department_group_id', $user->department->department_group_id);
                 })->whereHas('roles', function ($q) {
-                    $q->whereIn('name', ['Agent', 'Admin', 'Super Admin']);
+                    $q->whereIn('name', ['support', 'admin']);
                 })->orderBy('name')->get();
             } else {
                 // Fallback to just their department
                 $departments = Department::where('id', $user->department_id)->get();
                 $users = User::where('department_id', $user->department_id)
                     ->whereHas('roles', function ($q) {
-                        $q->whereIn('name', ['Agent', 'Admin', 'Super Admin']);
+                        $q->whereIn('name', ['support', 'admin']);
                     })->orderBy('name')->get();
             }
         }

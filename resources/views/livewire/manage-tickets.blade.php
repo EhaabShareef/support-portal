@@ -117,7 +117,7 @@
                 @endforeach
             </select>
 
-            @if(auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Admin'))
+            @if(auth()->user()->hasRole('admin'))
                 <select wire:model.live="filterOrg" 
                         class="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
                     <option value="">All Organizations</option>
@@ -496,7 +496,7 @@
                             </div>
 
                             {{-- Organization (Only for Agents/Admins) --}}
-                            @if(!auth()->user()->hasRole('Client'))
+                            @if(!auth()->user()->hasRole('client'))
                             <div>
                                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Organization *</label>
                                 <select wire:model.live="form.organization_id" 
