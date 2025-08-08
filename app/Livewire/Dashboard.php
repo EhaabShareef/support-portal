@@ -282,6 +282,9 @@ class Dashboard extends Component
 
     public function render()
     {
+        // Emit ready event for loading overlay after rendering
+        $this->dispatch('dashboard-ready');
+        
         return view('livewire.dashboard', [
             'dashboardData' => $this->dashboardData,
             'userRole' => $this->userRole,

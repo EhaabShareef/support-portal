@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{{ $title ?? 'Dashboard' }} – Support Portal</title>
 
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700" rel="stylesheet" />
 
@@ -16,6 +17,46 @@
 </head>
 
 <body class="bg-neutral-50 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 min-h-screen font-sans antialiased">
+
+    {{-- First-run Loading Overlay --}}
+    @if(session('show_loading_overlay'))
+        <x-loading-overlay />
+        
+        {{-- JS-off fallback for loading overlay --}}
+        <noscript>
+            <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-neutral-50/95 dark:bg-neutral-900/95 backdrop-blur-sm">
+                <div class="text-center space-y-8 max-w-md mx-auto px-8">
+                    <div class="flex justify-center">
+                        <svg class="w-16 h-16 text-sky-600/80 dark:text-sky-400/80" 
+                             viewBox="0 0 100 100" 
+                             fill="none" 
+                             xmlns="http://www.w3.org/2000/svg">
+                            <rect x="25" y="25" width="50" height="50" 
+                                  stroke="currentColor" 
+                                  stroke-width="2" 
+                                  fill="none" 
+                                  rx="4"/>
+                            <circle cx="50" cy="50" r="8" 
+                                    stroke="currentColor" 
+                                    stroke-width="2" 
+                                    fill="none"/>
+                        </svg>
+                    </div>
+                    <div class="space-y-3">
+                        <p class="text-lg font-medium text-neutral-800 dark:text-neutral-200">
+                            Signing you in…
+                        </p>
+                        <div class="flex justify-center space-x-1">
+                            <div class="w-2 h-2 bg-sky-500/60 rounded-full"></div>
+                            <div class="w-2 h-2 bg-sky-500/40 rounded-full"></div>
+                            <div class="w-2 h-2 bg-sky-500/20 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <meta http-equiv="refresh" content="3;url={{ request()->url() }}">
+        </noscript>
+    @endif
 
     {{-- NAVIGATION --}}
     <x-navigation />

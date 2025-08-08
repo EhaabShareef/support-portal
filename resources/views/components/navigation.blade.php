@@ -136,7 +136,7 @@
                             @endif
                         </div>
                         
-                        <button @click="userMenuOpen = false" wire:click="$dispatch('openProfileModal')" 
+                        <button @click="userMenuOpen = false; $dispatch('openProfileModal')" 
                                 class="w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
                             <x-heroicon-o-user-circle class="h-4 w-4 inline mr-2" />
                             Profile

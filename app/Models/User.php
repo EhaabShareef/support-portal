@@ -149,9 +149,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's avatar URL or generate initials avatar
+     * Get the user's avatar URL or return null
      */
-    public function getAvatarUrlAttribute(): string
+    public function getAvatarUrlAttribute(): ?string
     {
         if ($this->avatar && file_exists(public_path('storage/' . $this->avatar))) {
             return asset('storage/' . $this->avatar);

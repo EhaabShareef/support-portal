@@ -1,4 +1,4 @@
-<div>
+<div x-data="{}" @open-profile-modal.window="$wire.openModal()">
     {{-- Profile Modal --}}
     @if($showModal)
     <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">

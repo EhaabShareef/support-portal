@@ -67,6 +67,12 @@ Route::middleware('auth')->group(function () {
 
     // Profile Routes
     Route::get('/profile', UserProfile::class)->name('profile');
+    
+    // Loading overlay flag clear
+    Route::post('/clear-loading-flag', function () {
+        session()->forget('show_loading_overlay');
+        return response()->json(['status' => 'ok']);
+    })->name('clear.loading.flag');
 
     // Schedule Routes (Admin and Client only)
     Route::middleware(['role:admin|client'])->group(function () {

@@ -1,37 +1,7 @@
-Review the **user profile management** feature in the project—specifically the functionality for a logged-in user to view and update **their own profile**.
+Implement a first-run loading experience immediately after a successful login that always displays for at least three seconds, even on very fast networks. Trigger it right after authentication and before the dashboard becomes interactive, so the user sees a full-page, non-scrollable overlay with a subtle dim or solid background matching the app’s existing monochrome palette. The overlay should fade in quickly, show a compact animated tech icon (simple line/outline animation, looped smoothly), and then fade out after both conditions are true: the three-second minimum has elapsed and any initial dashboard data has finished loading. If data is already ready, still keep the overlay up until the three-second mark so the transition feels deliberate rather than a flash. Make the overlay accessible: trap focus within it, mark the root region `aria-busy="true"`, and respect `prefers-reduced-motion` by switching the icon animation to a gentle pulse or static state.
 
-Your tasks:
+Keep the visual language minimalist to fit the current style: neutral background, single accent shade already used in the app, and restrained typography. In the center, display a short rotating line of “nerd but cultured” copy that nods to computing history without being cringe—things like “Bootstrapping kernel…”, “Invoking Turing routine…”, “Mounting /humility”, “Linking Von Neumann unit…”, “Paging Schrödinger’s cache…”, “Negotiating handshakes with HAL (be nice)”, or “Compiling manners”. Cycle one line every \~900ms during the three-second window. Pair this with a small SVG circuit/terminal/chip outline that animates with stroke-dashoffset or a gentle rotate; keep it crisp, single-weight, and monochrome so it doesn’t fight the rest of the UI.
 
-1. **Profile Update Permissions**
+Wire this so it only appears on login, not every page change. The simplest approach is: on successful auth, set a short-lived session flag and redirect to the dashboard; the layout that wraps the dashboard reads that flag and mounts an Alpine/Livewire loading component. That component shows the overlay, starts a three-second timer, and listens for a “ready” event emitted when the initial data payload resolves; it hides itself only when both the timer and readiness are satisfied. Include a JS-off fallback where the dashboard view renders a static “Signing you in…” message with a meta refresh to the same route after three seconds, so the experience still degrades gracefully. Prevent double-show by clearing the flag once the overlay dismisses.
 
-   * Check the profile update logic to ensure it follows **modern security and UX practices**.
-   * Define **what fields can and cannot be updated** by the logged-in user (e.g., allow name, password, avatar/photo, contact info, but restrict role changes, organization changes, department assignments, or permission modifications).
-   * Ensure email changes, if allowed, are validated and potentially require confirmation before taking effect.
-   * Make sure no sensitive fields (e.g., `is_admin`, `role_id`, `permissions`) can be altered directly from this interface.
-
-2. **UI/UX Improvements**
-
-   * Replace the current full-page edit form (if applicable) with a **simple, modern modal** for editing the profile.
-   * Make sure this modal includes:
-
-     * Profile picture upload (with preview before saving)
-     * Secure password update option (with current password verification)
-     * Inline validation for fields
-   * Ensure **responsive design** so it works across desktop and mobile.
-
-3. **Navigation Profile Dropdown**
-
-   * Review the profile dropdown in the navigation bar.
-   * Fix any issues where **email or username text overflows** outside the container (apply text truncation with ellipsis and tooltip for full email).
-   * Ensure dropdown width and alignment are responsive to various screen sizes.
-
-4. **Output & Recommendations**
-
-   * Provide a step-by-step improvement plan:
-
-     * File paths to update
-     * Backend changes (validation, security checks, authorization)
-     * Frontend changes (modal design, responsive fixes, overflow handling)
-   * Include **best practice notes** for profile management and UI consistency.
-
-The end result should be a **secure, user-friendly profile management experience** with a clean and responsive dropdown, and a modern modal for editing user details.
+For implementation details, add a tiny, self-contained component (e.g., `<x-loading-overlay />` or a Livewire/Alpine snippet) to the post-login landing layout. Use CSS utilities you already have (Tailwind) for the fade and layout; keep assets inline SVG to avoid extra requests. Cap the z-index above modals, disable scroll on `body` while active, and restore focus to the main heading when it dismisses. Finally, ensure this is configurable: expose a simple env/config switch to disable or shorten the enforced delay in local/dev builds, but keep the full three seconds in staging/production so the entrance feels intentional.

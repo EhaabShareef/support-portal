@@ -36,6 +36,9 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            
+            // Set flag for first-run loading overlay
+            $request->session()->flash('show_loading_overlay', true);
 
             return redirect()->intended('/dashboard');
         }
