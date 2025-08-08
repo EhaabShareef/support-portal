@@ -20,6 +20,9 @@ use App\Livewire\Admin\ViewUser;
 use App\Livewire\Admin\ManageRoles;
 use App\Livewire\Admin\ManageSettings;
 use App\Livewire\ScheduleCalendar;
+use App\Livewire\Admin\Reports\ReportsDashboard;
+use App\Livewire\Admin\Reports\OrganizationSummaryReport;
+use App\Livewire\Admin\Reports\TicketVolumeReport;
 
 
 Route::get('/', function () {
@@ -77,6 +80,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/users/{user}', ViewUser::class)->name('users.view');
         Route::get('/roles', ManageRoles::class)->name('roles.index');
         Route::get('/settings', ManageSettings::class)->name('settings');
+        Route::get('/reports', ReportsDashboard::class)->name('reports.dashboard');
+        Route::get('/reports/ticket-volume', TicketVolumeReport::class)->name('reports.ticket-volume');
+        Route::get('/reports/organization-summary', OrganizationSummaryReport::class)->name('reports.organization-summary');
     });
 
 });

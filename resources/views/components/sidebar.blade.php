@@ -19,6 +19,24 @@
             <x-heroicon-o-users class="h-5 w-5 text-neutral-600 dark:text-neutral-300"/>
             <span x-show="!sidebarCollapsed" class="transition-all duration-200 origin-left">Users</span>
         </a>
+
+        <a href="{{ route('admin.roles.index') }}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50 transition">
+            <x-heroicon-o-shield-check class="h-5 w-5 text-neutral-600 dark:text-neutral-300"/>
+            <span x-show="!sidebarCollapsed" class="transition-all duration-200 origin-left">Roles</span>
+        </a>
+
+        <a href="{{ route('admin.reports.dashboard') }}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50 transition">
+            <x-heroicon-o-chart-bar class="h-5 w-5 text-neutral-600 dark:text-neutral-300"/>
+            <span x-show="!sidebarCollapsed" class="transition-all duration-200 origin-left">Reports</span>
+        </a>
+
+        <a href="{{ route('admin.settings') }}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50 transition">
+            <x-heroicon-o-cog-6-tooth class="h-5 w-5 text-neutral-600 dark:text-neutral-300"/>
+            <span x-show="!sidebarCollapsed" class="transition-all duration-200 origin-left">Settings</span>
+        </a>
         @endrole
 
         <a href="{{ route('organizations.index') }}"
@@ -32,6 +50,14 @@
             <x-heroicon-o-ticket class="h-5 w-5 text-neutral-600 dark:text-neutral-300"/>
             <span x-show="!sidebarCollapsed" class="transition-all duration-200 origin-left">Tickets</span>
         </a>
+
+        @role('admin|client')
+        <a href="{{ route('schedule.index') }}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50 transition">
+            <x-heroicon-o-calendar-days class="h-5 w-5 text-neutral-600 dark:text-neutral-300"/>
+            <span x-show="!sidebarCollapsed" class="transition-all duration-200 origin-left">Schedule</span>
+        </a>
+        @endrole
 
     </nav>
 </aside>

@@ -66,6 +66,13 @@
                     <span>Roles</span>
                 </a>
                 
+                {{-- Admin Reports (only for admins) --}}
+                <a href="{{ route('admin.reports.dashboard') }}"
+                   class="nav-link {{ request()->routeIs('admin.reports.*') ? 'nav-link-active' : '' }}">
+                    <x-heroicon-o-chart-bar class="h-4 w-4" />
+                    <span>Reports</span>
+                </a>
+                
                 {{-- Admin Settings (only for admins) --}}
                 <a href="{{ route('admin.settings') }}"
                    class="nav-link {{ request()->routeIs('admin.settings') ? 'nav-link-active' : '' }}">
@@ -214,6 +221,14 @@
                    @click="mobileMenuOpen = false">
                     <x-heroicon-o-shield-check class="h-5 w-5" />
                     <span>Roles</span>
+                </a>
+                
+                {{-- Mobile Admin Reports --}}
+                <a href="{{ route('admin.reports.dashboard') }}"
+                   class="mobile-nav-link {{ request()->routeIs('admin.reports.*') ? 'mobile-nav-link-active' : '' }}"
+                   @click="mobileMenuOpen = false">
+                    <x-heroicon-o-chart-bar class="h-5 w-5" />
+                    <span>Reports</span>
                 </a>
                 
                 {{-- Mobile Admin Settings --}}

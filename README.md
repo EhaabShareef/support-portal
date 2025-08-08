@@ -12,6 +12,7 @@ The application features a comprehensive **Role-Based Access Control (RBAC)** sy
 - 🛠️ **Hardware Management** - Track hardware assets and support
 - 👥 **User Management** - Comprehensive user administration
 - 📅 **Schedule Management** - Team schedule calendar with event tracking
+- 📊 **Reports & Analytics** - Comprehensive admin-only reporting system with real-time insights
 - 🔐 **Role-Based Permissions** - Granular permission system with role management
 - 📱 **Mobile Responsive** - Fully responsive design for all devices
 - 🌙 **Dark Mode** - Toggle between light and dark themes
@@ -84,24 +85,26 @@ The Support Portal implements a comprehensive RBAC system using **Spatie Laravel
 
 The system organizes permissions into the following modules:
 
-- **Users** (create, read, update, delete)
+- **Users** (create, read, update, delete, manage)
 - **Organizations** (create, read, update, delete)
 - **Departments** (create, read, update, delete)
-- **Tickets** (create, read, update, delete)
+- **Tickets** (create, read, update, delete, assign)
 - **Contracts** (create, read, update, delete)
 - **Hardware** (create, read, update, delete)
 - **Settings** (read, update)
 - **Notes** (create, read, update, delete)
 - **Messages** (create, read, update, delete)
 - **Articles** (create, read, update, delete)
-- **Reports** (read)
+- **Reports** (read) - *Admin-only comprehensive analytics and reporting system*
 - **Schedules** (create, read, update, delete)
 - **Schedule Event Types** (create, read, update, delete)
+- **Dashboard** (access)
 
 ### 🎛️ **Management Interface**
 
 - **Role Management**: `/admin/roles` - Create and manage roles with permission grid interface
 - **User Management**: `/admin/users` - Manage users and assign roles
+- **Reports Dashboard**: `/admin/reports` - Comprehensive analytics and reporting system (Admin-only)
 - **Permission Grid**: Matrix-style interface for easy role-permission assignment
 - **User Permissions View**: See exactly what permissions a user has through their role
 
@@ -185,9 +188,163 @@ Each department group has a default manager user:
 
 **Default Password**: `password` (should be changed after first login)
 
+## 📊 Reports & Analytics Module
+
+### 🔍 **Comprehensive Reporting System**
+
+The Support Portal features a powerful admin-only reporting system that provides detailed insights into all aspects of your support operations. Access reports through the `/admin/reports` dashboard.
+
+#### **📈 Available Report Categories**
+
+##### **1. Ticket & Support Performance**
+- **Ticket Volume & Status Trends** ✅ - Track ticket counts and workload patterns with advanced filtering
+- **Response & Resolution Time Analysis** - Monitor SLA compliance and team performance  
+- **Agent Workload Distribution** - Ensure balanced workloads across support staff
+- **Ticket Type & Priority Breakdown** - Analyze patterns to optimize resource allocation
+- **Aging & Overdue Tickets** - Identify stalled requests requiring attention
+
+##### **2. Organization & Contract Oversight**
+- **Organization Summary** ✅ - High-level client engagement metrics with status indicators
+- **Contract Renewal Forecast** - Proactive contract management and renewal planning
+- **Contract Value Analysis** - Revenue tracking and financial insights
+
+##### **3. Hardware & Asset Management**
+- **Hardware Inventory Snapshot** - Complete asset visibility and allocation tracking
+- **Warranty & Maintenance Schedule** - Proactive maintenance planning
+- **Hardware Allocation by Contract** - Contract deliverable validation
+
+##### **4. User & Department Activity**
+- **User Account Status & Access** - Security auditing and access management
+- **Department Performance** - Team effectiveness and resource allocation insights
+- **Agent Productivity** - Individual performance tracking and recognition
+
+##### **5. Schedule & Workforce Planning**
+- **Schedule Coverage** - Staffing adequacy and coverage gap identification
+- **User Schedule Summary** - Workload tracking and attendance validation
+
+### 🛡️ **Security & Access Control**
+
+- **Admin-Only Access**: All reports require admin role for maximum data security
+- **Role-Based Authorization**: Multiple layers of permission checking
+- **Read-Only Operations**: Reports never modify data, ensuring operational safety
+- **Optimized Queries**: Performance-focused database queries with proper indexing
+
+### ⚡ **Report Features**
+
+- **Advanced Filtering**: Date ranges, organizations, departments, agents, status, priority, and more
+- **Real-Time Updates**: Live filtering with instant results
+- **Export Capabilities**: CSV and Excel export functionality (framework ready)
+- **Responsive Design**: Mobile-friendly interface with dark mode support
+- **Query String Persistence**: Shareable URLs with filter state preservation
+- **Pagination Support**: Efficient handling of large datasets
+
+### 🎯 **Getting Started with Reports**
+
+1. **Access**: Navigate to `/admin/reports` (requires admin role)
+2. **Browse Categories**: Select from 5 organized report categories
+3. **Apply Filters**: Use comprehensive filtering options for targeted insights
+4. **Analyze Data**: View trends, patterns, and key metrics
+5. **Export Results**: Download reports for external analysis
+
 ## Recent Updates
 
-### 🚀 **v4.0.0 - Complete Organizational Structure Rebuild** (Latest)
+### 🚀 **v4.1.0 - Reports & Analytics Module Implementation** (Latest)
+
+#### 📊 **Major Features**
+
+- ✅ **Comprehensive Reports System**: Admin-only reporting module with 15 planned report types across 5 categories
+  - **Ticket & Support Performance**: Volume trends, response times, agent workload, type breakdowns, aging analysis
+  - **Organization & Contract Oversight**: Organization summaries, renewal forecasts, contract value analysis
+  - **Hardware & Asset Management**: Inventory snapshots, warranty schedules, allocation tracking
+  - **User & Department Activity**: Account status, performance metrics, productivity analysis
+  - **Schedule & Workforce Planning**: Coverage analysis, schedule summaries, workforce insights
+
+- ✅ **Advanced Report Implementation**: Two fully functional reports with rich features
+  - **Ticket Volume & Status Trends**: Multi-dimensional filtering, grouping options, date aggregation, visual charts
+  - **Organization Summary**: High-level metrics dashboard, status indicators, pagination support
+  - Framework established for rapid implementation of remaining 13 reports
+
+- ✅ **Enterprise-Grade Features**: Production-ready reporting infrastructure
+  - **Advanced Filtering**: Date ranges, multi-level organization/department filters, user selection, status/priority filtering
+  - **Real-Time Updates**: Live filter application with instant results and query string persistence
+  - **Visual Analytics**: Percentage bars, status badges, metric cards, responsive charts
+  - **Export Framework**: Ready for CSV/Excel export implementation across all reports
+
+#### 🔒 **Security & Access Control**
+
+- ✅ **Admin-Only Access**: Complete restriction to admin role with multiple authorization layers
+  - Route-level middleware protection (`role:admin`)
+  - Component-level authorization checks in all Livewire components
+  - Permission-based access control through existing Spatie system
+  - Reports module configured in `config/modules.php` with `reports.read` permission
+
+- ✅ **Data Security**: Read-only operations with optimized, secure database queries
+  - Parameterized queries preventing SQL injection
+  - Role-based data filtering ensuring users see only authorized information
+  - Performance-optimized queries using indexed columns and eager loading
+
+#### 🎨 **User Interface & Experience**
+
+- ✅ **Professional Dashboard**: Clean, categorized report selection interface
+  - 5 organized categories with 15 total report types
+  - Visual icons and descriptions for each report
+  - Availability indicators showing implemented vs planned reports
+  - Responsive card-based layout with hover effects
+
+- ✅ **Rich Report Interface**: Advanced filtering and visualization
+  - Comprehensive filter panels with real-time updates
+  - Visual data representation with percentage bars and charts
+  - Status badges, metric cards, and summary statistics
+  - Mobile-responsive design with dark mode support
+  - Consistent styling matching existing application theme
+
+#### 🛠️ **Technical Architecture**
+
+- ✅ **Scalable Framework**: Modular structure for rapid report development
+  - Standardized Livewire component patterns for consistent development
+  - Reusable filter components and query building patterns
+  - Template-based report structure for quick implementation
+  - Configuration-driven dashboard with easy report addition
+
+- ✅ **Performance Optimization**: Efficient data handling for large datasets
+  - Strategic eager loading preventing N+1 queries
+  - Pagination support for handling large result sets
+  - Computed properties for expensive calculations
+  - Query string persistence for shareable report URLs
+
+- ✅ **Navigation Integration**: Seamless integration with existing admin interface
+  - Reports link added to admin sidebar navigation
+  - Consistent with existing admin module patterns
+  - Breadcrumb navigation and back buttons for intuitive flow
+
+#### 📁 **Implementation Structure**
+
+- ✅ **Organized File Structure**: Clean separation of concerns
+  ```
+  app/Livewire/Admin/Reports/          # Report components
+  resources/views/livewire/admin/reports/ # Report templates  
+  routes/web.php                       # Protected admin routes
+  config/modules.php                  # Permission configuration
+  ```
+
+- ✅ **Documentation**: Comprehensive implementation documentation
+  - `REPORTS_MODULE_IMPLEMENTATION.md` with complete technical details
+  - Updated README with reports section and usage instructions
+  - Code comments and architectural notes for maintainability
+
+#### 🎯 **Business Value**
+
+- ✅ **Immediate Operational Insights**: Two working reports providing instant value
+  - Track ticket volume trends and identify workload spikes
+  - Monitor organization health and engagement metrics
+  - Data-driven decision making for resource allocation
+
+- ✅ **Expansion Ready**: Framework supports rapid development of remaining reports
+  - 13 additional reports can be implemented quickly using established patterns
+  - Consistent user experience across all report types
+  - Scalable architecture supporting future reporting needs
+
+### 🚀 **v4.0.0 - Complete Organizational Structure Rebuild** (Previous)
 
 #### 🏗️ **Major Restructuring**
 

@@ -198,28 +198,35 @@
                                             <div>
                                                 <h4 class="text-md font-medium text-neutral-900 dark:text-neutral-100 mb-4">Permissions</h4>
                                                 <div class="bg-neutral-50 dark:bg-neutral-700 rounded-lg p-4 max-h-96 overflow-y-auto">
-                                                    @foreach($permissions as $module => $modulePermissions)
+                                                    @foreach($permissionMatrix as $groupKey => $group)
                                                         <div class="mb-6 last:mb-0">
-                                                            <div class="flex items-center justify-between mb-3">
-                                                                <h5 class="text-sm font-semibold text-neutral-800 dark:text-neutral-200 capitalize">
-                                                                    {{ ucfirst(str_replace('_', ' ', $module)) }} Module
-                                                                </h5>
-                                                                <button type="button" wire:click="toggleAllPermissionsForModule('{{ $module }}')"
-                                                                    class="text-xs text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300">
-                                                                    {{ count(array_intersect($modulePermissions->pluck('name')->toArray(), $selectedPermissions)) === count($modulePermissions) ? 'Deselect All' : 'Select All' }}
-                                                                </button>
-                                                            </div>
-                                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                                @foreach($modulePermissions as $permission)
-                                                                    <label class="flex items-center space-x-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer hover:text-neutral-900 dark:hover:text-neutral-100">
-                                                                        <input type="checkbox" 
-                                                                               wire:click="togglePermission('{{ $permission->name }}')"
-                                                                               {{ in_array($permission->name, $selectedPermissions) ? 'checked' : '' }}
-                                                                               class="rounded border-neutral-300 dark:border-neutral-600 text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400">
-                                                                        <span class="capitalize">{{ explode('.', $permission->name)[1] ?? $permission->name }}</span>
-                                                                    </label>
-                                                                @endforeach
-                                                            </div>
+                                                            <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
+                                                                <span>{{ $group['label'] }}</span>
+                                                            </h4>
+                                                            @foreach($group['modules'] as $moduleKey => $module)
+                                                                <div class="mb-4 last:mb-0 ml-4">
+                                                                    <div class="flex items-center justify-between mb-3">
+                                                                        <h5 class="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                                                                            {{ $module['label'] }}
+                                                                        </h5>
+                                                                        <button type="button" wire:click="toggleAllPermissionsForModule('{{ $moduleKey }}')"
+                                                                            class="text-xs text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300">
+                                                                            {{ $this->isModuleFullySelected($moduleKey) ? 'Deselect All' : 'Select All' }}
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                                        @foreach($module['actions'] as $actionKey => $action)
+                                                                            <label class="flex items-center space-x-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer hover:text-neutral-900 dark:hover:text-neutral-100">
+                                                                                <input type="checkbox" 
+                                                                                       wire:click="togglePermission('{{ $action['permission'] }}')"
+                                                                                       {{ in_array($action['permission'], $selectedPermissions) ? 'checked' : '' }}
+                                                                                       class="rounded border-neutral-300 dark:border-neutral-600 text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400">
+                                                                                <span>{{ $action['label'] }}</span>
+                                                                            </label>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
                                                         </div>
                                                     @endforeach
                                                 </div>
@@ -228,28 +235,35 @@
                                             <div>
                                                 <h4 class="text-md font-medium text-neutral-900 dark:text-neutral-100 mb-4">Permissions</h4>
                                                 <div class="bg-neutral-50 dark:bg-neutral-700 rounded-lg p-4 max-h-96 overflow-y-auto">
-                                                    @foreach($permissions as $module => $modulePermissions)
+                                                    @foreach($permissionMatrix as $groupKey => $group)
                                                         <div class="mb-6 last:mb-0">
-                                                            <div class="flex items-center justify-between mb-3">
-                                                                <h5 class="text-sm font-semibold text-neutral-800 dark:text-neutral-200 capitalize">
-                                                                    {{ ucfirst(str_replace('_', ' ', $module)) }} Module
-                                                                </h5>
-                                                                <button type="button" wire:click="toggleAllPermissionsForModule('{{ $module }}')"
-                                                                    class="text-xs text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300">
-                                                                    {{ count(array_intersect($modulePermissions->pluck('name')->toArray(), $selectedPermissions)) === count($modulePermissions) ? 'Deselect All' : 'Select All' }}
-                                                                </button>
-                                                            </div>
-                                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                                @foreach($modulePermissions as $permission)
-                                                                    <label class="flex items-center space-x-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer hover:text-neutral-900 dark:hover:text-neutral-100">
-                                                                        <input type="checkbox" 
-                                                                               wire:click="togglePermission('{{ $permission->name }}')"
-                                                                               {{ in_array($permission->name, $selectedPermissions) ? 'checked' : '' }}
-                                                                               class="rounded border-neutral-300 dark:border-neutral-600 text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400">
-                                                                        <span class="capitalize">{{ explode('.', $permission->name)[1] ?? $permission->name }}</span>
-                                                                    </label>
-                                                                @endforeach
-                                                            </div>
+                                                            <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
+                                                                <span>{{ $group['label'] }}</span>
+                                                            </h4>
+                                                            @foreach($group['modules'] as $moduleKey => $module)
+                                                                <div class="mb-4 last:mb-0 ml-4">
+                                                                    <div class="flex items-center justify-between mb-3">
+                                                                        <h5 class="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                                                                            {{ $module['label'] }}
+                                                                        </h5>
+                                                                        <button type="button" wire:click="toggleAllPermissionsForModule('{{ $moduleKey }}')"
+                                                                            class="text-xs text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300">
+                                                                            {{ $this->isModuleFullySelected($moduleKey) ? 'Deselect All' : 'Select All' }}
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                                        @foreach($module['actions'] as $actionKey => $action)
+                                                                            <label class="flex items-center space-x-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer hover:text-neutral-900 dark:hover:text-neutral-100">
+                                                                                <input type="checkbox" 
+                                                                                       wire:click="togglePermission('{{ $action['permission'] }}')"
+                                                                                       {{ in_array($action['permission'], $selectedPermissions) ? 'checked' : '' }}
+                                                                                       class="rounded border-neutral-300 dark:border-neutral-600 text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400">
+                                                                                <span>{{ $action['label'] }}</span>
+                                                                            </label>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
                                                         </div>
                                                     @endforeach
                                                 </div>
