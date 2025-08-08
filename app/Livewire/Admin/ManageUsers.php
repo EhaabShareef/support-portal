@@ -39,7 +39,7 @@ class ManageUsers extends Component
         'department_id' => '',
         'organization_id' => '',
         'is_active' => true,
-        'role' => 'client', // Default to client role
+        'role' => 'support', // Default to support role
     ];
 
     // Confirmation properties
@@ -175,7 +175,7 @@ class ManageUsers extends Component
             'department_id' => '',
             'organization_id' => '',
             'is_active' => true,
-            'role' => 'client', // Default to client role
+            'role' => 'support', // Default to support role
         ];
         $this->userId = null;
     }
@@ -431,6 +431,9 @@ class ManageUsers extends Component
     {
         $query = User::query()
             ->with(['department', 'organization', 'roles'])
+            ->whereHas('roles', function ($roleQuery) {
+                $roleQuery->whereIn('name', ['admin', 'support']);
+            })
             ->when($this->search, function ($q) {
                 $q->where(function ($query) {
                     $query->where('name', 'like', "%{$this->search}%")
@@ -457,7 +460,7 @@ class ManageUsers extends Component
             'users' => $query->withCount(['tickets', 'assignedTickets', 'permissions'])->latest()->paginate(15),
             'departments' => Department::orderBy('name')->get(),
             'organizations' => Organization::orderBy('name')->get(),
-            'availableRoles' => Role::orderBy('name')->pluck('name'),
+            'availableRoles' => Role::whereIn('name', ['admin', 'support'])->orderBy('name')->pluck('name'),
             'userAccessInfo' => $this->showAccessModal ? $this->getUserAccessInfo() : [],
         ]);
     }

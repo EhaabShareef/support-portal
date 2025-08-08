@@ -20,6 +20,7 @@ use App\Livewire\Admin\ManageUsers as AdminManageUsers;
 use App\Livewire\Admin\ViewUser;
 use App\Livewire\Admin\ManageRoles;
 use App\Livewire\Admin\ManageSettings;
+use App\Livewire\Admin\UsersRoles;
 use App\Livewire\ScheduleCalendar;
 use App\Livewire\Admin\Reports\ReportsDashboard;
 use App\Livewire\Admin\Reports\OrganizationSummaryReport;
@@ -86,9 +87,16 @@ Route::middleware('auth')->group(function () {
 
     // Admin Routes (only for admin role)
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/users', AdminManageUsers::class)->name('users.index');
+        // Combined Users & Roles page
+        Route::get('/users-roles', UsersRoles::class)->name('users-roles.index');
         Route::get('/users/{user}', ViewUser::class)->name('users.view');
-        Route::get('/roles', ManageRoles::class)->name('roles.index');
+        
+        // Legacy redirects for backward compatibility
+        Route::get('/users', fn() => redirect()->route('admin.users-roles.index', ['tab' => 'users']))
+            ->name('users.index');
+        Route::get('/roles', fn() => redirect()->route('admin.users-roles.index', ['tab' => 'roles']))
+            ->name('roles.index');
+        
         Route::get('/settings', ManageSettings::class)->name('settings');
         Route::get('/reports', ReportsDashboard::class)->name('reports.dashboard');
         Route::get('/reports/ticket-volume', TicketVolumeReport::class)->name('reports.ticket-volume');

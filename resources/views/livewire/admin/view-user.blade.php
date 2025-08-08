@@ -3,9 +3,9 @@
     <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center gap-4">
-                <a href="{{ route('admin.users.index') }}"
+                <a href="{{ route('admin.users-roles.index', ['tab' => 'users']) }}"
                     class="inline-flex items-center text-sm text-neutral-600 dark:text-neutral-300 hover:text-neutral-800 dark:hover:text-neutral-100 hover:underline transition-colors duration-200">
-                    <x-heroicon-o-arrow-left class="h-4 w-4 mr-1" /> Back to Users
+                    <x-heroicon-o-arrow-left class="h-4 w-4 mr-1" /> Back to Users & Roles
                 </a>
                 <div class="hidden sm:block w-px h-6 bg-neutral-300 dark:bg-neutral-600"></div>
                 <div>

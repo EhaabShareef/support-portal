@@ -14,16 +14,10 @@
         </a>
 
         @role('admin')
-        <a href="{{ route('admin.users.index') }}"
+        <a href="{{ route('admin.users-roles.index') }}"
            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50 transition">
             <x-heroicon-o-users class="h-5 w-5 text-neutral-600 dark:text-neutral-300"/>
-            <span x-show="!sidebarCollapsed" class="transition-all duration-200 origin-left">Users</span>
-        </a>
-
-        <a href="{{ route('admin.roles.index') }}"
-           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50 transition">
-            <x-heroicon-o-shield-check class="h-5 w-5 text-neutral-600 dark:text-neutral-300"/>
-            <span x-show="!sidebarCollapsed" class="transition-all duration-200 origin-left">Roles</span>
+            <span x-show="!sidebarCollapsed" class="transition-all duration-200 origin-left">Users & Roles</span>
         </a>
 
         <a href="{{ route('admin.reports.dashboard') }}"

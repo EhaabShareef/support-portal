@@ -51,19 +51,12 @@
                 </a>
                 @endif
 
-                {{-- Admin Users (only for admins) --}}
+                {{-- Admin Users & Roles (only for admins) --}}
                 @if(auth()->user()->isAdmin())
-                <a href="{{ route('admin.users.index') }}"
-                   class="nav-link {{ request()->routeIs('admin.users.*') ? 'nav-link-active' : '' }}">
+                <a href="{{ route('admin.users-roles.index') }}"
+                   class="nav-link {{ request()->routeIs('admin.users-roles.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') ? 'nav-link-active' : '' }}">
                     <x-heroicon-o-users class="h-4 w-4" />
-                    <span>Users</span>
-                </a>
-                
-                {{-- Admin Roles (only for admins) --}}
-                <a href="{{ route('admin.roles.index') }}"
-                   class="nav-link {{ request()->routeIs('admin.roles.*') ? 'nav-link-active' : '' }}">
-                    <x-heroicon-o-shield-check class="h-4 w-4" />
-                    <span>Roles</span>
+                    <span>Users & Roles</span>
                 </a>
                 
                 {{-- Admin Reports (only for admins) --}}
@@ -214,21 +207,13 @@
                 </a>
                 @endif
 
-                {{-- Mobile Admin Users --}}
+                {{-- Mobile Admin Users & Roles --}}
                 @if(auth()->user()->isAdmin())
-                <a href="{{ route('admin.users.index') }}"
-                   class="mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'mobile-nav-link-active' : '' }}"
+                <a href="{{ route('admin.users-roles.index') }}"
+                   class="mobile-nav-link {{ request()->routeIs('admin.users-roles.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') ? 'mobile-nav-link-active' : '' }}"
                    @click="mobileMenuOpen = false">
                     <x-heroicon-o-users class="h-5 w-5" />
-                    <span>Users</span>
-                </a>
-                
-                {{-- Mobile Admin Roles --}}
-                <a href="{{ route('admin.roles.index') }}"
-                   class="mobile-nav-link {{ request()->routeIs('admin.roles.*') ? 'mobile-nav-link-active' : '' }}"
-                   @click="mobileMenuOpen = false">
-                    <x-heroicon-o-shield-check class="h-5 w-5" />
-                    <span>Roles</span>
+                    <span>Users & Roles</span>
                 </a>
                 
                 {{-- Mobile Admin Reports --}}
