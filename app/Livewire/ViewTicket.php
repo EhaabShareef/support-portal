@@ -96,7 +96,7 @@ class ViewTicket extends Component
                       ->with('user:id,name')
                       ->latest();
             },
-            'attachments:id,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image',
+            'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image',
         ]);
 
         $this->ticket->setRelation(
@@ -105,7 +105,7 @@ class ViewTicket extends Component
                    ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
                    ->with([
                        'sender:id,name',
-                       'attachments:id,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+                       'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
                    ])
                    ->latest('created_at')
                    ->get()
@@ -230,7 +230,7 @@ class ViewTicket extends Component
                              ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
                              ->with([
                                  'sender:id,name',
-                                 'attachments:id,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+                                 'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
                              ])
                              ->latest('created_at')
                              ->get()
@@ -293,7 +293,7 @@ class ViewTicket extends Component
                              ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
                              ->with([
                                  'sender:id,name',
-                                 'attachments:id,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+                                 'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
                              ])
                              ->latest('created_at')
                              ->get()
@@ -407,7 +407,7 @@ class ViewTicket extends Component
         $isImage = in_array($mimeType, ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
         
         // Create attachment record
-        Attachment::create([
+        $attachment = Attachment::create([
             'attachable_type' => get_class($attachable),
             'attachable_id' => $attachable->id,
             'original_name' => $originalName,
@@ -421,6 +421,12 @@ class ViewTicket extends Component
             'is_image' => $isImage,
             'uploaded_by' => Auth::id(),
         ]);
+
+        // Ensure the UUID was set (it should be auto-generated in the model's boot method)
+        if (empty($attachment->uuid)) {
+            $attachment->uuid = Str::uuid();
+            $attachment->save();
+        }
     }
 
     public function render()
