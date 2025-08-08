@@ -47,7 +47,7 @@
 
     {{-- Filters --}}
     <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Department Group</label>
                 <select wire:model.live="selectedDepartmentGroup" 
@@ -69,6 +69,19 @@
                     @endforeach
                 </select>
             </div>
+
+            <div class="flex items-end h-full">
+                <label class="flex items-center gap-3 cursor-pointer h-10">
+                    <div class="relative">
+                        <input type="checkbox" wire:model.live="showDepartmentGroups" class="sr-only">
+                        <div class="w-11 h-6 bg-neutral-200 dark:bg-neutral-700 rounded-full shadow-inner transition-colors duration-200 {{ $showDepartmentGroups ? 'bg-sky-500 dark:bg-sky-600' : '' }}"></div>
+                        <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200 {{ $showDepartmentGroups ? 'translate-x-5' : '' }}"></div>
+                    </div>
+                    <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                        Show Department Groups
+                    </span>
+                </label>
+            </div>
         </div>
     </div>
 
@@ -79,13 +92,16 @@
                 {{-- Calendar Header (Days 1-31) --}}
                 <thead class="bg-neutral-100 dark:bg-neutral-800 sticky top-0 z-10">
                     <tr>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider bg-neutral-200 dark:bg-neutral-700 sticky left-0 z-20">
+                        <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider bg-neutral-200 dark:bg-neutral-700 sticky left-0 z-20 whitespace-nowrap user-name-cell">
                             User
                         </th>
                         @for($day = 1; $day <= $this->daysInMonth; $day++)
-                            <th class="px-2 py-2 text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider min-w-16">
+                            <th class="px-2 py-2 text-center text-xs font-medium uppercase tracking-wider min-w-16
+                                {{ $this->isWeekend($day) 
+                                    ? 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/15 weekend-header' 
+                                    : 'text-neutral-500 dark:text-neutral-400' }}">
                                 {{ $day }}
-                                <div class="text-xs text-neutral-400 font-normal">
+                                <div class="text-xs font-normal {{ $this->isWeekend($day) ? 'text-red-600 dark:text-red-300' : 'text-neutral-400' }}">
                                     {{ $this->currentDate->day($day)->format('D') }}
                                 </div>
                             </th>
@@ -97,19 +113,20 @@
                 <tbody class="divide-y divide-neutral-200 dark:divide-neutral-700">
                     @forelse($this->users as $groupName => $groupUsers)
                         {{-- Department Group Header --}}
-                        <tr class="bg-neutral-50 dark:bg-neutral-800/50">
-                            <td colspan="{{ $this->daysInMonth + 1 }}" class="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                {{ $groupName ?: 'No Department Group' }}
-                            </td>
-                        </tr>
+                        @if($showDepartmentGroups)
+                            <tr class="bg-neutral-50 dark:bg-neutral-800/50">
+                                <td colspan="{{ $this->daysInMonth + 1 }}" class="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                    {{ $groupName ?: 'No Department Group' }}
+                                </td>
+                            </tr>
+                        @endif
 
                         {{-- Users in this group --}}
                         @foreach($groupUsers as $user)
                             <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/30">
-                                <td class="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800/50 sticky left-0 z-10">
-                                    <div>
-                                        <div>{{ $user->name }}</div>
-                                        <div class="text-xs text-neutral-500">{{ $user->department?->name }}</div>
+                                <td class="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-800/50 sticky left-0 z-10 whitespace-nowrap user-name-cell">
+                                    <div class="overflow-visible">
+                                        {{ $user->name }}
                                     </div>
                                 </td>
 
@@ -159,7 +176,7 @@
                                             @endphp
                                             @if($index === 0)
                                                 {{-- Only create one cell for all spanning events to maintain table structure --}}
-                                                <td class="px-1 py-2 text-center align-top min-h-16 spanning-event-cell" 
+                                                <td class="px-1 py-2 text-center align-top min-h-16 spanning-event-cell {{ $this->isWeekend($day) ? 'bg-red-100/40 dark:bg-red-900/8 weekend-column' : '' }}" 
                                                     style="min-height: 64px;" 
                                                     colspan="{{ $colspan }}">
                                                     <div class="flex flex-col gap-1 min-h-12">
@@ -244,7 +261,7 @@
                                         @endforeach
                                     @else
                                         {{-- Regular cell for non-spanning events or empty days --}}
-                                        <td class="px-1 py-2 text-center align-top min-h-16" style="min-height: 64px;">
+                                        <td class="px-1 py-2 text-center align-top min-h-16 {{ $this->isWeekend($day) ? 'bg-red-100/40 dark:bg-red-900/8 weekend-column' : '' }}" style="min-height: 64px;">
                                             <div class="flex flex-col gap-1 min-h-12">
                                                 {{-- Show regular single-day events --}}
                                                 @foreach($regularEvents as $schedule)
@@ -338,16 +355,38 @@
 
     {{-- Legend --}}
     <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
-        <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">Event Types</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            @foreach($this->eventTypes as $eventType)
-                <div class="flex items-center gap-2">
-                    <span class="inline-block px-2 py-1 rounded text-xs text-white {{ $eventType->color }}">
-                        {{ $eventType->code }}
-                    </span>
-                    <span class="text-sm text-neutral-700 dark:text-neutral-300">{{ $eventType->label }}</span>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {{-- Event Types --}}
+            <div class="lg:col-span-2">
+                <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">Event Types</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    @foreach($this->eventTypes as $eventType)
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block px-2 py-1 rounded text-xs text-white {{ $eventType->color }}">
+                                {{ $eventType->code }}
+                            </span>
+                            <span class="text-sm text-neutral-700 dark:text-neutral-300">{{ $eventType->label }}</span>
+                        </div>
+                    @endforeach
                 </div>
-            @endforeach
+            </div>
+
+            {{-- Weekend Information --}}
+            <div class="border-l border-neutral-200 dark:border-neutral-600 pl-6">
+                <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">Weekend Highlighting</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-700 rounded"></div>
+                        <span class="text-sm text-neutral-700 dark:text-neutral-300">Weekend columns have light red background</span>
+                    </div>
+                    <div class="text-xs text-neutral-600 dark:text-neutral-400">
+                        <div class="mb-1"><strong>Weekend Days:</strong> {{ implode(', ', $this->weekendDays) }}</div>
+                        <div class="text-neutral-500 dark:text-neutral-500">
+                            Weekend highlighting is configurable via application settings
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -488,6 +527,50 @@
             font-size: 10px;
             padding: 4px 6px;
             min-width: 100px;
+        }
+    }
+
+    /* Weekend highlighting styles */
+    .weekend-header {
+        position: relative;
+    }
+    
+    .weekend-header::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 3px;
+        background: linear-gradient(90deg, rgba(239, 68, 68, 0.4) 0%, rgba(239, 68, 68, 0.15) 100%);
+        border-radius: 0 0 4px 4px;
+    }
+    
+    .dark .weekend-header::before {
+        background: linear-gradient(90deg, rgba(239, 68, 68, 0.25) 0%, rgba(239, 68, 68, 0.08) 100%);
+    }
+    
+    /* Weekend column subtle pattern */
+    .weekend-column {
+        background-image: radial-gradient(circle at 1px 1px, rgba(239, 68, 68, 0.08) 1px, transparent 0);
+        background-size: 10px 10px;
+    }
+    
+    .dark .weekend-column {
+        background-image: radial-gradient(circle at 1px 1px, rgba(239, 68, 68, 0.05) 1px, transparent 0);
+    }
+
+    /* User name column styling */
+    .user-name-cell {
+        min-width: 120px;
+        max-width: 200px;
+        width: auto;
+    }
+    
+    @media (max-width: 768px) {
+        .user-name-cell {
+            min-width: 100px;
+            max-width: 150px;
         }
     }
 </style>

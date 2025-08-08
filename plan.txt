@@ -1,60 +1,37 @@
-Review the current structure of **department groups**, **departments**, **roles**, and **users** in the project. Based on the attached reference data, you are to reset and rebuild this structure from scratch (unless the current structure is already fully compatible and solid). If needed, modify the migrations, models, and relationships to ensure correctness and flexibility going forward.
+Review the **user profile management** feature in the project—specifically the functionality for a logged-in user to view and update **their own profile**.
 
-The tasks are:
+Your tasks:
 
-1. **Clear existing data** related to:
+1. **Profile Update Permissions**
 
-   * Users
-   * Roles
-   * Permissions
-   * Departments
-   * Department groups
-     You can truncate relevant tables or recreate them as needed.
+   * Check the profile update logic to ensure it follows **modern security and UX practices**.
+   * Define **what fields can and cannot be updated** by the logged-in user (e.g., allow name, password, avatar/photo, contact info, but restrict role changes, organization changes, department assignments, or permission modifications).
+   * Ensure email changes, if allowed, are validated and potentially require confirmation before taking effect.
+   * Make sure no sensitive fields (e.g., `is_admin`, `role_id`, `permissions`) can be altered directly from this interface.
 
-2. **Create department groups and departments** according to the following structure:
+2. **UI/UX Improvements**
 
-   * `Admin`: admin, Finance, Human Resource, Project Manage, Sales
-   * `PMS`: Opera, Opera Cloud, Vision, R\&A, OXI, Technical
-   * `POS`: Simphny, Simphony Cloud, RES 3700, RES 9700, R\&A
-   * `MC`: Materials Control, Reporting
-   * `BO`: BackOffice
-   * `Hardware`: Local, Oracle
-   * `Email`: Email Case
+   * Replace the current full-page edit form (if applicable) with a **simple, modern modal** for editing the profile.
+   * Make sure this modal includes:
 
-3. **Seed one default user per department group** with the following format:
+     * Profile picture upload (with preview before saving)
+     * Secure password update option (with current password verification)
+     * Inline validation for fields
+   * Ensure **responsive design** so it works across desktop and mobile.
 
-   * Email: `groupname@hospitalitytechnology.com.mv` (e.g. `pms@hospitalitytechnology.com.mv`)
-   * Assign that user to the corresponding **department group**
-   * Assign role:
+3. **Navigation Profile Dropdown**
 
-     * `admin` for Admin and Email groups
-     * `support` for all others
+   * Review the profile dropdown in the navigation bar.
+   * Fix any issues where **email or username text overflows** outside the container (apply text truncation with ellipsis and tooltip for full email).
+   * Ensure dropdown width and alignment are responsive to various screen sizes.
 
-4. **Ensure admin user** (e.g., `superadmin@hospitalitytechnology.com.mv`) is seeded and assigned:
+4. **Output & Recommendations**
 
-   * Role: `admin`
-   * **All available permissions** (full CRUD access on all modules)
+   * Provide a step-by-step improvement plan:
 
-5. **Verify and fix relationships**:
+     * File paths to update
+     * Backend changes (validation, security checks, authorization)
+     * Frontend changes (modal design, responsive fixes, overflow handling)
+   * Include **best practice notes** for profile management and UI consistency.
 
-   * Ensure that users are properly linked to departments and department groups (one-to-many or many-to-many as required)
-   * If the current migration structure doesn’t support this cleanly, update it accordingly
-
-6. **Roles and permissions setup**:
-
-   * Use Spatie’s Laravel Permission package
-   * Seed only two roles for now: `admin` and `support`
-   * Assign full permissions to `admin` role only during seeding
-   * All other roles will be configured later via the admin UI
-
-7. **All changes should be fully seedable**:
-
-   * Update the `DatabaseSeeder.php` to include seeding of:
-
-     * Department groups
-     * Departments
-     * Roles
-     * Permissions
-     * Users with proper assignments
-
-Ensure this implementation is clean, maintainable, and matches the domain structure of the application. Everything must work from a fresh migration and seed. This structure will become the base for the permission management and access control system, so correctness is critical.
+The end result should be a **secure, user-friendly profile management experience** with a clean and responsive dropdown, and a modern modal for editing user details.

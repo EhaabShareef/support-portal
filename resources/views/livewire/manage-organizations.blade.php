@@ -16,14 +16,20 @@
         @endif
     </div>
 
-    <div class="flex flex-col space-y-6 transition-all duration-300 ease-in-out">
+    <div class="flex flex-col space-y-6" x-data="{ showForm: @entangle('showForm') }">
 
         {{-- Inline Form --}}
-        @if ($showForm)
-            <div
-                class="transition-all duration-300 ease-in-out transform scale-100 opacity-100 translate-y-0
-               bg-white/60 dark:bg-neutral-800/60 backdrop-blur border border-neutral-200 dark:border-neutral-700 
-               rounded-md p-6 space-y-4 glass-card">
+        <div x-show="showForm" 
+             x-transition:enter="transition ease-out duration-400" 
+             x-transition:enter-start="opacity-0 transform -translate-y-2 scale-98" 
+             x-transition:enter-end="opacity-100 transform translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-300" 
+             x-transition:leave-start="opacity-100 transform translate-y-0 scale-100" 
+             x-transition:leave-end="opacity-0 transform -translate-y-2 scale-98"
+             class="bg-white/60 dark:bg-neutral-800/60 backdrop-blur border border-neutral-200 dark:border-neutral-700 
+                    rounded-md p-6 space-y-4 glass-card"
+             style="display: none;"
+             x-cloak>
 
                 <div class="flex justify-between items-center">
                     <h2 class="text-lg font-semibold text-neutral-800 dark:text-white">
@@ -32,7 +38,7 @@
 
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" x-show="showForm" x-transition.delay.100ms>
                     @foreach ([
         'name' => 'Name',
         'company' => 'Company',
@@ -41,7 +47,7 @@
         'email' => 'Email',
         'phone' => 'Phone',
     ] as $field => $label)
-                        <div>
+                        <div class="form-field-stagger">
                             <label for="{{ $field }}"
                                 class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">{{ $label }}</label>
                             <input wire:model.defer="form.{{ $field }}" id="{{ $field }}"
@@ -54,7 +60,7 @@
                         </div>
                     @endforeach
 
-                    <div>
+                    <div class="form-field-stagger">
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Subscription Status</label>
                         <select wire:model.defer="form.subscription_status"
                             class="w-full px-4 py-2 mt-1 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 
@@ -69,7 +75,7 @@
                         @enderror
                     </div>
 
-                    <div>
+                    <div class="form-field-stagger">
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Active</label>
                         <label class="inline-flex items-center">
                             <input type="checkbox" wire:model.defer="form.is_active"
@@ -79,7 +85,7 @@
                     </div>
                 </div>
 
-                <div class="md:col-span-2">
+                <div class="md:col-span-2 form-field-stagger">
                     <label for="notes" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Notes</label>
                     <textarea wire:model.defer="form.notes" id="notes" rows="3"
                         class="w-full px-4 py-2 mt-1 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 
@@ -90,18 +96,17 @@
                     @enderror
                 </div>
 
-                <div class="flex justify-end gap-2">
+                <div class="flex justify-end gap-2" x-show="showForm" x-transition.delay.200ms>
                     <button wire:click="$set('showForm', false)"
-                        class="px-3 py-1 text-sm rounded-md bg-neutral-300 dark:bg-neutral-700 text-neutral-800 dark:text-white hover:bg-neutral-400 dark:hover:bg-neutral-600 transition">
+                        class="px-3 py-1 text-sm rounded-md bg-neutral-300 dark:bg-neutral-700 text-neutral-800 dark:text-white hover:bg-neutral-400 dark:hover:bg-neutral-600 transition-all duration-200 transform hover:scale-105">
                         Cancel
                     </button>
                     <button wire:click="save"
-                        class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition">
+                        class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md">
                         Save
                     </button>
                 </div>
             </div>
-        @endif
 
         {{-- Simple Delete Confirm (optional UI) --}}
         @if ($deleteId)

@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\DepartmentGroup;
 use App\Models\Schedule;
 use App\Models\ScheduleEventType;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Livewire\Attributes\Computed;
@@ -15,6 +16,7 @@ class ScheduleCalendar extends Component
     public $currentDate;
     public $selectedDepartmentGroup = '';
     public $selectedEventType = '';
+    public $showDepartmentGroups = true;
 
     // Schedule event creation properties
     public bool $showScheduleModal = false;
@@ -180,6 +182,28 @@ class ScheduleCalendar extends Component
             ->whereHas('roles', function ($q) {
                 $q->whereIn('name', ['admin', 'support']);
             })->orderBy('name')->get();
+    }
+
+    #[Computed]
+    public function weekendDays()
+    {
+        return Setting::get('weekend_days', ['Saturday', 'Sunday']);
+    }
+
+    /**
+     * Check if a given day in the current month is a weekend
+     */
+    public function isWeekend($day)
+    {
+        try {
+            $date = $this->currentDate->copy()->day($day);
+            $dayName = $date->format('l'); // Full day name (e.g., 'Saturday')
+            
+            return in_array($dayName, $this->weekendDays);
+        } catch (\Exception $e) {
+            // Handle invalid dates (e.g., day 31 in February)
+            return false;
+        }
     }
 
 

@@ -42,6 +42,7 @@ class User extends Authenticatable
         'email',
         'email_verified_at',
         'password',
+        'avatar',
         'is_active',
         'last_login_at',
         'timezone',
@@ -145,5 +146,29 @@ class User extends Authenticatable
             ->where('model_has_roles.model_type', 'App\\Models\\User')
             ->where('roles.name', 'admin')
             ->exists();
+    }
+
+    /**
+     * Get the user's avatar URL or generate initials avatar
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->avatar && file_exists(public_path('storage/' . $this->avatar))) {
+            return asset('storage/' . $this->avatar);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get user initials for avatar
+     */
+    public function getInitialsAttribute(): string
+    {
+        $names = explode(' ', $this->name ?? 'User');
+        if (count($names) >= 2) {
+            return strtoupper(substr($names[0], 0, 1) . substr($names[1], 0, 1));
+        }
+        return strtoupper(substr($names[0] ?? 'U', 0, 2));
     }
 }

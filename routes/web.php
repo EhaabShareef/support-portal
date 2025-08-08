@@ -15,6 +15,7 @@ use App\Livewire\ManageUsers;
 use App\Livewire\CreateTicket;
 use App\Livewire\ManageTickets;
 use App\Livewire\ViewTicket;
+use App\Livewire\UserProfile;
 use App\Livewire\Admin\ManageUsers as AdminManageUsers;
 use App\Livewire\Admin\ViewUser;
 use App\Livewire\Admin\ManageRoles;
@@ -63,6 +64,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/create', CreateTicket::class)->name('tickets.create');
     Route::get('/tickets/manage', ManageTickets::class)->name('tickets.index');
     Route::get('/tickets/{ticket}', ViewTicket::class)->name('tickets.show');
+
+    // Profile Routes
+    Route::get('/profile', UserProfile::class)->name('profile');
 
     // Schedule Routes (Admin and Client only)
     Route::middleware(['role:admin|client'])->group(function () {

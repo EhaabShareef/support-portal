@@ -93,11 +93,16 @@
                 <div class="relative" x-data="{ userMenuOpen: false }">
                     <button @click="userMenuOpen = !userMenuOpen"
                             class="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500">
-                        <div class="w-7 h-7 bg-sky-100 dark:bg-sky-900 rounded-full flex items-center justify-center">
-                            <span class="text-xs font-semibold text-sky-700 dark:text-sky-300">
-                                {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
-                            </span>
-                        </div>
+                        @if(auth()->user()->avatar_url)
+                            <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" 
+                                 class="w-7 h-7 rounded-full object-cover border border-neutral-200 dark:border-neutral-600">
+                        @else
+                            <div class="w-7 h-7 bg-sky-100 dark:bg-sky-900 rounded-full flex items-center justify-center">
+                                <span class="text-xs font-semibold text-sky-700 dark:text-sky-300">
+                                    {{ auth()->user()->initials }}
+                                </span>
+                            </div>
+                        @endif
                         <span class="hidden sm:block">{{ auth()->user()->name ?? 'User' }}</span>
                         <x-heroicon-o-chevron-down class="h-4 w-4" />
                     </button>
@@ -111,11 +116,13 @@
                          x-transition:leave="transition ease-in duration-75"
                          x-transition:leave-start="transform opacity-100 scale-100"
                          x-transition:leave-end="transform opacity-0 scale-95"
-                         class="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1">
+                         class="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1">
                         
                         <div class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700">
-                            <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ auth()->user()->name ?? 'User' }}</p>
-                            <p class="text-xs text-neutral-500 dark:text-neutral-400">{{ auth()->user()->email ?? '' }}</p>
+                            <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate" 
+                               title="{{ auth()->user()->name ?? 'User' }}">{{ auth()->user()->name ?? 'User' }}</p>
+                            <p class="text-xs text-neutral-500 dark:text-neutral-400 truncate" 
+                               title="{{ auth()->user()->email ?? '' }}">{{ auth()->user()->email ?? '' }}</p>
                             @if(auth()->user()->isAdmin())
                                 <p class="text-xs text-sky-600 dark:text-sky-400">
                                     Role: Admin
@@ -129,10 +136,11 @@
                             @endif
                         </div>
                         
-                        <a href="#" class="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
+                        <button @click="userMenuOpen = false" wire:click="$dispatch('openProfileModal')" 
+                                class="w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
                             <x-heroicon-o-user-circle class="h-4 w-4 inline mr-2" />
                             Profile
-                        </a>
+                        </button>
                         
                         <a href="#" class="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
                             <x-heroicon-o-cog-6-tooth class="h-4 w-4 inline mr-2" />
