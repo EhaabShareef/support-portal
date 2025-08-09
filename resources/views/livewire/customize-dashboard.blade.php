@@ -1,7 +1,10 @@
 {{-- Customize Dashboard Modal --}}
 <div>
     @if($showModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true"
+             x-data="{ modalOpen: true }"
+             x-trap.noscroll="modalOpen"
+             @keydown.escape.window="$wire.closeModal()">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity" 
                  wire:click="closeModal" aria-hidden="true"></div>
@@ -17,7 +20,8 @@
                             </h3>
                         </div>
                         <button wire:click="closeModal" 
-                                class="text-neutral-400 hover:text-neutral-500 dark:hover:text-neutral-300">
+                                class="text-neutral-400 hover:text-neutral-500 dark:hover:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-md p-1"
+                                aria-label="Close modal">
                             <x-heroicon-o-x-mark class="h-6 w-6" />
                         </button>
                     </div>
@@ -45,10 +49,12 @@
                                                 {{-- Visibility Toggle --}}
                                                 <label class="inline-flex items-center">
                                                     <input type="checkbox" 
-                                                           wire:model.live="widgets.{{ $index }}.visible"
-                                                           wire:change="toggleVisibility({{ $index }})"
+                                                           id="widget-visible-{{ $index }}"
+                                                           name="widgets[{{ $index }}][visible]"
+                                                           wire:model.defer="widgets.{{ $index }}.visible"
                                                            class="rounded border-neutral-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                                                           {{ !$widget['can_view'] ? 'disabled' : '' }} />
+                                                           {{ !$widget['can_view'] ? 'disabled' : '' }}
+                                                           aria-describedby="widget-{{ $index }}-description" />
                                                 </label>
 
                                                 <div class="flex-1">
@@ -56,7 +62,7 @@
                                                         {{ $widget['name'] }}
                                                     </h4>
                                                     @if($widget['description'])
-                                                        <p class="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                                                        <p class="text-xs text-neutral-600 dark:text-neutral-400 mt-1" id="widget-{{ $index }}-description">
                                                             {{ $widget['description'] }}
                                                         </p>
                                                     @endif
@@ -67,12 +73,16 @@
                                         {{-- Controls --}}
                                         <div class="flex items-center gap-2">
                                             {{-- Size Selector --}}
-                                            <select wire:model.live="widgets.{{ $index }}.size"
-                                                    wire:change="changeSize({{ $index }}, $event.target.value)"
+                                            <select id="widget-size-{{ $index }}"
+                                                    name="widgets[{{ $index }}][size]"
+                                                    wire:model.defer="widgets.{{ $index }}.size"
                                                     class="text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-800 focus:ring-purple-500 focus:border-purple-500"
                                                     {{ !$widget['visible'] || !$widget['can_view'] ? 'disabled' : '' }}>
-                                                @foreach($availableSizes as $sizeKey => $sizeInfo)
-                                                    <option value="{{ $sizeKey }}">{{ $sizeInfo['label'] ?? $sizeKey }}</option>
+                                                @foreach($widget['available_sizes'] as $sizeKey)
+                                                    @php
+                                                        $sizeLabel = $availableSizes[$sizeKey]['label'] ?? $sizeKey;
+                                                    @endphp
+                                                    <option value="{{ $sizeKey }}">{{ $sizeLabel }}</option>
                                                 @endforeach
                                             </select>
 

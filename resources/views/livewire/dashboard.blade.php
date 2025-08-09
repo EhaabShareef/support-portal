@@ -13,7 +13,6 @@
             </div>
             <div class="flex items-center gap-2">
                 <button wire:click="openCustomizeModal" 
-                    onclick="console.log('Customize button clicked')"
                     class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md">
                     <x-heroicon-o-cog-6-tooth class="h-4 w-4 mr-2" />
                     Customize

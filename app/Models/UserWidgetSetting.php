@@ -13,14 +13,14 @@ class UserWidgetSetting extends Model
     protected $fillable = [
         'user_id',
         'widget_id',
-        'visible',
+        'is_visible',
         'size',
         'sort_order',
         'options',
     ];
 
     protected $casts = [
-        'visible' => 'boolean',
+        'is_visible' => 'boolean',
         'sort_order' => 'integer',
         'options' => 'array',
     ];
@@ -46,7 +46,7 @@ class UserWidgetSetting extends Model
      */
     public function scopeVisible($query)
     {
-        return $query->where('visible', true);
+        return $query->where('is_visible', true);
     }
 
     /**
@@ -79,7 +79,7 @@ class UserWidgetSetting extends Model
      */
     public function getEffectiveOrder(): int
     {
-        return $this->sort_order ?? $this->widget->default_order ?? 0;
+        return $this->sort_order ?? $this->widget->sort_order ?? 0;
     }
 
     /**

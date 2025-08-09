@@ -37,17 +37,26 @@ class UserWidgetSettingsSeeder extends Seeder
                 }
 
                 // Check if user has permission for this widget
-                if ($widget->permission && !$user->can($widget->permission)) {
-                    continue;
+                if ($widget->permissions && !empty($widget->permissions)) {
+                    $hasPermission = true;
+                    foreach ($widget->permissions as $permission) {
+                        if (!$user->can($permission)) {
+                            $hasPermission = false;
+                            break;
+                        }
+                    }
+                    if (!$hasPermission) {
+                        continue;
+                    }
                 }
 
                 // Create default settings for this user-widget combination
                 UserWidgetSetting::create([
                     'user_id' => $user->id,
                     'widget_id' => $widget->id,
-                    'visible' => true,
+                    'is_visible' => true,
                     'size' => $widget->default_size,
-                    'sort_order' => $widget->default_order,
+                    'sort_order' => $widget->sort_order,
                     'options' => null, // Start with no custom options
                 ]);
 

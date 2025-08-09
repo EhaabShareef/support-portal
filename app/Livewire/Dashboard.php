@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\Auth;
 class Dashboard extends Component
 {
     public $refreshInterval = 30000; // 30 seconds
-    public $showCustomizeModal = false;
     
     public function mount()
     {
@@ -47,11 +46,14 @@ class Dashboard extends Component
         $user = Auth::user();
         $userRole = $user->roles->first()?->name ?? 'client';
         
-        // Get available widgets for user's role
+        // Get available widgets for user's role with proper permission filtering
         $availableWidgets = DashboardWidget::where('is_active', true)
             ->where('category', $userRole)
             ->orderBy('sort_order')
-            ->get();
+            ->get()
+            ->filter(function ($widget) use ($user) {
+                return $widget->isVisibleForUser($user);
+            });
         
         // Get user's widget settings
         $userSettings = UserWidgetSetting::where('user_id', $user->id)
@@ -336,16 +338,7 @@ class Dashboard extends Component
      */
     public function openCustomizeModal()
     {
-        $this->showCustomizeModal = true;
         $this->dispatch('open-customize');
-    }
-
-    /**
-     * Close the customize dashboard modal
-     */
-    public function closeCustomizeModal()
-    {
-        $this->showCustomizeModal = false;
     }
 
     /**
@@ -370,8 +363,6 @@ class Dashboard extends Component
     public function getListeners()
     {
         return [
-            'open-customize' => 'openCustomizeModal',
-            'close-customize' => 'closeCustomizeModal',
             'widgets-updated' => '$refresh',
         ];
     }

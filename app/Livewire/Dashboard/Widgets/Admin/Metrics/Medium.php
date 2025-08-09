@@ -17,6 +17,12 @@ class Medium extends Component
 
     public function mount(): void
     {
+        // Check permissions before loading data
+        $user = Auth::user();
+        if (!$user || !$user->can('dashboard.admin')) {
+            abort(403, 'Insufficient permissions to view this widget.');
+        }
+        
         $this->loadData();
     }
 

@@ -33,10 +33,11 @@ class CustomizeDashboard extends Component
 
         // Get all active widgets that the user has permission to see
         $availableWidgets = DashboardWidget::active()
+            ->forRole($role)
             ->ordered()
             ->get()
             ->filter(function ($widget) use ($user) {
-                return !$widget->permission || $user->can($widget->permission);
+                return $widget->isVisibleForUser($user);
             });
 
         // Get user's current settings
@@ -54,10 +55,11 @@ class CustomizeDashboard extends Component
                 'name' => $widget->name,
                 'description' => $widget->description,
                 'default_size' => $widget->default_size,
-                'default_order' => $widget->default_order,
-                'visible' => $setting ? $setting->visible : true,
+                'default_order' => $widget->sort_order,
+                'available_sizes' => $widget->available_sizes,
+                'visible' => $setting ? $setting->is_visible : true,
                 'size' => $setting ? $setting->getEffectiveSize() : $widget->default_size,
-                'sort_order' => $setting ? $setting->getEffectiveOrder() : $widget->default_order,
+                'sort_order' => $setting ? $setting->getEffectiveOrder() : $widget->sort_order,
                 'can_view' => $widget->isVisibleForUser($user),
             ];
         })->toArray();
@@ -73,6 +75,10 @@ class CustomizeDashboard extends Component
      */
     public function openModal(): void
     {
+        // Reset state
+        $this->widgets = [];
+        $this->userSettings = [];
+        
         $this->showModal = true;
         $this->loadWidgets();
     }
@@ -83,28 +89,8 @@ class CustomizeDashboard extends Component
     public function closeModal(): void
     {
         $this->showModal = false;
-        $this->dispatch('close-customize'); // Notify parent component
     }
 
-    /**
-     * Toggle widget visibility
-     */
-    public function toggleVisibility(int $index): void
-    {
-        if (isset($this->widgets[$index])) {
-            $this->widgets[$index]['visible'] = !$this->widgets[$index]['visible'];
-        }
-    }
-
-    /**
-     * Change widget size
-     */
-    public function changeSize(int $index, string $size): void
-    {
-        if (isset($this->widgets[$index])) {
-            $this->widgets[$index]['size'] = $size;
-        }
-    }
 
     /**
      * Move widget up in order
@@ -174,19 +160,28 @@ class CustomizeDashboard extends Component
                 continue; // Skip widgets user can't view
             }
 
+            // Validate size is available for this widget
+            $size = $widget['size'];
+            if (!in_array($size, $widget['available_sizes'])) {
+                $size = $widget['default_size'] ?? '2x2';
+            }
+
             UserWidgetSetting::updateOrCreate(
                 [
                     'user_id' => $user->id,
                     'widget_id' => $widget['id'],
                 ],
                 [
-                    'visible' => $widget['visible'],
-                    'size' => $widget['size'],
-                    'sort_order' => $widget['sort_order'],
+                    'is_visible' => (bool) $widget['visible'],
+                    'size' => $size,
+                    'sort_order' => (int) ($widget['sort_order'] ?? 0),
                 ]
             );
         }
 
+        // Refresh the widget data after save
+        $this->loadWidgets();
+        
         $this->dispatch('widgets-updated');
         $this->closeModal();
         
