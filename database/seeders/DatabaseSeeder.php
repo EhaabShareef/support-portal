@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             DepartmentGroupSeeder::class, // Creates department groups
             DepartmentSeeder::class,      // Creates departments
             UserSeeder::class,           // Creates users with proper assignments
+            DashboardWidgetSeeder::class, // Creates widget catalog
+            UserWidgetSettingsSeeder::class, // Creates default user widget settings
         ]);
         
         $this->command->info('✅ Database rebuild completed successfully!');

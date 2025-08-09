@@ -40,6 +40,28 @@ Route::post('login', [LoginController::class, 'login']);
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
+    
+    // Test widget system
+    Route::get('/test-widgets', function () {
+        $user = auth()->user();
+        $widgets = \App\Models\DashboardWidget::all();
+        $userSettings = \App\Models\UserWidgetSetting::where('user_id', $user->id)->with('widget')->get();
+        $visibleWidgets = $user->getVisibleWidgets();
+        
+        return response()->json([
+            'widget_system_enabled' => config('dashboard.widgets_enabled'),
+            'total_widgets' => $widgets->count(),
+            'user_settings_count' => $userSettings->count(),
+            'visible_widgets_count' => $visibleWidgets->count(),
+            'user_role' => $user->roles->first()?->name,
+            'widgets' => $widgets->map(fn($w) => [
+                'key' => $w->key,
+                'name' => $w->name,
+                'permission' => $w->permission,
+                'can_view' => $w->isVisibleForUser($user)
+            ])
+        ]);
+    });
 
     Route::post('logout', [LogoutController::class, 'logout'])->name('logout');
     Route::get('session', [SessionController::class, 'index']);

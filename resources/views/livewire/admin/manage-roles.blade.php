@@ -161,36 +161,43 @@
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                <div class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-                    <form wire:submit="saveRole">
-                        <div class="bg-white dark:bg-neutral-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                            <div class="sm:flex sm:items-start">
-                                <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                                    <h3 class="text-lg leading-6 font-medium text-neutral-900 dark:text-neutral-100" id="modal-title">
-                                        {{ $editMode ? 'Edit Role' : 'Create New Role' }}
-                                    </h3>
+                <div class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full max-h-screen flex flex-col">
+                    <form wire:submit="saveRole" class="h-full flex flex-col">
+                        <div class="bg-white dark:bg-neutral-800 px-6 pt-6 pb-4 border-b border-neutral-200 dark:border-neutral-700 flex-shrink-0">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xl leading-6 font-semibold text-neutral-900 dark:text-neutral-100" id="modal-title">
+                                    {{ $editMode ? 'Edit Role' : 'Create New Role' }}
+                                </h3>
+                                <button type="button" wire:click="closeModal" 
+                                    class="rounded-md text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                    <span class="sr-only">Close</span>
+                                    <x-heroicon-o-x-mark class="h-6 w-6" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-neutral-800 px-6 py-4 overflow-y-auto flex-1">
+                            <div class="w-full space-y-6">
                                     
-                                    {{-- Admin Role Warning Banner --}}
-                                    @if($this->isEditingAdminRole)
-                                        <div class="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
-                                            <div class="flex">
-                                                <div class="flex-shrink-0">
-                                                    <x-heroicon-o-exclamation-triangle class="h-5 w-5 text-amber-400" />
-                                                </div>
-                                                <div class="ml-3">
-                                                    <h4 class="text-sm font-medium text-amber-800 dark:text-amber-200">
-                                                        Admin Role Protection
-                                                    </h4>
-                                                    <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
-                                                        The Admin role is protected and cannot be modified for security reasons. 
-                                                        Most fields are disabled to prevent accidental changes to critical system permissions.
-                                                    </p>
-                                                </div>
+                                {{-- Admin Role Warning Banner --}}
+                                @if($this->isEditingAdminRole)
+                                    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0">
+                                                <x-heroicon-o-exclamation-triangle class="h-5 w-5 text-amber-400" />
+                                            </div>
+                                            <div class="ml-3">
+                                                <h4 class="text-sm font-medium text-amber-800 dark:text-amber-200">
+                                                    Admin Role Protection
+                                                </h4>
+                                                <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                                                    The Admin role is protected and cannot be modified for security reasons. 
+                                                    Most fields are disabled to prevent accidental changes to critical system permissions.
+                                                </p>
                                             </div>
                                         </div>
-                                    @endif
-                                    
-                                    <div class="mt-6 space-y-6">
+                                    </div>
+                                @endif
                                         {{-- Basic Role Information --}}
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
@@ -221,97 +228,175 @@
                                             @error('form.description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                         </div>
 
-                                        {{-- Permission Grid --}}
+                                        {{-- Improved Permission Grid --}}
                                         @if($editMode && $form['name'] !== 'admin')
                                             <div>
-                                                <h4 class="text-md font-medium text-neutral-900 dark:text-neutral-100 mb-4">Permissions</h4>
-                                                <div class="bg-neutral-50 dark:bg-neutral-700 rounded-lg p-4 max-h-96 overflow-y-auto">
+                                                <div class="flex items-center justify-between mb-4">
+                                                    <h4 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Permissions</h4>
+                                                    <div class="text-sm text-neutral-500 dark:text-neutral-400">
+                                                        {{ count($selectedPermissions) }} permissions selected
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="space-y-6">
                                                     @foreach($permissionMatrix as $groupKey => $group)
-                                                        <div class="mb-6 last:mb-0">
-                                                            <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-                                                                <span>{{ $group['label'] }}</span>
-                                                            </h4>
-                                                            @foreach($group['modules'] as $moduleKey => $module)
-                                                                <div class="mb-4 last:mb-0 ml-4">
-                                                                    <div class="flex items-center justify-between mb-3">
-                                                                        <h5 class="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                                                                            {{ $module['label'] }}
-                                                                        </h5>
-                                                                        <button type="button" wire:click="toggleAllPermissionsForModule('{{ $moduleKey }}')"
-                                                                            class="text-xs text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300">
-                                                                            {{ $this->isModuleFullySelected($moduleKey) ? 'Deselect All' : 'Select All' }}
-                                                                        </button>
-                                                                    </div>
-                                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                                        @foreach($module['actions'] as $actionKey => $action)
-                                                                            <label class="flex items-center space-x-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer hover:text-neutral-900 dark:hover:text-neutral-100">
-                                                                                <input type="checkbox" 
-                                                                                       wire:click="togglePermission('{{ $action['permission'] }}')"
-                                                                                       {{ in_array($action['permission'], $selectedPermissions) ? 'checked' : '' }}
-                                                                                       class="rounded border-neutral-300 dark:border-neutral-600 text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400">
-                                                                                <span>{{ $action['label'] }}</span>
-                                                                            </label>
-                                                                        @endforeach
+                                                        <div class="border border-neutral-200 dark:border-neutral-600 rounded-lg">
+                                                            {{-- Group Header --}}
+                                                            <div class="bg-neutral-50 dark:bg-neutral-700/50 px-4 py-3 border-b border-neutral-200 dark:border-neutral-600">
+                                                                <div class="flex items-center justify-between">
+                                                                    <div class="flex items-center space-x-3">
+                                                                        @if(isset($group['icon']))
+                                                                            <div class="flex-shrink-0">
+                                                                                <x-dynamic-component :component="$group['icon']" class="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
+                                                                            </div>
+                                                                        @endif
+                                                                        <div>
+                                                                            <h5 class="text-base font-semibold text-neutral-900 dark:text-neutral-100">{{ $group['label'] }}</h5>
+                                                                            @if(isset($group['description']))
+                                                                                <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ $group['description'] }}</p>
+                                                                            @endif
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            @endforeach
+                                                            </div>
+                                                            
+                                                            {{-- Group Content --}}
+                                                            <div class="p-4">
+                                                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                    @foreach($group['modules'] as $moduleKey => $module)
+                                                                        <div class="bg-white dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4">
+                                                                            <div class="flex items-center justify-between mb-3">
+                                                                                <div class="flex items-center space-x-2">
+                                                                                    @if(isset($module['icon']))
+                                                                                        <x-dynamic-component :component="$module['icon']" class="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+                                                                                    @endif
+                                                                                    <h6 class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ $module['label'] }}</h6>
+                                                                                </div>
+                                                                                <button type="button" wire:click="toggleAllPermissionsForModule('{{ $moduleKey }}')"
+                                                                                    class="text-xs px-2 py-1 rounded-md font-medium transition-colors
+                                                                                        {{ $this->isModuleFullySelected($moduleKey) 
+                                                                                            ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50' 
+                                                                                            : 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400 dark:hover:bg-sky-900/50' }}">
+                                                                                    {{ $this->isModuleFullySelected($moduleKey) ? 'Deselect All' : 'Select All' }}
+                                                                                </button>
+                                                                            </div>
+                                                                            
+                                                                            @if(isset($module['description']))
+                                                                                <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-3">{{ $module['description'] }}</p>
+                                                                            @endif
+                                                                            
+                                                                            <div class="grid grid-cols-2 gap-2">
+                                                                                @foreach($module['actions'] as $actionKey => $action)
+                                                                                    <label class="flex items-center space-x-2 p-2 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer transition-colors">
+                                                                                        <input type="checkbox" 
+                                                                                               wire:click="togglePermission('{{ $action['permission'] }}')"
+                                                                                               {{ in_array($action['permission'], $selectedPermissions) ? 'checked' : '' }}
+                                                                                               class="rounded border-neutral-300 dark:border-neutral-500 text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400 focus:ring-offset-0">
+                                                                                        <span class="text-sm text-neutral-700 dark:text-neutral-300 select-none">{{ $action['label'] }}</span>
+                                                                                    </label>
+                                                                                @endforeach
+                                                                            </div>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     @endforeach
                                                 </div>
                                             </div>
                                         @elseif(!$editMode)
                                             <div>
-                                                <h4 class="text-md font-medium text-neutral-900 dark:text-neutral-100 mb-4">Permissions</h4>
-                                                <div class="bg-neutral-50 dark:bg-neutral-700 rounded-lg p-4 max-h-96 overflow-y-auto">
+                                                <div class="flex items-center justify-between mb-4">
+                                                    <h4 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Permissions</h4>
+                                                    <div class="text-sm text-neutral-500 dark:text-neutral-400">
+                                                        {{ count($selectedPermissions) }} permissions selected
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="space-y-6">
                                                     @foreach($permissionMatrix as $groupKey => $group)
-                                                        <div class="mb-6 last:mb-0">
-                                                            <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex items-center gap-2">
-                                                                <span>{{ $group['label'] }}</span>
-                                                            </h4>
-                                                            @foreach($group['modules'] as $moduleKey => $module)
-                                                                <div class="mb-4 last:mb-0 ml-4">
-                                                                    <div class="flex items-center justify-between mb-3">
-                                                                        <h5 class="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                                                                            {{ $module['label'] }}
-                                                                        </h5>
-                                                                        <button type="button" wire:click="toggleAllPermissionsForModule('{{ $moduleKey }}')"
-                                                                            class="text-xs text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300">
-                                                                            {{ $this->isModuleFullySelected($moduleKey) ? 'Deselect All' : 'Select All' }}
-                                                                        </button>
-                                                                    </div>
-                                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                                        @foreach($module['actions'] as $actionKey => $action)
-                                                                            <label class="flex items-center space-x-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer hover:text-neutral-900 dark:hover:text-neutral-100">
-                                                                                <input type="checkbox" 
-                                                                                       wire:click="togglePermission('{{ $action['permission'] }}')"
-                                                                                       {{ in_array($action['permission'], $selectedPermissions) ? 'checked' : '' }}
-                                                                                       class="rounded border-neutral-300 dark:border-neutral-600 text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400">
-                                                                                <span>{{ $action['label'] }}</span>
-                                                                            </label>
-                                                                        @endforeach
+                                                        <div class="border border-neutral-200 dark:border-neutral-600 rounded-lg">
+                                                            {{-- Group Header --}}
+                                                            <div class="bg-neutral-50 dark:bg-neutral-700/50 px-4 py-3 border-b border-neutral-200 dark:border-neutral-600">
+                                                                <div class="flex items-center justify-between">
+                                                                    <div class="flex items-center space-x-3">
+                                                                        @if(isset($group['icon']))
+                                                                            <div class="flex-shrink-0">
+                                                                                <x-dynamic-component :component="$group['icon']" class="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
+                                                                            </div>
+                                                                        @endif
+                                                                        <div>
+                                                                            <h5 class="text-base font-semibold text-neutral-900 dark:text-neutral-100">{{ $group['label'] }}</h5>
+                                                                            @if(isset($group['description']))
+                                                                                <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ $group['description'] }}</p>
+                                                                            @endif
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            @endforeach
+                                                            </div>
+                                                            
+                                                            {{-- Group Content --}}
+                                                            <div class="p-4">
+                                                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                    @foreach($group['modules'] as $moduleKey => $module)
+                                                                        <div class="bg-white dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-600 p-4">
+                                                                            <div class="flex items-center justify-between mb-3">
+                                                                                <div class="flex items-center space-x-2">
+                                                                                    @if(isset($module['icon']))
+                                                                                        <x-dynamic-component :component="$module['icon']" class="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+                                                                                    @endif
+                                                                                    <h6 class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ $module['label'] }}</h6>
+                                                                                </div>
+                                                                                <button type="button" wire:click="toggleAllPermissionsForModule('{{ $moduleKey }}')"
+                                                                                    class="text-xs px-2 py-1 rounded-md font-medium transition-colors
+                                                                                        {{ $this->isModuleFullySelected($moduleKey) 
+                                                                                            ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50' 
+                                                                                            : 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-400 dark:hover:bg-sky-900/50' }}">
+                                                                                    {{ $this->isModuleFullySelected($moduleKey) ? 'Deselect All' : 'Select All' }}
+                                                                                </button>
+                                                                            </div>
+                                                                            
+                                                                            @if(isset($module['description']))
+                                                                                <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-3">{{ $module['description'] }}</p>
+                                                                            @endif
+                                                                            
+                                                                            <div class="grid grid-cols-2 gap-2">
+                                                                                @foreach($module['actions'] as $actionKey => $action)
+                                                                                    <label class="flex items-center space-x-2 p-2 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer transition-colors">
+                                                                                        <input type="checkbox" 
+                                                                                               wire:click="togglePermission('{{ $action['permission'] }}')"
+                                                                                               {{ in_array($action['permission'], $selectedPermissions) ? 'checked' : '' }}
+                                                                                               class="rounded border-neutral-300 dark:border-neutral-500 text-sky-600 focus:ring-sky-500 dark:focus:ring-sky-400 focus:ring-offset-0">
+                                                                                        <span class="text-sm text-neutral-700 dark:text-neutral-300 select-none">{{ $action['label'] }}</span>
+                                                                                    </label>
+                                                                                @endforeach
+                                                                            </div>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     @endforeach
                                                 </div>
                                             </div>
                                         @endif
-                                    </div>
-                                </div>
                             </div>
                         </div>
-                        <div class="bg-neutral-50 dark:bg-neutral-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                            @if(!$this->isEditingAdminRole)
-                                <button type="submit" 
-                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                                    {{ $editMode ? 'Update Role' : 'Create Role' }}
+                        
+                        {{-- Modal Footer - Sticky --}}
+                        <div class="bg-neutral-50 dark:bg-neutral-700 px-6 py-4 border-t border-neutral-200 dark:border-neutral-600 flex-shrink-0">
+                            <div class="flex items-center justify-end space-x-3">
+                                <button type="button" wire:click="closeModal" 
+                                    class="px-4 py-2 border border-neutral-300 dark:border-neutral-500 rounded-md text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors">
+                                    {{ $this->isEditingAdminRole ? 'Close' : 'Cancel' }}
                                 </button>
-                            @endif
-                            <button type="button" wire:click="closeModal" 
-                                class="mt-3 w-full inline-flex justify-center rounded-md border border-neutral-300 dark:border-neutral-600 shadow-sm px-4 py-2 bg-white dark:bg-neutral-800 text-base font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                                {{ $this->isEditingAdminRole ? 'Close' : 'Cancel' }}
-                            </button>
+                                @if(!$this->isEditingAdminRole)
+                                    <button type="submit" 
+                                        class="px-6 py-2 bg-sky-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors shadow-sm">
+                                        {{ $editMode ? 'Update Role' : 'Create Role' }}
+                                    </button>
+                                @endif
+                            </div>
                         </div>
                     </form>
                 </div>

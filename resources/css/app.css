@@ -231,6 +231,39 @@ html, body {
     @apply glass-card p-6 hover:shadow-lg transition-all duration-200;
   }
 
+  /* Dashboard Widget System */
+  .dashboard-grid {
+    @apply grid gap-6 auto-rows-min;
+  }
+
+  .dashboard-widget {
+    @apply rounded-lg shadow-md bg-white/5 dark:bg-neutral-800 backdrop-blur-md border border-white/20 transition-all duration-200 hover:shadow-lg;
+  }
+
+  .dashboard-widget:hover {
+    @apply transform hover:-translate-y-1 hover:scale-[1.02];
+  }
+
+  /* Widget specific responsive behavior */
+  @media (prefers-reduced-motion: reduce) {
+    .dashboard-widget {
+      @apply transform-none hover:transform-none;
+    }
+    
+    .dashboard-widget:hover {
+      @apply transform-none scale-100;
+    }
+  }
+
+  /* Widget loading states */
+  .widget-skeleton {
+    @apply animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded;
+  }
+
+  .widget-error {
+    @apply bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400;
+  }
+
   .contribution-graph-container {
     @apply p-4;
   }

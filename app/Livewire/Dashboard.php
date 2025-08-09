@@ -8,6 +8,8 @@ use App\Models\Organization;
 use App\Models\Department;
 use App\Models\OrganizationContract;
 use App\Models\OrganizationHardware;
+use App\Models\DashboardWidget;
+use App\Models\UserWidgetSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
@@ -17,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 class Dashboard extends Component
 {
     public $refreshInterval = 30000; // 30 seconds
+    public $showCustomizeModal = false;
     
     public function mount()
     {
@@ -25,6 +28,51 @@ class Dashboard extends Component
         if (!$user) {
             abort(403, 'Authentication required to access dashboard.');
         }
+        
+        // Check role-based dashboard permissions
+        $userRole = $user->roles->first()?->name ?? 'client';
+        $requiredPermission = "dashboard.{$userRole}";
+        
+        if (!$user->can('dashboard.access') || !$user->can($requiredPermission)) {
+            abort(403, 'Insufficient permissions to access dashboard.');
+        }
+    }
+
+    /**
+     * Get user's visible widgets in order
+     */
+    #[Computed]
+    public function userWidgets()
+    {
+        $user = Auth::user();
+        $userRole = $user->roles->first()?->name ?? 'client';
+        
+        // Get available widgets for user's role
+        $availableWidgets = DashboardWidget::where('is_active', true)
+            ->where('category', $userRole)
+            ->orderBy('sort_order')
+            ->get();
+        
+        // Get user's widget settings
+        $userSettings = UserWidgetSetting::where('user_id', $user->id)
+            ->get()
+            ->keyBy('widget_id');
+        
+        // Combine widgets with user settings
+        $widgets = $availableWidgets->map(function ($widget) use ($userSettings) {
+            $setting = $userSettings->get($widget->id);
+            
+            return (object) [
+                'widget' => $widget,
+                'is_visible' => $setting ? $setting->is_visible : $widget->is_default_visible,
+                'size' => $setting ? $setting->size : $widget->default_size,
+                'sort_order' => $setting ? $setting->sort_order : $widget->sort_order,
+            ];
+        })->filter(function ($item) {
+            return $item->is_visible;
+        })->sortBy('sort_order');
+        
+        return $widgets;
     }
 
     #[Computed]
@@ -278,6 +326,54 @@ class Dashboard extends Component
         $user = auth()->user();
         Cache::forget("dashboard_data_{$user->id}_{$this->userRole}");
         $this->dispatch('dataRefreshed');
+        
+        // Refresh all widgets
+        $this->dispatch('refreshAllWidgets');
+    }
+
+    /**
+     * Open the customize dashboard modal
+     */
+    public function openCustomizeModal()
+    {
+        $this->showCustomizeModal = true;
+        $this->dispatch('open-customize');
+    }
+
+    /**
+     * Close the customize dashboard modal
+     */
+    public function closeCustomizeModal()
+    {
+        $this->showCustomizeModal = false;
+    }
+
+    /**
+     * Get CSS classes for widget containers based on size
+     */
+    public function getWidgetClasses(string $size): string
+    {
+        $sizeClasses = [
+            '1x1' => 'col-span-1 row-span-1',
+            '2x1' => 'col-span-1 md:col-span-2 row-span-1',
+            '2x2' => 'col-span-1 md:col-span-2 row-span-2',
+            '3x2' => 'col-span-1 md:col-span-2 lg:col-span-3 row-span-2',
+            '3x3' => 'col-span-1 md:col-span-2 lg:col-span-3 row-span-3',
+        ];
+
+        return $sizeClasses[$size] ?? $sizeClasses['1x1'];
+    }
+
+    /**
+     * Listen for widget customization events
+     */
+    public function getListeners()
+    {
+        return [
+            'open-customize' => 'openCustomizeModal',
+            'close-customize' => 'closeCustomizeModal',
+            'widgets-updated' => '$refresh',
+        ];
     }
 
     public function render()
@@ -288,6 +384,7 @@ class Dashboard extends Component
         return view('livewire.dashboard', [
             'dashboardData' => $this->dashboardData,
             'userRole' => $this->userRole,
+            'userWidgets' => $this->userWidgets,
         ]);
     }
 }

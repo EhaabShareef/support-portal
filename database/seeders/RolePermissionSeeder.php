@@ -80,6 +80,12 @@ class RolePermissionSeeder extends Seeder
                 $permissions[] = "{$module}.{$action}";
             }
         }
+        
+        // Add dashboard-specific permissions
+        $permissions[] = 'dashboard.access';
+        $permissions[] = 'dashboard.admin';
+        $permissions[] = 'dashboard.support';
+        $permissions[] = 'dashboard.client';
 
         // Create permissions
         $createdCount = 0;
@@ -121,10 +127,12 @@ class RolePermissionSeeder extends Seeder
             'guard_name' => 'web'
         ]);
         
-        // Support role gets basic read permissions only
+        // Support role gets basic read permissions only plus dashboard.support
         $basicPermissions = Permission::where('name', 'like', '%.read')
             ->orWhere('name', 'like', '%.create')
             ->orWhere('name', 'like', '%.update')
+            ->orWhere('name', 'dashboard.access')
+            ->orWhere('name', 'dashboard.support')
             ->get();
         $supportRole->syncPermissions($basicPermissions);
         $createdRoles['support'] = $supportRole;
@@ -142,7 +150,8 @@ class RolePermissionSeeder extends Seeder
             'tickets.read',
             'tickets.update', // own tickets only
             'articles.read',
-            'dashboard.access'
+            'dashboard.access',
+            'dashboard.client'
         ])->get();
         $clientRole->syncPermissions($clientPermissions);
         $createdRoles['client'] = $clientRole;

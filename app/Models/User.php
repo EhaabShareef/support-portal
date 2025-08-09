@@ -136,6 +136,29 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the user's widget settings
+     */
+    public function widgetSettings()
+    {
+        return $this->hasMany(UserWidgetSetting::class);
+    }
+
+    /**
+     * Get visible widgets for the user in order
+     */
+    public function getVisibleWidgets()
+    {
+        return $this->widgetSettings()
+            ->with('widget')
+            ->visible()
+            ->ordered()
+            ->get()
+            ->filter(function ($setting) {
+                return $setting->widget && $setting->widget->isVisibleForUser($this);
+            });
+    }
+
+    /**
      * Check if user has admin role (workaround for teams configuration)
      */
     public function isAdmin(): bool
