@@ -47,7 +47,7 @@
 
     {{-- Search and Filters --}}
     <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-4 shadow-md">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="relative">
                 <x-heroicon-o-magnifying-glass class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <input type="text" wire:model.live.debounce.300ms="search" 
@@ -55,36 +55,39 @@
                        class="pl-10 pr-4 py-2 w-full text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
             </div>
 
-            <select wire:model.live="filterRole" 
-                    class="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
-                <option value="">All Roles</option>
-                @foreach ($availableRoles as $role)
-                    <option value="{{ $role }}">{{ $role }}</option>
-                @endforeach
-            </select>
+            <div class="relative">
+                <x-heroicon-o-shield-check class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                <select wire:model.live="filterRole" 
+                        class="pl-10 pr-4 py-2 w-full text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
+                    <option value="">All Roles</option>
+                    @foreach ($availableRoles as $role)
+                        <option value="{{ $role }}">{{ $role }}</option>
+                    @endforeach
+                </select>
+            </div>
 
-            <select wire:model.live="filterDepartment" 
-                    class="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
-                <option value="">All Departments</option>
-                @foreach ($departments as $dept)
-                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                @endforeach
-            </select>
+            <div class="relative">
+                <x-heroicon-o-building-office class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                <select wire:model.live="filterDepartment" 
+                        class="pl-10 pr-4 py-2 w-full text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
+                    <option value="">All Departments</option>
+                    @foreach ($departments as $dept)
+                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                    @endforeach
+                </select>
+            </div>
 
-            <select wire:model.live="filterOrganization" 
-                    class="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
-                <option value="">All Organizations</option>
-                @foreach ($organizations as $org)
-                    <option value="{{ $org->id }}">{{ $org->name }}</option>
-                @endforeach
-            </select>
-
-            <select wire:model.live="filterStatus" 
-                    class="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
-                <option value="">All Status</option>
-                <option value="1">Active</option>
-                <option value="0">Inactive</option>
-            </select>
+            <div class="flex items-center">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" wire:model.live="filterStatus" value="0"
+                           class="sr-only peer">
+                    <div class="relative w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-300 dark:peer-focus:ring-sky-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-sky-600"></div>
+                    <span class="ml-3 text-sm text-neutral-700 dark:text-neutral-300 flex items-center">
+                        <x-heroicon-o-eye-slash class="h-4 w-4 mr-1" />
+                        Show Inactive
+                    </span>
+                </label>
+            </div>
         </div>
     </div>
 

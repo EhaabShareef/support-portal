@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\Organization;
 use App\Models\DepartmentGroup;
 use App\Models\Department;
+use App\Models\Setting;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
@@ -27,6 +28,9 @@ class BasicDataSeeder extends Seeder
 
         // Create departments
         $departments = $this->createDepartments($departmentGroups);
+
+        // Create default organization setting
+        $this->createDefaultOrganizationSetting($organization);
 
         $this->command->info('✅ Basic data seeded successfully!');
     }
@@ -209,6 +213,23 @@ class BasicDataSeeder extends Seeder
         }
 
         return $createdDepartments;
+    }
+
+    private function createDefaultOrganizationSetting(Organization $organization): void
+    {
+        Setting::updateOrCreate(
+            ['key' => 'default_organization'],
+            [
+                'value' => $organization->id,
+                'type' => 'integer',
+                'label' => 'Default Organization',
+                'description' => 'Default organization assigned to new users created in admin panel',
+                'group' => 'user_management',
+                'validation_rules' => ['required', 'integer', 'exists:organizations,id'],
+                'is_public' => false,
+                'is_encrypted' => false,
+            ]
+        );
     }
 
 }

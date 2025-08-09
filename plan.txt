@@ -1,7 +1,219 @@
-Implement a first-run loading experience immediately after a successful login that always displays for at least three seconds, even on very fast networks. Trigger it right after authentication and before the dashboard becomes interactive, so the user sees a full-page, non-scrollable overlay with a subtle dim or solid background matching the app’s existing monochrome palette. The overlay should fade in quickly, show a compact animated tech icon (simple line/outline animation, looped smoothly), and then fade out after both conditions are true: the three-second minimum has elapsed and any initial dashboard data has finished loading. If data is already ready, still keep the overlay up until the three-second mark so the transition feels deliberate rather than a flash. Make the overlay accessible: trap focus within it, mark the root region `aria-busy="true"`, and respect `prefers-reduced-motion` by switching the icon animation to a gentle pulse or static state.
+Dashboard Widget Refactor Plan
+This document presents a complete strategy for converting the current dashboard into a modular, user-managed grid of widgets with persistent settings, role-based enforcement, performance enhancements, and accessibility improvements. It is based on an exhaustive inspection of the repository, with special attention to User and Role pages and their interplay with dashboard components.
 
-Keep the visual language minimalist to fit the current style: neutral background, single accent shade already used in the app, and restrained typography. In the center, display a short rotating line of “nerd but cultured” copy that nods to computing history without being cringe—things like “Bootstrapping kernel…”, “Invoking Turing routine…”, “Mounting /humility”, “Linking Von Neumann unit…”, “Paging Schrödinger’s cache…”, “Negotiating handshakes with HAL (be nice)”, or “Compiling manners”. Cycle one line every \~900ms during the three-second window. Pair this with a small SVG circuit/terminal/chip outline that animates with stroke-dashoffset or a gentle rotate; keep it crisp, single-weight, and monochrome so it doesn’t fight the rest of the UI.
+1. Discovery Audit Map
+Area	Files / Components	Notes
+Routes	/routes/web.php defines Route::get('/dashboard', Dashboard::class) plus admin routes for Users, Roles, Reports, Settings	Dashboard served by Livewire. Role-based grouping via Spatie’s role: middleware.
+Layout & Navigation	resources/views/components/layouts/app.blade.php wraps Livewire pages; navigation.blade.php renders top menu with role checks	Layout includes loading overlay, dark mode, Livewire stacks.
+Dashboard Livewire Component	app/Livewire/Dashboard.php handles role detection, caching, data aggregation for admin, support, client users	No per-widget permission checks; data assembled in helper methods.
+Dashboard Views	resources/views/livewire/dashboard.blade.php selects role-specific partials	Partial views in /resources/views/livewire/dashboard/ contain static grid layouts for each role.
+User & Role Pages	app/Livewire/Admin/UsersRoles.php; view at resources/views/livewire/admin/users-roles.blade.php	Admin “Users & Roles” screen (tabbed). Roles affect dashboard visibility.
+Policies & Middleware	UserPolicy.php, TicketPolicy.php, SchedulePolicy.php; middleware FilterByUserRole.php and SetDepartmentTeam.php	Policies gate ticket/user actions but not dashboard cards; middleware enriches requests with role/department info.
+2. Widget Inventory (Current State)
+Widget / Section	File Path	Data Source & Est. Query Cost	Required Role/Permission (implicit)	Visual Notes
+Admin – Total Tickets / Open Tickets / Organizations / Active Users	resources/views/livewire/dashboard/admin-dashboard.blade.php (lines 4‑47)	Several Ticket::count(), Organization::count(), User::count() (~5 simple count queries)	Admin	Cards share row with mixed colors; each 1×1.
+Admin – Ticket Trends Chart	same file lines ~50‑75	getTicketTrends(30) (grouped date counts; ~1 heavy query)	Admin	Fixed height; not lazy-loaded.
+Admin – Department Activity list	same file lines ~77‑97	Department::withCount(...) (potential N+1)	Admin	Variable row heights; duplicates metrics.
+Admin – Contract Alerts / Hardware Alerts	same file lines ~99‑153	OrganizationContract & OrganizationHardware with with (~2 queries each)	Admin & contracts.read / hardware.read	Taller cards; mixing sizes.
+Agent – My Tickets / Resolved Today / Department Tickets / Ranking	resources/views/livewire/dashboard/agent-dashboard.blade.php lines 4‑60	Ticket counts & ranking query (~5 queries)	Support	1×1 cards, visually consistent.
+Agent – Contribution Graph	same file lines ~69‑104	getContributionData (grouped query across year; heavy)	Support	Large 3×2 canvas; no lazy-loading.
+Agent – Department Ticket Status	same file lines ~108‑165	ticket_breakdown counts (~4 queries)	Support	Large widget; row height mismatch with “My Performance.”
+Agent – My Performance	same file lines ~166‑201	Uses ranking data already loaded	Support	Contains sub-cards.
+Agent – Recent Activity	same file lines ~209‑230	getRecentActivity (~1 query with relations)	Support	Scrollable area within fixed card.
+Agent – Quick Actions	same lines ~232‑250	None (static routes)	Support	1×1 card.
+Client – Total/Open/Resolved Tickets/Avg Response	resources/views/livewire/dashboard/client-dashboard.blade.php lines 4‑60	Multiple Ticket counts & avg response time (~5 queries)	Client	Uniform cards.
+Client – Ticket Status Overview (pie chart)	same file lines ~62‑108	Count breakdown already queried	Client	Chart not lazy-loaded.
+Client – Active Contracts	same file lines ~110‑160	OrganizationContract::where(...)->with('department') (~1 query)	Client & contracts.read	Repeats contract info from other screens.
+Client – Recent Tickets / Quick Actions / Contact Support	lines ~162‑220	recent_tickets query (~1 query with relations)	Client & tickets.read	Quick Actions + contact card share column; spacing inconsistent.
+Issues: No persistent layout or size constraints, duplication of metrics, lack of explicit permission gating, and inconsistent row/column sizes across roles.
 
-Wire this so it only appears on login, not every page change. The simplest approach is: on successful auth, set a short-lived session flag and redirect to the dashboard; the layout that wraps the dashboard reads that flag and mounts an Alpine/Livewire loading component. That component shows the overlay, starts a three-second timer, and listens for a “ready” event emitted when the initial data payload resolves; it hides itself only when both the timer and readiness are satisfied. Include a JS-off fallback where the dashboard view renders a static “Signing you in…” message with a meta refresh to the same route after three seconds, so the experience still degrades gracefully. Prevent double-show by clearing the flag once the overlay dismisses.
+3. Proposed Data Model
+Option B: Catalog + Per-User Settings
+-- dashboard_widgets: seeded catalog
+CREATE TABLE dashboard_widgets (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    key VARCHAR(50) UNIQUE,
+    name VARCHAR(100),
+    component VARCHAR(150),       -- Livewire/Blade component identifier
+    permission VARCHAR(100) NULL, -- Laravel ability required (optional)
+    default_size VARCHAR(10),     -- e.g. '1x1'
+    default_order INT
+);
 
-For implementation details, add a tiny, self-contained component (e.g., `<x-loading-overlay />` or a Livewire/Alpine snippet) to the post-login landing layout. Use CSS utilities you already have (Tailwind) for the fade and layout; keep assets inline SVG to avoid extra requests. Cap the z-index above modals, disable scroll on `body` while active, and restore focus to the main heading when it dismisses. Finally, ensure this is configurable: expose a simple env/config switch to disable or shorten the enforced delay in local/dev builds, but keep the full three seconds in staging/production so the entrance feels intentional.
+-- user_widget_settings: user overrides
+CREATE TABLE user_widget_settings (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT REFERENCES users(id),
+    widget_id BIGINT REFERENCES dashboard_widgets(id),
+    visible BOOLEAN DEFAULT TRUE,
+    size VARCHAR(10) NULL,
+    sort_order INT NULL,
+    options JSON NULL,
+    UNIQUE (user_id, widget_id)
+);
+Sample options JSON
+
+{
+  "filters": { "department_id": 3 },
+  "color": "blue"
+}
+Migration Strategy
+
+Seed dashboard_widgets with current widgets, assigning default_order to approximate existing layout.
+
+For each user, insert user_widget_settings rows (visible = true, size = default_size, sort_order = default_order).
+
+Future widgets auto-add default settings via listener.
+
+If user_widget_settings is missing, the dashboard falls back to catalog defaults.
+
+4. Widget Interface Contract
+Each widget component (Livewire or Blade) must adopt the following contract:
+
+Attribute	Description
+public string $widgetKey	Matches dashboard_widgets.key.
+public string $size	Size token (1x1, 2x2, etc.) from user preferences.
+public function mount()	Check permission: $this->authorize($permission); abort if unauthorized.
+public function load()	Lazy-load heavy data; Cache::remember for short TTL.
+Blade view	Expose wire:init for lazy widgets; render skeleton (aria-busy="true" role="status") until data loads.
+Events	Emit widgetRefreshed for global refresh requests.
+5. Grid Container & Size Tokens
+Canonical Sizes
+Token	Default Width × Height	Tailwind Classes
+1x1	1 col × 1 row	col-span-1 row-span-1
+2x1	2 cols × 1 row	md:col-span-2
+2x2	2 cols × 2 rows	md:col-span-2 md:row-span-2
+3x2	3 cols × 2 rows	md:col-span-3 md:row-span-2
+3x3	3 cols × 3 rows	md:col-span-3 md:row-span-3
+Grid Container Example
+<div class="dashboard-grid grid gap-6 auto-rows-min
+            grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+    @foreach($widgets as $widget)
+        <livewire:widgets.{{ $widget->component }}
+            :widgetKey="$widget->key"
+            :size="$widget->size"
+            :key="$widget->key" />
+    @endforeach
+</div>
+CSS (resources/css/app.css)
+
+.dashboard-grid > * {
+    @apply rounded-lg shadow-md bg-white/5 dark:bg-neutral-800;
+}
+Mobile defaults to grid-cols-1; widget order is governed by sort_order, ensuring the most relevant widgets appear first for each role.
+
+6. Customize Dashboard Flow
+Entry Point – “Customize” button in dashboard header.
+
+Modal/Side Panel (CustomizeDashboard Livewire component):
+
+Checkbox to toggle visibility.
+
+Dropdown to choose size token.
+
+Up/Down buttons for ordering (drag-and-drop can be added later).
+
+“Reset to defaults” button.
+
+Persistence – Saving updates user_widget_settings; dashboard listens for a refresh event.
+
+Accessibility – Modal uses role="dialog" with aria-modal="true", focus trap, esc to close, keyboard-friendly controls.
+
+Mounting – Include component in dashboard.blade.php; open via Alpine event: $dispatch('open-customize').
+
+7. Effective Visibility Logic
+Visible = user_setting.visible &&
+          user_has_permission(widget.permission or role in catalog)
+Catalog: permission column declares required ability.
+
+Widget mount: $this->authorize($permission) to enforce at component level.
+
+Blade guard: Container check Gate::denies() before rendering.
+
+A user cannot force-show a widget they lack permission for, even if they toggle it on.
+
+8. Performance Enhancements
+Widget/Feature	Improvement	Files/Details
+Heavy counts & trend charts	Cache per user/role (~5 min TTL) using Cache::remember	Implement in each widget’s load() method.
+Department/Contract/Hardware lists	Ensure eager loading to avoid N+1 (with('organization','department'))	Update methods getContractAlerts, getHardwareAlerts in Dashboard.php → move into dedicated widgets.
+Contribution graph, pie charts	Lazy-load via wire:init and skeleton; debounce filters	Widget components handle load() with caching.
+User-specific aggregates	Cache metrics (e.g., resolved tickets) per user; clear on ticket update events	Observers or event listeners.
+9. UI/UX Standardization
+Card Structure: Common header with title, small icon, optional actions area.
+
+Monochrome Theme: Neutral backgrounds; optional accent stripe or border per status.
+
+Animations: Use transition-all duration-200 within motion-safe to respect prefers-reduced-motion.
+
+Collapse/Expand: Optional via <details> or Alpine; state stored in options.
+
+Dark Mode: Add dark: variants to text/background; ensure high contrast.
+
+Icons: Consistent Heroicons in headers.
+
+10. Accessibility Improvements
+Use proper landmarks (<main>, <nav>, <header>).
+
+Modal focus trapping with Alpine’s focus-trap plugin.
+
+Keyboard operability for toggles, size selectors, and order controls.
+
+Truncated text uses title attributes or tooltip component (x-tooltip).
+
+Skeleton loaders marked with aria-busy="true" and role="status".
+
+11. Test Plan
+Preference Persistence – Feature tests for CRUD operations on user_widget_settings.
+
+Role-Based Visibility – Ensure toggling on a widget without permission keeps it hidden; confirm defaults per role.
+
+Grid Rendering – Browser tests (e.g., Dusk) at sm and lg breakpoints to confirm correct col-span classes and stacking order.
+
+Lazy-Load Behavior – Ensure skeletons appear before data loads; verify events trigger refresh.
+
+Migration/Backfill – Run migrations and verify seeded defaults match legacy layout for each role.
+
+Reset Defaults – Ensure reset restores catalog defaults.
+
+Performance – Compare query counts before/after caching; ensure heavy widgets do not cause N+1 queries.
+
+12. Rollout Plan
+Feature Flag: dashboard_widgets.enabled config; old dashboard guarded.
+
+Migration:
+
+Deploy new schema and seed catalog.
+
+Backfill per-user defaults.
+
+Enable flag on staging; test with admin/support/client users.
+
+Fallback: If preferences fail to load, render catalog defaults.
+
+Checklist:
+
+Permissions seeded correctly.
+
+Manual QA on desktop and mobile.
+
+Accessibility audit (keyboard, screen reader).
+
+Clear caches post-deploy.
+
+13. Cleanup / Deprecation After Migration
+Path	Reason	Replacement
+resources/views/livewire/dashboard/admin-dashboard.blade.php	Replaced by modular widgets and dynamic layout	Remove after widget migration
+resources/views/livewire/dashboard/agent-dashboard.blade.php	Same as above	Remove
+resources/views/livewire/dashboard/client-dashboard.blade.php	Same as above	Remove
+Static methods in Dashboard.php (getAdminDashboardData, etc.)	Logic moves to individual widget components	Remove or refactor
+Legacy CSS/JS for old layout	Superseded by unified grid	Delete or migrate to widget-specific assets
+Routes/menu entries pointing to deprecated dashboards	Consolidated under new /dashboard route	Remove or redirect
+Role-Based Default Layout Suggestions
+Role	Default Widgets (ordered)
+admin	Metrics, Ticket Trends, Department Activity, Contract Alerts, Hardware Alerts
+support	Metrics, My Performance, Department Status, Contribution Graph, Recent Activity, Quick Actions
+client	Metrics, Ticket Status, Active Contracts, Recent Tickets, Quick Actions
+Users may hide any widget they are authorized to view; restricted widgets are absent from the customize panel.
+
+By implementing this plan, the dashboard will evolve into a user-configurable grid of widgets that persist preferences, enforce permissions, deliver consistent responsive layout, and improve performance and accessibility across all supported roles.
+Verify any new database migrations you create follows the naming convention established and also the roles matches existing datatbase roles created i.e admin.support and client

@@ -4,9 +4,11 @@ namespace App\Livewire\Admin;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\Computed;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class ManageRoles extends Component
 {
@@ -54,6 +56,21 @@ class ManageRoles extends Component
         'form.guard_name.required' => 'Guard name is required',
     ];
 
+    #[Computed]
+    public function canEditRole()
+    {
+        if (!$this->editMode || !$this->roleId) return true;
+        
+        $role = Role::find($this->roleId);
+        return $role && Gate::allows('update', $role);
+    }
+
+    #[Computed] 
+    public function isEditingAdminRole()
+    {
+        return $this->editMode && $this->form['name'] === 'admin';
+    }
+
     public function updating($field)
     {
         if ($field === 'search') {
@@ -80,6 +97,12 @@ class ManageRoles extends Component
     public function openEditModal($roleId)
     {
         $role = Role::with('permissions')->findOrFail($roleId);
+        
+        // Check policy authorization
+        if (!Gate::allows('update', $role)) {
+            session()->flash('error', 'The Admin role cannot be modified for security reasons.');
+            return;
+        }
         
         $this->roleId = $role->id;
         $this->form = [
@@ -112,7 +135,16 @@ class ManageRoles extends Component
 
     public function saveRole()
     {
-        // Prevent modification of admin role
+        // Check policy authorization for existing roles
+        if ($this->editMode && $this->roleId) {
+            $role = Role::findOrFail($this->roleId);
+            if (!Gate::allows('update', $role)) {
+                session()->flash('error', 'The Admin role cannot be modified for security reasons.');
+                return;
+            }
+        }
+        
+        // Additional legacy guard for admin role name
         if ($this->editMode && $this->form['name'] === 'admin') {
             session()->flash('error', 'Admin role cannot be modified.');
             return;
@@ -154,6 +186,12 @@ class ManageRoles extends Component
     public function confirmDelete($roleId)
     {
         $role = Role::findOrFail($roleId);
+        
+        // Check policy authorization
+        if (!Gate::allows('delete', $role)) {
+            session()->flash('error', 'The Admin role cannot be deleted for security reasons.');
+            return;
+        }
         
         // Prevent deletion of system roles
         if (in_array($role->name, ['admin', 'support', 'client'])) {

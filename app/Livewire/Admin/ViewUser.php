@@ -87,6 +87,8 @@ class ViewUser extends Component
     {
         $grouped = [];
         foreach ($this->permissions as $permission => $hasPermission) {
+            if (!$hasPermission) continue; // Only show permissions the user has
+            
             $parts = explode('.', $permission);
             $module = $parts[0] ?? 'general';
             $action = $parts[1] ?? $permission;
@@ -94,10 +96,7 @@ class ViewUser extends Component
             if (! isset($grouped[$module])) {
                 $grouped[$module] = [];
             }
-            $grouped[$module][$action] = [
-                'permission' => $permission,
-                'has_permission' => $hasPermission,
-            ];
+            $grouped[$module][] = str_replace('_', ' ', ucfirst($action));
         }
 
         return $grouped;
@@ -211,12 +210,6 @@ class ViewUser extends Component
         session()->flash('message', 'User updated successfully.');
     }
 
-    public function updatePermission($permission, $granted)
-    {
-        // Disable direct permission editing - permissions should be managed through roles
-        session()->flash('error', 'Permissions cannot be modified directly. Please manage permissions through roles.');
-        return;
-    }
 
     public function refreshUser()
     {

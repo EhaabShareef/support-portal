@@ -225,33 +225,38 @@
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">User Permissions</h3>
                     <span class="text-sm text-neutral-600 dark:text-neutral-400">
-                        Click to toggle permissions for this user
+                        Permissions are managed through user roles
                     </span>
                 </div>
 
+                @if(count($this->groupedPermissions) > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @foreach($this->groupedPermissions as $module => $modulePermissions)
+                    @foreach($this->groupedPermissions as $module => $actions)
                     <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-4 shadow-md">
-                        <h4 class="text-md font-medium text-neutral-800 dark:text-neutral-100 mb-3 capitalize">
+                        <h4 class="text-md font-medium text-neutral-800 dark:text-neutral-100 mb-3 capitalize flex items-center">
+                            <x-heroicon-o-key class="h-5 w-5 mr-2 text-emerald-500" />
                             {{ str_replace('_', ' ', $module) }}
                         </h4>
                         <div class="space-y-2">
-                            @foreach($modulePermissions as $action => $permissionData)
-                            <label class="flex items-center cursor-pointer">
-                                <input type="checkbox" 
-                                       wire:change="updatePermission('{{ $permissionData['permission'] }}', $event.target.checked)"
-                                       @checked($permissionData['has_permission'])
-                                       @disabled(!$this->canEdit)
-                                       class="rounded border-neutral-300 text-sky-600 shadow-sm focus:ring-sky-500 transition-all duration-200">
-                                <span class="ml-2 text-sm text-neutral-800 dark:text-neutral-200 capitalize">
-                                    {{ str_replace('_', ' ', $action) }}
-                                </span>
-                            </label>
+                            @foreach($actions as $action)
+                            <div class="flex items-center">
+                                <x-heroicon-o-check class="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                <span class="text-sm text-neutral-700 dark:text-neutral-300">{{ $action }}</span>
+                            </div>
                             @endforeach
                         </div>
                     </div>
                     @endforeach
                 </div>
+                @else
+                <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-8 shadow-md text-center">
+                    <x-heroicon-o-exclamation-triangle class="h-12 w-12 mx-auto text-amber-500 mb-4" />
+                    <h4 class="text-lg font-medium text-neutral-800 dark:text-neutral-100 mb-2">No Direct Permissions</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                        This user's permissions are inherited from their assigned role: <strong>{{ $user->roles->first()?->name ?? 'No Role' }}</strong>
+                    </p>
+                </div>
+                @endif
             </div>
             @endif
 

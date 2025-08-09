@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Department;
 use App\Models\Organization;
+use App\Models\Setting;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -19,9 +20,7 @@ class ManageUsers extends Component
 
     public $filterDepartment = '';
 
-    public $filterOrganization = '';
-
-    public $filterStatus = '';
+    public $filterStatus = false;
 
     // Form properties
     public $showModal = false;
@@ -69,8 +68,6 @@ class ManageUsers extends Component
         // Role-specific validation
         if ($this->form['role'] === 'support') {
             $rules['form.department_id'] = 'required|exists:departments,id';
-        } elseif ($this->form['role'] === 'client') {
-            $rules['form.organization_id'] = 'required|exists:organizations,id';
         } elseif ($this->form['role'] === 'admin') {
             // Admin users get admin department automatically, but allow override
             $rules['form.department_id'] = 'nullable|exists:departments,id';
@@ -222,17 +219,14 @@ class ManageUsers extends Component
         // Set department/organization based on role
         if ($this->form['role'] === 'support') {
             $userData['department_id'] = $this->form['department_id'];
-            $userData['organization_id'] = null;
-        } elseif ($this->form['role'] === 'client') {
-            $userData['organization_id'] = $this->form['organization_id'];
-            $userData['department_id'] = null; // Clients have no departments
+            $userData['organization_id'] = Setting::get('default_organization', 1);
         } elseif ($this->form['role'] === 'admin') {
             // Admin users get assigned to admin department or user-selected department
             $userData['department_id'] = $this->form['department_id'] ?: $this->getDefaultAdminDepartmentId();
-            $userData['organization_id'] = null;
+            $userData['organization_id'] = Setting::get('default_organization', 1);
         } else {
             $userData['department_id'] = null;
-            $userData['organization_id'] = null;
+            $userData['organization_id'] = Setting::get('default_organization', 1);
         }
 
         $user = User::create($userData);
@@ -449,17 +443,13 @@ class ManageUsers extends Component
             ->when($this->filterDepartment, function ($q) {
                 $q->where('department_id', $this->filterDepartment);
             })
-            ->when($this->filterOrganization, function ($q) {
-                $q->where('organization_id', $this->filterOrganization);
-            })
-            ->when($this->filterStatus !== '', function ($q) {
-                $q->where('is_active', (bool) $this->filterStatus);
+            ->when($this->filterStatus, function ($q) {
+                $q->where('is_active', false); // Show only inactive users when toggle is on
             });
 
         return view('livewire.admin.manage-users', [
             'users' => $query->withCount(['tickets', 'assignedTickets', 'permissions'])->latest()->paginate(15),
             'departments' => Department::orderBy('name')->get(),
-            'organizations' => Organization::orderBy('name')->get(),
             'availableRoles' => Role::whereIn('name', ['admin', 'support'])->orderBy('name')->pluck('name'),
             'userAccessInfo' => $this->showAccessModal ? $this->getUserAccessInfo() : [],
         ]);

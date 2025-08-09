@@ -110,15 +110,22 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-2">
-                                    <button wire:click="openEditModal({{ $role->id }})" 
-                                        class="text-sky-600 hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-300 transition-colors">
-                                        <x-heroicon-o-pencil class="h-4 w-4" />
-                                    </button>
-                                    @if(!in_array($role->name, ['admin', 'support', 'client']))
-                                        <button wire:click="confirmDelete({{ $role->id }})" 
-                                            class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors">
-                                            <x-heroicon-o-trash class="h-4 w-4" />
+                                    @if($role->name === 'admin')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                            <x-heroicon-o-lock-closed class="h-3 w-3 mr-1" />
+                                            Protected
+                                        </span>
+                                    @else
+                                        <button wire:click="openEditModal({{ $role->id }})" 
+                                            class="text-sky-600 hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-300 transition-colors">
+                                            <x-heroicon-o-pencil class="h-4 w-4" />
                                         </button>
+                                        @if(!in_array($role->name, ['admin', 'support', 'client']))
+                                            <button wire:click="confirmDelete({{ $role->id }})" 
+                                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors">
+                                                <x-heroicon-o-trash class="h-4 w-4" />
+                                            </button>
+                                        @endif
                                     @endif
                                 </div>
                             </td>
@@ -163,6 +170,26 @@
                                         {{ $editMode ? 'Edit Role' : 'Create New Role' }}
                                     </h3>
                                     
+                                    {{-- Admin Role Warning Banner --}}
+                                    @if($this->isEditingAdminRole)
+                                        <div class="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
+                                            <div class="flex">
+                                                <div class="flex-shrink-0">
+                                                    <x-heroicon-o-exclamation-triangle class="h-5 w-5 text-amber-400" />
+                                                </div>
+                                                <div class="ml-3">
+                                                    <h4 class="text-sm font-medium text-amber-800 dark:text-amber-200">
+                                                        Admin Role Protection
+                                                    </h4>
+                                                    <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                                                        The Admin role is protected and cannot be modified for security reasons. 
+                                                        Most fields are disabled to prevent accidental changes to critical system permissions.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    
                                     <div class="mt-6 space-y-6">
                                         {{-- Basic Role Information --}}
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -189,7 +216,8 @@
                                             <label for="description" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Description</label>
                                             <textarea wire:model="form.description" id="description" rows="3" 
                                                 class="mt-1 block w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:focus:ring-sky-400 dark:focus:border-sky-400"
-                                                placeholder="Brief description of this role's purpose..."></textarea>
+                                                placeholder="Brief description of this role's purpose..."
+                                                {{ $this->isEditingAdminRole ? 'disabled' : '' }}></textarea>
                                             @error('form.description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                         </div>
 
@@ -274,13 +302,15 @@
                             </div>
                         </div>
                         <div class="bg-neutral-50 dark:bg-neutral-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                            <button type="submit" 
-                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                                {{ $editMode ? 'Update Role' : 'Create Role' }}
-                            </button>
+                            @if(!$this->isEditingAdminRole)
+                                <button type="submit" 
+                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                                    {{ $editMode ? 'Update Role' : 'Create Role' }}
+                                </button>
+                            @endif
                             <button type="button" wire:click="closeModal" 
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-neutral-300 dark:border-neutral-600 shadow-sm px-4 py-2 bg-white dark:bg-neutral-800 text-base font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                                Cancel
+                                {{ $this->isEditingAdminRole ? 'Close' : 'Cancel' }}
                             </button>
                         </div>
                     </form>
