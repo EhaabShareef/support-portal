@@ -100,57 +100,58 @@
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     {{-- User Info --}}
                     <div class="flex-1 space-y-3">
-                        <div class="flex items-start justify-between">
-                            <div class="flex items-center gap-4">
-                                {{-- Avatar --}}
-                                <div class="flex-shrink-0 h-12 w-12">
-                                    <div class="h-12 w-12 rounded-full bg-gradient-to-br bg-sky-500/60 flex items-center justify-center shadow-md">
-                                        <span class="text-lg font-bold text-white">
-                                            {{ strtoupper(substr($user->name, 0, 1)) }}
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                {{-- User Details --}}
-                                <div>
-                                    <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
-                                        {{ $user->name }}
-                                    </h3>
-                                    <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ $user->email }}</p>
-                                    <p class="text-xs text-neutral-500 dark:text-neutral-500">{{ '@'.$user->username }}</p>
+                        <div class="flex items-start gap-4">
+                            {{-- Avatar --}}
+                            <div class="flex-shrink-0 h-12 w-12">
+                                <div class="h-12 w-12 rounded-full bg-gradient-to-br bg-sky-500/60 flex items-center justify-center shadow-md">
+                                    <span class="text-lg font-bold text-white">
+                                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                                    </span>
                                 </div>
                             </div>
                             
-                            <div class="flex items-center gap-2">
-                                {{-- Role Badge --}}
-                                @php
-                                    $role = $user->roles->first();
-                                    $roleColors = [
-                                        'admin' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
-                                        'support' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                                        'client' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                                    ];
-                                @endphp
-                                @if($role)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $roleColors[$role->name] ?? 'bg-neutral-100 text-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-300' }}">
-                                        {{ $role->name }}
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300">
-                                        No Role
-                                    </span>
-                                @endif
-                                
-                                {{-- Status Badge --}}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $user->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' }}">
-                                    @if($user->is_active)
-                                        <x-heroicon-o-check-circle class="h-3 w-3 mr-1" />
-                                        Active
-                                    @else
-                                        <x-heroicon-o-x-circle class="h-3 w-3 mr-1" />
-                                        Inactive
-                                    @endif
-                                </span>
+                            {{-- User Details --}}
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100 truncate">
+                                        {{ $user->name }}
+                                    </h3>
+                                    
+                                    {{-- Role and Status Badges --}}
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        {{-- Role Badge --}}
+                                        @php
+                                            $role = $user->roles->first();
+                                            $roleColors = [
+                                                'admin' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+                                                'support' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                                                'client' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                                            ];
+                                        @endphp
+                                        @if($role)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $roleColors[$role->name] ?? 'bg-neutral-100 text-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-300' }}">
+                                                {{ $role->name }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300">
+                                                No Role
+                                            </span>
+                                        @endif
+                                        
+                                        {{-- Status Badge --}}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $user->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' }}">
+                                            @if($user->is_active)
+                                                <x-heroicon-o-check-circle class="h-3 w-3 mr-1" />
+                                                Active
+                                            @else
+                                                <x-heroicon-o-x-circle class="h-3 w-3 mr-1" />
+                                                Inactive
+                                            @endif
+                                        </span>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-neutral-600 dark:text-neutral-400 truncate">{{ $user->email }}</p>
+                                <p class="text-xs text-neutral-500 dark:text-neutral-500">{{ '@'.$user->username }}</p>
                             </div>
                         </div>
 

@@ -187,7 +187,26 @@ class ScheduleCalendar extends Component
     #[Computed]
     public function weekendDays()
     {
-        return Setting::get('weekend_days', ['Saturday', 'Sunday']);
+        $setting = Setting::get('weekend_days', ['Saturday', 'Sunday']);
+        
+        // If it's already an array, return it
+        if (is_array($setting)) {
+            return $setting;
+        }
+        
+        // If it's a string, try to decode it as JSON first
+        if (is_string($setting)) {
+            $decoded = json_decode($setting, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+            
+            // If not valid JSON, try comma-separated values
+            return array_map('trim', explode(',', $setting));
+        }
+        
+        // Fallback to default
+        return ['Saturday', 'Sunday'];
     }
 
     /**
