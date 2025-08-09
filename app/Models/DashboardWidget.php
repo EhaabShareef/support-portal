@@ -50,9 +50,9 @@ class DashboardWidget extends Model
     }
 
     /**
-     * Check if widget should be visible for a user
+     * Check if user has permission to access this widget (for customize modal)
      */
-    public function isVisibleForUser(User $user): bool
+    public function isAccessibleForUser(User $user): bool
     {
         // Check if widget is active
         if (!$this->is_active) {
@@ -76,6 +76,19 @@ class DashboardWidget extends Model
                     return false;
                 }
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if widget should be visible for a user (for dashboard display)
+     */
+    public function isVisibleForUser(User $user): bool
+    {
+        // First check if user has access
+        if (!$this->isAccessibleForUser($user)) {
+            return false;
         }
 
         // Check user settings

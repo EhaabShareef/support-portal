@@ -31,13 +31,13 @@ class CustomizeDashboard extends Component
         $user = Auth::user();
         $role = $user->roles->first()?->name ?? 'client';
 
-        // Get all active widgets that the user has permission to see
+        // Get all active widgets that the user has permission to access
         $availableWidgets = DashboardWidget::active()
             ->forRole($role)
             ->ordered()
             ->get()
             ->filter(function ($widget) use ($user) {
-                return $widget->isVisibleForUser($user);
+                return $widget->isAccessibleForUser($user);
             });
 
         // Get user's current settings
@@ -60,7 +60,7 @@ class CustomizeDashboard extends Component
                 'visible' => $setting ? $setting->is_visible : true,
                 'size' => $setting ? $setting->getEffectiveSize() : $widget->default_size,
                 'sort_order' => $setting ? $setting->getEffectiveOrder() : $widget->sort_order,
-                'can_view' => $widget->isVisibleForUser($user),
+                'can_view' => $widget->isAccessibleForUser($user),
             ];
         })->toArray();
 
