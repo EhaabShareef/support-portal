@@ -47,11 +47,16 @@ The following migrations will be executed in dependency order:
 ## Production Seeder Classes
 
 ### Primary Seeder
-- **`ProductionDatabaseSeeder`** - Main entry point for production seeding
+- **`DatabaseSeeder`** - Main entry point for seeding all baseline data
 
 ### Component Seeders
-- **`ProductionRolePermissionSeeder`** - Creates roles and permissions from modules config
-- **`ProductionBaseDataSeeder`** - Creates organizations, departments, settings, and initial admin
+- **`RolePermissionSeeder`** - Creates roles and permissions from modules config
+- **`BasicDataSeeder`** - Creates organization, department groups, and departments
+- **`UserSeeder`** - Creates users with proper role assignments  
+- **`ScheduleEventTypeSeeder`** - Creates schedule event types (PR, PO, HAS, etc.)
+- **`DashboardWidgetSeeder`** - Creates dashboard widget catalog
+- **`UserWidgetSettingsSeeder`** - Creates default user widget settings
+- **`ApplicationSettingsSeeder`** - Creates application settings (weekend days, default org, etc.)
 
 ## Deployment Commands
 
@@ -93,12 +98,14 @@ php artisan migrate:status
 
 # Verify critical tables exist and have data
 php artisan tinker
->>> App\Models\User::count(); // Should be 1 (initial admin)
+>>> App\Models\User::count(); // Should be 6+ (super admin + department managers)
 >>> Spatie\Permission\Models\Role::count(); // Should be 3 (admin, support, client)
 >>> Spatie\Permission\Models\Permission::count(); // Should be ~40+ permissions
->>> App\Models\Organization::count(); // Should be 1 (default org)
->>> App\Models\Department::count(); // Should be 3 (admin, support, customer service)
->>> App\Models\DepartmentGroup::count(); // Should be 3 groups
+>>> App\Models\Organization::count(); // Should be 1 (Hospitality Technology)
+>>> App\Models\Department::count(); // Should be 14 (various PMS, POS, MC, Hardware, Admin depts)
+>>> App\Models\DepartmentGroup::count(); // Should be 5 (Admin, PMS, POS, MC, Hardware)
+>>> App\Models\ScheduleEventType::count(); // Should be 10+ (PR, PO, HAS, etc.)
+>>> App\Models\Setting::count(); // Should be 2+ (weekend_days, default_organization)
 >>> exit
 ```
 
@@ -138,24 +145,34 @@ Verify these tables exist and have the correct structure:
 
 ## Default Credentials
 
-**Initial Admin Account:**
-- Email: `admin@yourcompany.com`
-- Password: `admin123!`
+**Super Admin Account:**
+- Email: `superadmin@hospitalitytechnology.com.mv`
+- Username: `superadmin`
+- Password: `password`
 
-⚠️ **CRITICAL**: Change this password immediately after first login!
+**Department Manager Accounts:**
+- Admin Manager: `admin@hospitalitytechnology.com.mv` / `password`
+- PMS Manager: `pms@hospitalitytechnology.com.mv` / `password`
+- POS Manager: `pos@hospitalitytechnology.com.mv` / `password`
+- MC Manager: `mc@hospitalitytechnology.com.mv` / `password`
+- Hardware Manager: `hardware@hospitalitytechnology.com.mv` / `password`
+
+⚠️ **CRITICAL**: Change all default passwords immediately after first login!
 
 ## Environment-Specific Seeding
 
 ### Production Seeding (Default)
 ```bash
 php artisan db:seed
-# Uses ProductionDatabaseSeeder - baseline data only
+# Uses DatabaseSeeder - creates roles, permissions, departments, users, widgets, and settings
 ```
 
-### Development Seeding (Optional)
+### Development Seeding (Alternative)
 ```bash
-php artisan db:seed --class=DevelopmentDatabaseSeeder
-# Uses development seeders with sample users and test data
+# For local development, you can run specific seeders
+php artisan db:seed --class=RolePermissionSeeder
+php artisan db:seed --class=ApplicationSettingsSeeder
+# etc.
 ```
 
 ### Demo/Staging Seeding
@@ -213,20 +230,11 @@ After successful deployment:
 The following migration files have been moved to `database/migrations/deprecated/` and should not be used:
 
 - `2025_01_01_000017_add_description_to_roles_table.php` - Merged into permission tables migration
-- `2025_01_01_000019_create_permission_tables.php` - Replaced with cleaner version
-- `2025_01_01_000022_cleanup_schedules_table_structure.php` - No longer needed
-- `2025_01_01_000016_create_schedules_table.php` - Replaced with fixed version
+- `2025_01_01_000019_create_permission_tables.php` - Replaced with cleaner consolidated version
+- `2025_01_01_000022_cleanup_schedules_table_structure.php` - No longer needed (fixed at source)
+- `2025_01_01_000016_create_schedules_table.php` - Replaced with corrected version
 
-## Development Seeders Backup
-
-Development seeders have been backed up to `database/seeders/development/`:
-
-- `DevelopmentDatabaseSeeder.php`
-- `RolePermissionSeeder.php` 
-- `BasicDataSeeder.php`
-- `UserSeeder.php`
-
-These can be used for local development and testing.
+These files are preserved for reference but should not be included in fresh deployments.
 
 ## Troubleshooting
 
@@ -242,8 +250,9 @@ These can be used for local development and testing.
    - Verify foreign key relationships in migrations
 
 3. **Seeder Failures**
-   - Check that ProductionRolePermissionSeeder runs before ProductionBaseDataSeeder
+   - Ensure seeders run in correct dependency order (roles before users, organizations before users)
    - Verify modules.php configuration file exists and is properly formatted
+   - Check that department groups are created before departments and users
 
 4. **Migration Order Issues**
    - All migrations follow dependency order (referenced tables created first)

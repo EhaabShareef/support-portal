@@ -18,11 +18,11 @@ class DatabaseSeeder extends Seeder
         
         // Seed in correct order
         $this->call([
-            RolePermissionSeeder::class,  // Clears all data, creates permissions and roles
-            DepartmentGroupSeeder::class, // Creates department groups
-            DepartmentSeeder::class,      // Creates departments
-            UserSeeder::class,           // Creates users with proper assignments
-            DashboardWidgetSeeder::class, // Creates widget catalog
+            RolePermissionSeeder::class,     // Clears all data, creates permissions and roles
+            BasicDataSeeder::class,          // Creates organization, department groups, and departments
+            UserSeeder::class,              // Creates users with proper assignments
+            ScheduleEventTypeSeeder::class,  // Creates schedule event types
+            DashboardWidgetSeeder::class,    // Creates widget catalog
             UserWidgetSettingsSeeder::class, // Creates default user widget settings
             ApplicationSettingsSeeder::class, // Creates application settings
         ]);
