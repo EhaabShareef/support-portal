@@ -33,12 +33,12 @@
                 @php
                     $widget = $userWidget->widget;
                     $size = $userWidget->size;
-                    $componentName = $widget->getComponentForSize($size);
+                    $componentInfo = $widget->getComponentForSizeWithFallback($size);
                 @endphp
                 
                 <div class="{{ $this->getWidgetClasses($size) }}" wire:key="widget-{{ $widget->id }}">
-                    {{-- Render the actual widget component --}}
-                    @livewire($componentName, [], key('widget-' . $widget->id . '-' . $size))
+                    {{-- Render the widget component with fallback support --}}
+                    @livewire($componentInfo['component'], $componentInfo['params'], key('widget-' . $widget->id . '-' . $size))
                 </div>
             @endforeach
         </div>

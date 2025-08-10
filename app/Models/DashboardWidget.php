@@ -163,6 +163,45 @@ class DashboardWidget extends Model
     }
 
     /**
+     * Check if the component exists for a specific size
+     */
+    public function componentExists(string $size): bool
+    {
+        $componentName = $this->getComponentForSize($size);
+        
+        // Convert component name to class path
+        $className = 'App\\Livewire\\' . str_replace('.', '\\', ucwords($componentName, '.'));
+        
+        return class_exists($className);
+    }
+
+    /**
+     * Get the component name for a size, with fallback if not found
+     */
+    public function getComponentForSizeWithFallback(string $size): array
+    {
+        $componentName = $this->getComponentForSize($size);
+        
+        if ($this->componentExists($size)) {
+            return [
+                'component' => $componentName,
+                'is_fallback' => false,
+                'params' => []
+            ];
+        }
+        
+        // Return fallback component with parameters
+        return [
+            'component' => 'dashboard.widgets.fallback-widget',
+            'is_fallback' => true,
+            'params' => [
+                'widgetName' => $this->name,
+                'widgetSize' => $size
+            ]
+        ];
+    }
+
+    /**
      * Scope to get active widgets
      */
     public function scopeActive($query)
