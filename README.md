@@ -13,6 +13,7 @@ The application features a comprehensive **Role-Based Access Control (RBAC)** sy
 - 👥 **User Management** - Comprehensive user administration
 - 📅 **Schedule Management** - Team schedule calendar with event tracking
 - 📊 **Reports & Analytics** - Comprehensive admin-only reporting system with real-time insights
+- 🎛️ **Dashboard Widgets** - Role-based customizable dashboard with smart widget system
 - 🔐 **Role-Based Permissions** - Granular permission system with role management
 - 📱 **Mobile Responsive** - Fully responsive design for all devices
 - 🌙 **Dark Mode** - Toggle between light and dark themes
@@ -131,6 +132,63 @@ The system organizes permissions into the following modules:
 - Department restrictions are enforced in Livewire components and policies
 - All RBAC logic follows Laravel best practices and integrates seamlessly with the framework
 
+## 🎛️ Dashboard Widget System
+
+### 📊 **Role-Based Widgets**
+
+The Support Portal features a comprehensive dashboard widget system that provides role-specific insights and functionality. Each user role has access to widgets tailored to their responsibilities and permissions.
+
+#### **🔧 Admin Widgets**
+- **System Health Monitor** - Real-time monitoring of database, cache, queues, and storage
+- **Ticket Analytics** - Comprehensive ticket trends, status breakdown, and performance metrics  
+- **Organization Management** - Contract alerts and organization overview metrics *(planned)*
+- **User Activity Monitor** - Authentication metrics and online user tracking *(planned)*
+- **Department Performance** - Efficiency analysis and workload distribution *(planned)*
+
+#### **🎧 Support Widgets**
+- **My Workload** - Personal ticket queue with priority indicators and resolution metrics
+- **Team Performance** - Department rankings and comparative metrics *(planned)*
+- **Quick Actions** - Common support shortcuts and ticket creation tools *(planned)*
+- **Recent Activity** - Latest tickets and updates within department *(planned)*
+- **Knowledge Insights** - Popular solutions and FAQ metrics *(planned)*
+
+#### **👤 Client Widgets**
+- **My Tickets Overview** - Organization ticket dashboard with status indicators
+- **Service Status** - SLA compliance and system uptime metrics *(planned)*
+- **Contract Information** - Active contracts and renewal alerts *(planned)*
+- **Hardware Assets** - Inventory status and warranty tracking *(planned)*
+- **Quick Support** - Easy access to support resources and ticket creation *(planned)*
+
+### ⚙️ **Widget Management Features**
+
+- **🎨 Customizable Layout**: Drag-and-drop widget reordering with persistent user preferences
+- **📏 Multiple Sizes**: Each widget supports Small (1x1), Medium (2x2), and Large (3x2) variants
+- **👁️ Visibility Control**: Show/hide widgets based on individual user preferences
+- **🔄 Real-Time Updates**: Individual widget refresh with 5-minute cache TTL for performance
+- **🛡️ Permission-Based**: Widgets automatically filtered by user roles and permissions
+
+### 🚀 **Smart Fallback System**
+
+- **🔍 Automatic Detection**: System checks component existence before rendering
+- **😊 Friendly Messages**: Unimplemented widgets show "Widget still in beta brew" with widget details
+- **🛠️ Development-Friendly**: Add widgets to database without breaking dashboard functionality
+- **⚡ No Errors**: Missing components gracefully fall back instead of crashing
+
+### 🎯 **Getting Started with Widgets**
+
+1. **Access Dashboard**: Navigate to `/dashboard` after login
+2. **Customize Layout**: Click "Customize" button to modify widget arrangement
+3. **Toggle Sizes**: Select different widget sizes for optimal information display
+4. **Refresh Data**: Use individual widget refresh buttons or global dashboard refresh
+5. **Role-Based View**: Widgets automatically adjust based on your user role permissions
+
+### 💻 **Technical Implementation**
+
+- **Modular Architecture**: Widgets organized by role with size-specific implementations
+- **Database-Driven**: Complete widget system configuration stored in database
+- **Performance Optimized**: Efficient caching, lazy loading, and optimized queries
+- **Security-First**: Multi-layer permission checks and role-based access control
+
 ## Organizational Structure
 
 ### 🏢 **Department Groups & Departments**
@@ -248,7 +306,119 @@ The Support Portal features a powerful admin-only reporting system that provides
 
 ## Recent Updates
 
-### 🚀 **v4.1.0 - Reports & Analytics Module Implementation** (Latest)
+### 🚀 **v4.2.0 - Dashboard Widget System Implementation** (Latest)
+
+#### 📊 **Comprehensive Dashboard Widget Framework**
+
+- ✅ **Role-Based Widget System**: Dynamic dashboard widgets customized for user roles (Admin, Support, Client)
+  - **Admin Widgets**: System Health Monitor, Ticket Analytics, Organization Management, User Activity, Department Performance
+  - **Support Widgets**: My Workload, Team Performance, Quick Actions, Recent Activity, Knowledge Insights  
+  - **Client Widgets**: My Tickets Overview, Service Status, Contract Information, Hardware Assets, Quick Support
+  - Each widget supports multiple size variants: Small (1x1), Medium (2x2), Large (3x2)
+
+- ✅ **Smart Widget Management**: User-customizable dashboard with persistent settings
+  - **Customize Modal**: Drag-and-drop widget reordering with live preview
+  - **Size Selection**: Toggle between available widget sizes with instant updates
+  - **Visibility Control**: Show/hide widgets based on user preferences
+  - **Permission-Based Access**: Widgets filtered by user roles and permissions
+
+- ✅ **Universal Fallback System**: Graceful handling of unimplemented widgets
+  - **Automatic Detection**: System checks if widget components exist before rendering
+  - **Friendly Fallback**: "Widget still in beta brew" message with widget name and size
+  - **No Error Crashes**: Missing components show fallback instead of breaking the dashboard
+  - **Development-Friendly**: Easy to add new widgets to seeder without implementation
+
+#### 🎯 **Implemented Widgets** (Working Examples)
+
+- ✅ **System Health Monitor** (Admin - All sizes): Real-time system monitoring
+  - Database connectivity, cache status, queue health, storage space
+  - Performance metrics including response times and resource usage
+  - Visual status indicators with color-coded health states
+
+- ✅ **Ticket Analytics** (Admin - Small/Medium): Advanced ticket trend analysis  
+  - Today/weekly ticket counts with percentage trend indicators
+  - Status breakdown (open, in progress, resolved, closed)
+  - Priority distribution and average resolution time metrics
+
+- ✅ **My Workload** (Support - Small): Personal ticket queue management
+  - Open assigned tickets count with high priority indicators
+  - Daily resolution metrics and total workload overview
+  - Real-time updates with 5-minute cache TTL
+
+- ✅ **My Tickets Overview** (Client - Small): Organization ticket dashboard
+  - Recent tickets with creation dates and status indicators
+  - Organization-scoped filtering for multi-tenant security
+  - Clean interface showing ticket subjects and current status
+
+#### 🔧 **Technical Architecture**
+
+- ✅ **Modular Component Structure**: Organized by role and size variants
+  ```
+  app/Livewire/Dashboard/Widgets/
+  ├── Admin/SystemHealth/{Small,Medium,Large}.php
+  ├── Admin/TicketAnalytics/{Small,Medium,Large}.php  
+  ├── Support/MyWorkload/{Small,Medium,Large}.php
+  ├── Client/MyTickets/{Small,Medium,Large}.php
+  └── FallbackWidget.php
+  ```
+
+- ✅ **Smart Component Loading**: Automatic fallback system prevents errors
+  - `componentExists()` method checks for widget class existence
+  - `getComponentForSizeWithFallback()` returns appropriate component or fallback
+  - Dashboard template updated to handle missing components gracefully
+
+- ✅ **Database-Driven Configuration**: Complete widget system in database
+  - 16 widget definitions across all roles with size variants and permissions
+  - User settings table stores personal widget preferences
+  - Dynamic component resolution based on database configuration
+
+#### 🎨 **User Experience Features**
+
+- ✅ **Responsive Grid Layout**: Adaptive dashboard layout for all screen sizes
+  - CSS Grid with dynamic columns (1/2/4 columns based on screen size)
+  - Widget size classes: Small (1x1), Medium (2x2), Large (3x2)
+  - Proper spacing and visual hierarchy
+
+- ✅ **Interactive Elements**: Rich user interactions throughout
+  - Refresh buttons on individual widgets with loading states
+  - Hover effects and smooth transitions using Alpine.js
+  - Real-time data updates with caching for performance
+
+- ✅ **Dark Mode Support**: Complete dark theme compatibility
+  - All widgets support light/dark mode with proper contrast
+  - Consistent styling with application theme
+  - Backdrop blur effects and translucent backgrounds
+
+#### 🛡️ **Security & Performance**
+
+- ✅ **Permission-Based Access**: Multi-layer security enforcement
+  - Role-based widget filtering (`dashboard.admin`, `dashboard.support`, `dashboard.client`)
+  - Component-level permission checks in mount methods
+  - User can only see widgets appropriate for their role
+
+- ✅ **Performance Optimization**: Efficient data loading and caching
+  - 5-minute cache TTL for all widget data queries
+  - Lazy loading with proper loading states
+  - Optimized database queries with eager loading relationships
+
+- ✅ **Error Handling**: Comprehensive error management
+  - Try-catch blocks in all data loading methods
+  - Graceful degradation with error state displays
+  - Logging for debugging without breaking user experience
+
+#### 📈 **Future-Ready Framework**
+
+- ✅ **Expansion Capabilities**: Easy to add new widgets
+  - Standardized component patterns for consistent development
+  - Database seeder with 16 widget definitions (5 implemented, 11 planned)
+  - Template structure supports rapid widget development
+
+- ✅ **Customization Options**: Rich configuration possibilities
+  - Widget options stored as JSON for flexible configuration
+  - Size variant system supports different layouts per widget
+  - User preferences persist across sessions
+
+### 🚀 **v4.1.0 - Reports & Analytics Module Implementation** (Previous)
 
 #### 📊 **Major Features**
 

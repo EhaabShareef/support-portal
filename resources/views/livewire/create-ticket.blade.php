@@ -78,6 +78,8 @@
             </div>
             @endif
 
+            {{-- Organization Selection (hidden for clients as it's auto-set) --}}
+            @if(!auth()->user()->hasRole('client'))
             <div>
                 <label for="organization" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Organization</label>
                 <select wire:model.defer="form.organization_id" 
@@ -92,6 +94,7 @@
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
                 @enderror
             </div>
+            @endif
 
             <div>
                 <label for="department" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Department</label>
@@ -108,6 +111,8 @@
                 @enderror
             </div>
 
+            {{-- Assignment Selection (only for admin/support users) --}}
+            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('support'))
             <div>
                 <label for="assigned_to" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Assigned To</label>
                 <select wire:model.defer="form.assigned_to" 
@@ -122,6 +127,7 @@
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
                 @enderror
             </div>
+            @endif
 
             <div>
                 <label for="priority" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Priority</label>
@@ -192,4 +198,48 @@
             </div>
         </div>
     </div>
+
+    {{-- Critical Priority Confirmation Modal --}}
+    @if($showCriticalConfirmation)
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" x-data="" x-transition>
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <div class="flex items-center mb-4">
+                <x-heroicon-o-exclamation-triangle class="h-8 w-8 text-red-500 mr-3" />
+                <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Critical Priority Confirmation</h3>
+            </div>
+            
+            <div class="mb-6">
+                <p class="text-sm text-neutral-700 dark:text-neutral-300 mb-3">
+                    You have marked this ticket as <strong class="text-red-600">CRITICAL</strong> priority. 
+                    This designation is reserved for urgent issues that severely impact operations.
+                </p>
+                
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-3 mb-3">
+                    <p class="text-sm text-red-800 dark:text-red-300 font-medium">
+                        📞 <strong>IMMEDIATE ACTION REQUIRED:</strong>
+                    </p>
+                    <p class="text-sm text-red-700 dark:text-red-400 mt-1">
+                        Please contact our technical hotline at <strong>[HOTLINE_NUMBER]</strong> immediately after submitting this ticket. 
+                        Remain available for immediate assistance.
+                    </p>
+                </div>
+                
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                    Do you confirm that this issue requires critical priority and immediate attention?
+                </p>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button wire:click="cancelCriticalConfirmation" 
+                        class="px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 text-sm font-medium rounded-md transition-colors">
+                    Cancel (Change to High)
+                </button>
+                <button wire:click="confirmCriticalPriority" 
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors">
+                    Confirm Critical Priority
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>

@@ -24,6 +24,7 @@ class ViewTicket extends Component
 
     public Ticket $ticket;
 
+
     public string $activeInput = ''; // values: 'reply', 'note'
 
     public bool $editMode = false;
@@ -54,28 +55,15 @@ class ViewTicket extends Component
 
     public function mount(Ticket $ticket)
     {
-        // Check permissions
+        // Check permissions before allowing access to ticket viewing
         $user = auth()->user();
-        if (! $user->can('tickets.read')) {
-            abort(403, 'You do not have permission to view tickets.');
+        if (!$user || !$user->can('tickets.read')) {
+            abort(403, 'Insufficient permissions to view tickets.');
         }
-
-        // Role-based access control
-        if ($user->hasRole('client') && $ticket->organization_id !== $user->organization_id) {
-            abort(403, 'You can only view tickets from your organization.');
-        }
-
-        if ($user->hasRole('support')) {
-            $hasAccess = $ticket->department_id === $user->department_id;
-            
-            // Also check department group access
-            if (!$hasAccess && $user->department?->department_group_id) {
-                $hasAccess = $user->department->department_group_id === $ticket->department?->department_group_id;
-            }
-            
-            if (!$hasAccess) {
-                abort(403, 'You can only view tickets from your department or department group.');
-            }
+        
+        // Additional authorization check - ensure user can access this specific ticket
+        if (!$this->canAccessTicket($user, $ticket)) {
+            abort(403, 'You do not have access to this ticket.');
         }
 
         $this->ticket = $ticket->load([
@@ -122,6 +110,29 @@ class ViewTicket extends Component
         ];
 
         $this->noteInputKey = uniqid();
+    }
+
+    private function canAccessTicket($user, $ticket): bool
+    {
+        // Admin can see all tickets
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+        
+        // Client can only see their organization's tickets
+        if ($user->hasRole('client')) {
+            return $ticket->organization_id === $user->organization_id;
+        }
+        
+        // Support staff can see tickets in their department group
+        if ($user->hasRole('support') && $user->department) {
+            if ($user->department->department_group_id) {
+                return $ticket->department->department_group_id === $user->department->department_group_id;
+            }
+            return $ticket->department_id === $user->department_id;
+        }
+        
+        return false;
     }
 
     #[Computed]

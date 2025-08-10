@@ -17,6 +17,15 @@ class ManageTickets extends Component
 {
     use WithPagination;
 
+    public function mount(): void
+    {
+        // Check permissions before allowing access to ticket management
+        $user = auth()->user();
+        if (!$user || !$user->can('tickets.read')) {
+            abort(403, 'Insufficient permissions to view tickets.');
+        }
+    }
+
     public string $search = '';
 
     public string $filterStatus = '';
@@ -216,6 +225,167 @@ class ManageTickets extends Component
         }
     }
 
+    public function assignToMe($ticketId)
+    {
+        try {
+            $user = auth()->user();
+            $ticket = Ticket::findOrFail($ticketId);
+            
+            // Check if user can assign tickets
+            if (!$user->can('tickets.update')) {
+                session()->flash('error', 'You do not have permission to assign tickets.');
+                return;
+            }
+            
+            // Check if user can access this ticket based on role
+            if (!$this->canAccessTicket($user, $ticket)) {
+                session()->flash('error', 'You cannot assign this ticket.');
+                return;
+            }
+            
+            $ticket->update(['assigned_to' => $user->id]);
+            session()->flash('message', 'Ticket assigned to you successfully.');
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to assign ticket', [
+                'ticket_id' => $ticketId,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to assign ticket.');
+        }
+    }
+
+    public function closeTicket($ticketId)
+    {
+        try {
+            $user = auth()->user();
+            $ticket = Ticket::findOrFail($ticketId);
+            
+            // Check if user can close tickets
+            if (!$user->can('tickets.update')) {
+                session()->flash('error', 'You do not have permission to close tickets.');
+                return;
+            }
+            
+            // Check if user can access this ticket
+            if (!$this->canAccessTicket($user, $ticket)) {
+                session()->flash('error', 'You cannot close this ticket.');
+                return;
+            }
+            
+            $ticket->update([
+                'status' => 'closed',
+                'closed_at' => now()
+            ]);
+            session()->flash('message', 'Ticket closed successfully.');
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to close ticket', [
+                'ticket_id' => $ticketId,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to close ticket.');
+        }
+    }
+
+    public function changePriority($ticketId, $priority)
+    {
+        try {
+            $user = auth()->user();
+            $ticket = Ticket::findOrFail($ticketId);
+            
+            // Check if user can update tickets
+            if (!$user->can('tickets.update')) {
+                session()->flash('error', 'You do not have permission to update tickets.');
+                return;
+            }
+            
+            // Check if user can access this ticket
+            if (!$this->canAccessTicket($user, $ticket)) {
+                session()->flash('error', 'You cannot update this ticket.');
+                return;
+            }
+            
+            $ticket->update(['priority' => $priority]);
+            session()->flash('message', 'Ticket priority updated successfully.');
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to update ticket priority', [
+                'ticket_id' => $ticketId,
+                'priority' => $priority,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to update ticket priority.');
+        }
+    }
+
+    public function changeStatus($ticketId, $status)
+    {
+        try {
+            $user = auth()->user();
+            $ticket = Ticket::findOrFail($ticketId);
+            
+            // Check if user can update tickets
+            if (!$user->can('tickets.update')) {
+                session()->flash('error', 'You do not have permission to update tickets.');
+                return;
+            }
+            
+            // Check if user can access this ticket
+            if (!$this->canAccessTicket($user, $ticket)) {
+                session()->flash('error', 'You cannot update this ticket.');
+                return;
+            }
+            
+            $updateData = ['status' => $status];
+            
+            // Set closed_at if closing the ticket
+            if ($status === 'closed') {
+                $updateData['closed_at'] = now();
+            } elseif ($status === 'resolved') {
+                $updateData['resolved_at'] = now();
+            }
+            
+            $ticket->update($updateData);
+            session()->flash('message', 'Ticket status updated successfully.');
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to update ticket status', [
+                'ticket_id' => $ticketId,
+                'status' => $status,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to update ticket status.');
+        }
+    }
+
+    private function canAccessTicket($user, $ticket): bool
+    {
+        // Admin can access all tickets
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+        
+        // Client can only access their organization's tickets
+        if ($user->hasRole('client')) {
+            return $ticket->organization_id === $user->organization_id;
+        }
+        
+        // Support staff can access tickets in their department group
+        if ($user->hasRole('support') && $user->department) {
+            if ($user->department->department_group_id) {
+                return $ticket->department->department_group_id === $user->department->department_group_id;
+            }
+            return $ticket->department_id === $user->department_id;
+        }
+        
+        return false;
+    }
+
 
     public function render()
     {
@@ -228,13 +398,7 @@ class ManageTickets extends Component
                 'client:id,name,email',
                 'assigned:id,name',
             ])
-            ->withCount('messages')
-            ->with(['messages' => function($q) {
-                $q->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
-                  ->with('sender:id,name')
-                  ->latest()
-                  ->limit(1);
-            }]);
+            ->withCount('messages');
 
         // Apply quick filter first
         switch ($this->quickFilter) {

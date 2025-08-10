@@ -29,6 +29,20 @@ class TicketMessage extends Model
         'deleted_at' => 'datetime',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($message) {
+            // Update the ticket's latest_message_at timestamp
+            if ($message->ticket) {
+                $message->ticket->update([
+                    'latest_message_at' => $message->created_at
+                ]);
+            }
+        });
+    }
+
     // Ticket
     public function ticket(): BelongsTo
     {

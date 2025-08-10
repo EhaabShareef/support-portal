@@ -53,6 +53,7 @@ class Ticket extends Model
         'type',
         'status',
         'priority',
+        'critical_confirmed',
         'description',
         'organization_id',
         'client_id',
@@ -61,14 +62,17 @@ class Ticket extends Model
         'first_response_at',
         'resolved_at',
         'closed_at',
+        'latest_message_at',
         'response_time_minutes',
         'resolution_time_minutes',
     ];
 
     protected $casts = [
+        'critical_confirmed' => 'boolean',
         'first_response_at' => 'datetime',
         'resolved_at' => 'datetime',
         'closed_at' => 'datetime',
+        'latest_message_at' => 'datetime',
     ];
 
     protected static function boot()

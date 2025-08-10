@@ -13,6 +13,18 @@ use Livewire\Component;
 
 class CreateTicket extends Component
 {
+    public bool $showCriticalConfirmation = false;
+    public bool $criticalConfirmed = false;
+
+    public function mount(): void
+    {
+        // Check permissions before allowing access to ticket creation
+        $user = auth()->user();
+        if (!$user || !$user->can('tickets.create')) {
+            abort(403, 'Insufficient permissions to create tickets.');
+        }
+    }
+
     public array $form = [
         'subject'   => '',
         'type'      => 'issue',
@@ -60,8 +72,15 @@ class CreateTicket extends Component
             $user = auth()->user();
             $validated = $this->validate()['form'];
             
+            // Check for critical priority confirmation
+            if ($validated['priority'] === 'critical' && !$this->criticalConfirmed) {
+                $this->showCriticalConfirmation = true;
+                return;
+            }
+            
             // Override security-sensitive fields
             $validated['status'] = 'open';
+            $validated['critical_confirmed'] = $this->criticalConfirmed;
             
             // For clients, force their organization and set them as the client
             if ($user->hasRole('client')) {
@@ -80,14 +99,16 @@ class CreateTicket extends Component
 
             $ticket = Ticket::create($validated);
 
-            // Add dependent note about calling hotline
-            TicketNote::create([
-                'ticket_id' => $ticket->id,
-                'user_id' => auth()->id(),
-                'is_internal' => false,
-                'color' => 'blue',
-                'note' => 'Please note: For urgent assistance or immediate support regarding this ticket, you may contact our technical hotline at [HOTLINE_NUMBER]. Our support team is available to provide additional guidance and ensure timely resolution of your request.',
-            ]);
+            // Add hotline note only for critical and urgent tickets
+            if (in_array($validated['priority'], ['critical', 'urgent'])) {
+                TicketNote::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => auth()->id(),
+                    'is_internal' => false,
+                    'color' => 'red',
+                    'note' => 'PRIORITY ALERT: This ticket has been marked as ' . strtoupper($validated['priority']) . '. For immediate assistance, please contact our technical hotline at [HOTLINE_NUMBER]. Our support team is available to provide additional guidance and ensure timely resolution of your request.',
+                ]);
+            }
 
             session()->flash('message', 'Ticket created successfully.');
 
@@ -103,6 +124,21 @@ class CreateTicket extends Component
             session()->flash('error', 'Failed to create ticket. Please try again or contact support if the problem persists.');
             return;
         }
+    }
+
+    public function confirmCriticalPriority()
+    {
+        $this->criticalConfirmed = true;
+        $this->showCriticalConfirmation = false;
+        $this->submit(); // Retry submission
+    }
+
+    public function cancelCriticalConfirmation()
+    {
+        $this->showCriticalConfirmation = false;
+        $this->criticalConfirmed = false;
+        // Reset priority to high
+        $this->form['priority'] = 'high';
     }
 
     public function render()

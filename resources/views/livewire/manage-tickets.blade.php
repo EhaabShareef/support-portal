@@ -232,33 +232,15 @@
 
                             {{-- Priority --}}
                             <div class="col-span-1">
-                                @php
-                                    $priorityColors = [
-                                        'low' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300',
-                                        'normal' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                                        'high' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-                                        'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                                        'critical' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-                                    ];
-                                @endphp
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $priorityColors[$ticket->priority] ?? $priorityColors['normal'] }}">
-                                    {{ $ticket->priority_label }}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketPriority::from($ticket->priority)->cssClass() }}">
+                                    {{ \App\Enums\TicketPriority::from($ticket->priority)->label() }}
                                 </span>
                             </div>
 
                             {{-- Status --}}
                             <div class="col-span-1">
-                                @php
-                                    $statusColors = [
-                                        'open' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                                        'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                                        'awaiting_customer_response' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                                        'closed' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300',
-                                        'on_hold' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'
-                                    ];
-                                @endphp
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$ticket->status] ?? $statusColors['open'] }}">
-                                    {{ $ticket->status_label }}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketStatus::from($ticket->status)->cssClass() }}">
+                                    {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
                                 </span>
                             </div>
 
@@ -281,8 +263,8 @@
                             {{-- Last Reply --}}
                             <div class="col-span-1">
                                 <div class="text-xs text-neutral-600 dark:text-neutral-400">
-                                    @if($ticket->messages->count() > 0)
-                                        {{ $ticket->messages->first()->created_at->diffForHumans() }}
+                                    @if($ticket->latest_message_at)
+                                        {{ $ticket->latest_message_at->diffForHumans() }}
                                     @else
                                         No replies
                                     @endif
@@ -299,10 +281,65 @@
                             {{-- Actions --}}
                             <div class="col-span-1">
                                 <div class="flex items-center gap-1">
+                                    {{-- View Button --}}
                                     <a href="{{ route('tickets.show', $ticket) }}" 
-                                       class="inline-flex items-center px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded transition-all duration-200">
+                                       class="inline-flex items-center px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded transition-all duration-200"
+                                       title="View Ticket">
                                         <x-heroicon-o-eye class="h-3 w-3" />
                                     </a>
+
+                                    {{-- Quick Actions for Admin/Support --}}
+                                    @if(auth()->user()->can('tickets.update'))
+                                        {{-- Assign to Me (only for unassigned tickets) --}}
+                                        @if(!$ticket->assigned_to && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
+                                            <button wire:click="assignToMe({{ $ticket->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
+                                                    title="Assign to Me">
+                                                <x-heroicon-o-user-plus class="h-3 w-3" />
+                                            </button>
+                                        @endif
+
+                                        {{-- Close Ticket (for resolved/open tickets) --}}
+                                        @if(in_array($ticket->status, ['resolved', 'solution_provided', 'in_progress']))
+                                            <button wire:click="closeTicket({{ $ticket->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200"
+                                                    title="Close Ticket">
+                                                <x-heroicon-o-x-circle class="h-3 w-3" />
+                                            </button>
+                                        @endif
+
+                                        {{-- Priority Dropdown --}}
+                                        @if(auth()->user()->hasRole('admin'))
+                                            <div class="relative" x-data="{ open: false }" @click.away="open = false">
+                                                <button @click="open = !open" 
+                                                        class="inline-flex items-center px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded transition-all duration-200"
+                                                        title="Change Priority">
+                                                    <x-heroicon-o-flag class="h-3 w-3" />
+                                                </button>
+                                                
+                                                <div x-show="open" 
+                                                     x-transition:enter="transition ease-out duration-100"
+                                                     x-transition:enter-start="transform opacity-0 scale-95"
+                                                     x-transition:enter-end="transform opacity-100 scale-100"
+                                                     x-transition:leave="transition ease-in duration-75"
+                                                     x-transition:leave-start="transform opacity-100 scale-100"
+                                                     x-transition:leave-end="transform opacity-0 scale-95"
+                                                     class="absolute right-0 mt-1 w-24 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg z-10">
+                                                    <div class="py-1">
+                                                        @foreach(['low', 'normal', 'high', 'urgent', 'critical'] as $priority)
+                                                            @if($priority !== $ticket->priority)
+                                                                <button wire:click="changePriority({{ $ticket->id }}, '{{ $priority }}')" 
+                                                                        @click="open = false"
+                                                                        class="w-full text-left px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
+                                                                    {{ ucfirst($priority) }}
+                                                                </button>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -330,10 +367,35 @@
                                         {{ $ticket->subject }}
                                     </h3>
                                 </div>
-                                <a href="{{ route('tickets.show', $ticket) }}" 
-                                   class="ml-2 inline-flex items-center px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded transition-all duration-200">
-                                    <x-heroicon-o-eye class="h-4 w-4" />
-                                </a>
+                                <div class="flex items-center gap-1 ml-2">
+                                    {{-- View Button --}}
+                                    <a href="{{ route('tickets.show', $ticket) }}" 
+                                       class="inline-flex items-center px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded transition-all duration-200"
+                                       title="View Ticket">
+                                        <x-heroicon-o-eye class="h-4 w-4" />
+                                    </a>
+
+                                    {{-- Quick Actions for Admin/Support --}}
+                                    @if(auth()->user()->can('tickets.update'))
+                                        {{-- Assign to Me (only for unassigned tickets) --}}
+                                        @if(!$ticket->assigned_to && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
+                                            <button wire:click="assignToMe({{ $ticket->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
+                                                    title="Assign to Me">
+                                                <x-heroicon-o-user-plus class="h-4 w-4" />
+                                            </button>
+                                        @endif
+
+                                        {{-- Close Ticket --}}
+                                        @if(in_array($ticket->status, ['resolved', 'solution_provided', 'in_progress']))
+                                            <button wire:click="closeTicket({{ $ticket->id }})" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200"
+                                                    title="Close Ticket">
+                                                <x-heroicon-o-x-circle class="h-4 w-4" />
+                                            </button>
+                                        @endif
+                                    @endif
+                                </div>
                             </div>
 
                             {{-- Client and Organization --}}
@@ -345,27 +407,11 @@
 
                             {{-- Status and Priority Badges --}}
                             <div class="flex items-center gap-2 flex-wrap">
-                                @php
-                                    $priorityColors = [
-                                        'low' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300',
-                                        'normal' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                                        'high' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-                                        'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                                        'critical' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-                                    ];
-                                    $statusColors = [
-                                        'open' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                                        'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                                        'awaiting_customer_response' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                                        'closed' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300',
-                                        'on_hold' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'
-                                    ];
-                                @endphp
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$ticket->status] ?? $statusColors['open'] }}">
-                                    {{ $ticket->status_label }}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketStatus::from($ticket->status)->cssClass() }}">
+                                    {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
                                 </span>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $priorityColors[$ticket->priority] ?? $priorityColors['normal'] }}">
-                                    {{ $ticket->priority_label }}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketPriority::from($ticket->priority)->cssClass() }}">
+                                    {{ \App\Enums\TicketPriority::from($ticket->priority)->label() }}
                                 </span>
                             </div>
 
@@ -385,8 +431,8 @@
                                 </div>
                                 <div class="text-right">
                                     <div>Created {{ $ticket->created_at->diffForHumans() }}</div>
-                                    @if($ticket->messages->count() > 0)
-                                        <div>Last reply {{ $ticket->messages->first()->created_at->diffForHumans() }}</div>
+                                    @if($ticket->latest_message_at)
+                                        <div>Last reply {{ $ticket->latest_message_at->diffForHumans() }}</div>
                                     @endif
                                 </div>
                             </div>

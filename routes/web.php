@@ -83,10 +83,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/users', function() { return redirect()->route('organizations.index'); });
     Route::get('/users/manage/{organization}', ManageUsers::class)->name('users.manage');
 
-    // Ticket Routes
-    Route::get('/tickets/create', CreateTicket::class)->name('tickets.create');
-    Route::get('/tickets/manage', ManageTickets::class)->name('tickets.index');
-    Route::get('/tickets/{ticket}', ViewTicket::class)->name('tickets.show');
+    // Ticket Routes (Protected by permissions)
+    Route::middleware(['can:tickets.read'])->group(function () {
+        Route::get('/tickets/manage', ManageTickets::class)->name('tickets.index');
+        Route::get('/tickets/{ticket}', ViewTicket::class)->name('tickets.show');
+    });
+    
+    Route::middleware(['can:tickets.create'])->group(function () {
+        Route::get('/tickets/create', CreateTicket::class)->name('tickets.create');
+    });
 
     // Profile Routes
     Route::get('/profile', UserProfile::class)->name('profile');

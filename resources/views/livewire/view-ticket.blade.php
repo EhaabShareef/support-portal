@@ -19,27 +19,11 @@
             </div>
             
             <div class="flex items-center gap-2">
-                @php
-                    $priorityColors = [
-                        'low' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300',
-                        'normal' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                        'high' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-                        'urgent' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                        'critical' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-                    ];
-                    $statusColors = [
-                        'open' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                        'in_progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                        'awaiting_customer_response' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                        'closed' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300',
-                        'on_hold' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'
-                    ];
-                @endphp
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $priorityColors[$ticket->priority] ?? $priorityColors['normal'] }}">
-                    {{ $ticket->priority_label }}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketPriority::from($ticket->priority)->cssClass() }}">
+                    {{ \App\Enums\TicketPriority::from($ticket->priority)->label() }}
                 </span>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$ticket->status] ?? $statusColors['open'] }}">
-                    {{ $ticket->status_label }}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketStatus::from($ticket->status)->cssClass() }}">
+                    {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
                 </span>
             </div>
         </div>
@@ -94,12 +78,6 @@
                 @if($editMode)
                     {{-- Edit Form --}}
                     <form wire:submit="updateTicket" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Subject</label>
-                            <input type="text" value="{{ $form['subject'] }}" readonly
-                                   class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 cursor-not-allowed">
-                            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Subject cannot be modified after ticket creation</p>
-                        </div>
 
                         <div class="grid grid-cols-2 gap-3">
                             <div>
