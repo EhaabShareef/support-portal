@@ -233,6 +233,24 @@ class DashboardWidgetSeeder extends Seeder
                 'period' => 30,
             ],
         ]);
+        
+        DashboardWidget::create([
+            'name' => 'Agent Ticket Contributions',
+            'description' => 'GitHub-style heatmap of daily ticket activity',
+            'category' => 'support',
+            'base_component' => 'support.agent-contributions',
+            'available_sizes' => ['1x1', '2x2', '3x2'],
+            'default_size' => '2x2',
+            'sort_order' => 6,
+            'is_active' => true,
+            'is_default_visible' => true,
+            'permissions' => ['dashboard.support'],
+            'options' => [
+                'cache_ttl' => 300,
+                'show_legend' => true,
+                'color_theme' => 'green',
+            ],
+        ]);
     }
     
     private function createClientWidgets(): void

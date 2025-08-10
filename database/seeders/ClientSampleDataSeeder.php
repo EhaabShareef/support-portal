@@ -175,7 +175,7 @@ class ClientSampleDataSeeder extends Seeder
                 'org_index' => 0,
                 'contracts' => [
                     [
-                        'department_name' => 'OPERA',
+                        'department_name' => 'Opera',
                         'service_type' => 'PMS Support',
                         'start_date' => '2023-01-01',
                         'end_date' => '2024-12-31',
@@ -184,7 +184,7 @@ class ClientSampleDataSeeder extends Seeder
                         'description' => 'Annual OPERA PMS support and maintenance contract'
                     ],
                     [
-                        'department_name' => 'SYMPHONY',
+                        'department_name' => 'Simphny',
                         'service_type' => 'POS Support',
                         'start_date' => '2023-03-01',
                         'end_date' => '2024-02-29',
@@ -193,7 +193,7 @@ class ClientSampleDataSeeder extends Seeder
                         'description' => 'Symphony POS system support for all F&B outlets'
                     ],
                     [
-                        'department_name' => 'Hardware',
+                        'department_name' => 'Technical',
                         'service_type' => 'Hardware Maintenance',
                         'start_date' => '2023-01-01',
                         'end_date' => '2025-12-31',
@@ -208,7 +208,7 @@ class ClientSampleDataSeeder extends Seeder
                 'org_index' => 1,
                 'contracts' => [
                     [
-                        'department_name' => 'OPERA Cloud',
+                        'department_name' => 'Opera Cloud',
                         'service_type' => 'Cloud PMS',
                         'start_date' => '2023-06-01',
                         'end_date' => '2024-05-31',
@@ -217,7 +217,7 @@ class ClientSampleDataSeeder extends Seeder
                         'description' => 'OPERA Cloud PMS subscription and support'
                     ],
                     [
-                        'department_name' => 'RES9700',
+                        'department_name' => 'RES 9700',
                         'service_type' => 'POS Support',
                         'start_date' => '2023-04-01',
                         'end_date' => '2024-03-31',
@@ -232,7 +232,7 @@ class ClientSampleDataSeeder extends Seeder
                 'org_index' => 2,
                 'contracts' => [
                     [
-                        'department_name' => 'OPERA',
+                        'department_name' => 'Opera',
                         'service_type' => 'PMS Support',
                         'start_date' => '2023-02-01',
                         'end_date' => '2024-01-31',
@@ -241,7 +241,7 @@ class ClientSampleDataSeeder extends Seeder
                         'description' => 'OPERA PMS support for boutique operations'
                     ],
                     [
-                        'department_name' => 'MC',
+                        'department_name' => 'Materials Control',
                         'service_type' => 'Materials Control',
                         'start_date' => '2023-05-01',
                         'end_date' => '2024-04-30',
@@ -260,16 +260,27 @@ class ClientSampleDataSeeder extends Seeder
                 $department = $departments->get($contractData['department_name']);
                 if (!$department) continue;
 
-                OrganizationContract::updateOrCreate([
+                // Map service types to enum values
+                $typeMapping = [
+                    'PMS Support' => 'support',
+                    'POS Support' => 'support', 
+                    'Cloud PMS' => 'software',
+                    'Hardware Maintenance' => 'hardware',
+                    'Materials Control' => 'software'
+                ];
+                $contractType = $typeMapping[$contractData['service_type']] ?? 'support';
+                
+                $contract = OrganizationContract::updateOrCreate([
                     'organization_id' => $organization->id,
                     'department_id' => $department->id,
-                    'service_type' => $contractData['service_type']
+                    'type' => $contractType
                 ], [
+                    'contract_number' => 'CNT-' . strtoupper(substr($organization->name, 0, 3)) . '-' . date('Y') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT),
                     'start_date' => $contractData['start_date'],
                     'end_date' => $contractData['end_date'],
                     'contract_value' => $contractData['value'],
                     'status' => $contractData['status'],
-                    'description' => $contractData['description']
+                    'terms_conditions' => $contractData['description']
                 ]);
                 
                 $this->command->info("✓ Created contract: {$contractData['service_type']} for {$organization->name}");
@@ -325,12 +336,15 @@ class ClientSampleDataSeeder extends Seeder
                     'organization_id' => $organization->id,
                     'serial_number' => $hardware['serial']
                 ], [
-                    'equipment_type' => $hardware['type'],
+                    'asset_tag' => 'AST-' . $hardware['serial'],
+                    'hardware_type' => $hardware['type'],
+                    'brand' => explode(' ', $hardware['model'])[0] ?? 'Generic',
                     'model' => $hardware['model'],
                     'location' => $hardware['location'],
                     'status' => $hardware['status'],
                     'purchase_date' => Carbon::now()->subMonths(rand(3, 18)),
-                    'warranty_expires' => Carbon::now()->addMonths(rand(12, 36))
+                    'warranty_start' => Carbon::now()->subMonths(rand(3, 18)),
+                    'warranty_expiration' => Carbon::now()->addMonths(rand(12, 36))
                 ]);
                 
                 $this->command->info("✓ Created hardware: {$hardware['type']} for {$organization->name}");
@@ -357,21 +371,21 @@ class ClientSampleDataSeeder extends Seeder
                         'description' => 'The OPERA system becomes extremely slow during peak check-in times (3-6 PM). Guest wait times are increasing and front desk staff are frustrated.',
                         'type' => 'issue',
                         'priority' => 'high',
-                        'department' => 'OPERA'
+                        'department' => 'Opera'
                     ],
                     [
                         'subject' => 'Pool Bar POS Terminal Not Printing Receipts',
                         'description' => 'The Symphony POS terminal at the pool bar stopped printing receipts yesterday. Guests are asking for receipts but we cannot provide them.',
                         'type' => 'issue',
                         'priority' => 'urgent',
-                        'department' => 'SYMPHONY'
+                        'department' => 'Simphny'
                     ],
                     [
                         'subject' => 'Request for Additional User Training on OPERA Reports',
                         'description' => 'Our new front office manager needs training on generating daily and monthly reports in OPERA. Please schedule a training session.',
                         'type' => 'request',
                         'priority' => 'normal',
-                        'department' => 'OPERA'
+                        'department' => 'Opera'
                     ]
                 ]
             ],
@@ -384,21 +398,21 @@ class ClientSampleDataSeeder extends Seeder
                         'description' => 'We are experiencing intermittent connection issues with OPERA Cloud. The system disconnects randomly during the day causing disruptions.',
                         'type' => 'issue',
                         'priority' => 'high',
-                        'department' => 'OPERA Cloud'
+                        'department' => 'Opera Cloud'
                     ],
                     [
                         'subject' => 'Hardware Upgrade Request for Front Desk Workstation',
                         'description' => 'The current front desk workstation is 5 years old and running very slowly. We need to upgrade to improve efficiency.',
                         'type' => 'request',
                         'priority' => 'normal',
-                        'department' => 'Hardware'
+                        'department' => 'Technical'
                     ],
                     [
                         'subject' => 'RES 9700 Menu Update Not Working',
                         'description' => 'We updated our restaurant menu in the system but the changes are not reflecting on the POS terminals. The old menu items are still showing.',
                         'type' => 'bug',
                         'priority' => 'high',
-                        'department' => 'RES9700'
+                        'department' => 'RES 9700'
                     ]
                 ]
             ],
@@ -411,28 +425,28 @@ class ClientSampleDataSeeder extends Seeder
                         'description' => 'Guests in villas 12-15 are complaining about poor WiFi connectivity. The signal is weak and keeps dropping.',
                         'type' => 'issue',
                         'priority' => 'high',
-                        'department' => 'Hardware'
+                        'department' => 'Technical'
                     ],
                     [
                         'subject' => 'Materials Control System Training Request',
                         'description' => 'Our housekeeping supervisor needs training on the new Materials Control system for inventory management.',
                         'type' => 'request',
                         'priority' => 'normal',
-                        'department' => 'MC'
+                        'department' => 'Materials Control'
                     ],
                     [
                         'subject' => 'OPERA Backup Issues',
                         'description' => 'The nightly backup for OPERA has been failing for the past 3 days. We need this resolved immediately to ensure data safety.',
                         'type' => 'issue',
                         'priority' => 'critical',
-                        'department' => 'OPERA'
+                        'department' => 'Opera'
                     ],
                     [
                         'subject' => 'Spa POS Terminal Needs Replacement',
                         'description' => 'The Square terminal at the spa reception is malfunctioning. The screen flickers and sometimes freezes during transactions.',
                         'type' => 'issue',
                         'priority' => 'high',
-                        'department' => 'Hardware'
+                        'department' => 'Technical'
                     ]
                 ]
             ]
@@ -450,7 +464,8 @@ class ClientSampleDataSeeder extends Seeder
                 $clientUser = $orgUsers->random();
                 $assignedUser = $supportUsers->random();
 
-                $ticket = Ticket::create([
+                $createdAt = Carbon::now()->subDays(rand(1, 30));
+                $ticket = new Ticket([
                     'uuid' => Str::uuid(),
                     'ticket_number' => 'TKT-' . str_pad($ticketNumber++, 6, '0', STR_PAD_LEFT),
                     'subject' => $ticketData['subject'],
@@ -462,8 +477,10 @@ class ClientSampleDataSeeder extends Seeder
                     'client_id' => $clientUser->id,
                     'department_id' => $department->id,
                     'assigned_to' => rand(0, 1) ? $assignedUser->id : null,
-                    'created_at' => Carbon::now()->subDays(rand(1, 30))
                 ]);
+                $ticket->created_at = $createdAt;
+                $ticket->updated_at = $createdAt;
+                $ticket->save();
                 
                 $this->command->info("✓ Created ticket: {$ticket->ticket_number} for {$organization->name}");
             }

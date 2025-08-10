@@ -1,4 +1,4 @@
- SQLSTATE[42S22]: Column not found: 1054 Unknown column 'label' in 'field list' (Connection: mysql, SQL: insert into `schedule_event_types` (`name`, `label`, `color`, `sort_order`, `is_active`, `created_by`, `updated_at`, `created_at`) values (PR, Project Remote, bg-blue-500, 1, 1, 1, 2025-08-10 12:54:46, 2025-08-10 12:54:46))
+ SQLSTATE[42S22]: Column not found: 1054 Unknown column 'service_type' in 'where clause' (Connection: mysql, SQL: select * from `organization_contracts` where (`organization_id` = 2 and `department_id` = 1 and `service_type` = PMS Support) and `organization_contracts`.`deleted_at` is null limit 1)
 
   at vendor\laravel\framework\src\Illuminate\Database\Connection.php:824
     820▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
@@ -11,8 +11,8 @@
     827▕         }
     828▕     }
 
-  1   vendor\laravel\framework\src\Illuminate\Database\MySqlConnection.php:47
-      PDOException::("SQLSTATE[42S22]: Column not found: 1054 Unknown column 'label' in 'field list'")
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:406
+      PDOException::("SQLSTATE[42S22]: Column not found: 1054 Unknown column 'service_type' in 'where clause'")
 
-  2   vendor\laravel\framework\src\Illuminate\Database\MySqlConnection.php:47
-      PDO::prepare("insert into `schedule_event_types` (`name`, `label`, `color`, `sort_order`, `is_active`, `created_by`, `updated_at`, `created_at`) values (?, ?, ?, ?, ?, ?, ?, ?)")
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:406
+      PDO::prepare("select * from `organization_contracts` where (`organization_id` = ? and `department_id` = ? and `service_type` = ?) and `organization_contracts`.`deleted_at` is null limit 1")
