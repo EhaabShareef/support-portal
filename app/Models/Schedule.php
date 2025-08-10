@@ -150,18 +150,21 @@ class Schedule extends Model
     public function getDisplayBadgeAttribute(): string
     {
         $eventType = $this->eventType;
+        $classes = $eventType->tailwind_classes;
         $style = $eventType->color_style ? "style='{$eventType->color_style}'" : '';
-        $class = $eventType->color_class !== 'custom-color' ? "bg-{$eventType->color_class}" : '';
         
         $title = $this->remarks ? "title='{$eventType->label}: {$this->remarks}'" : "title='{$eventType->label}'";
         
-        return "<span class='inline-block px-1 rounded text-xs text-white {$class}' {$style} {$title}>{$eventType->code}</span>";
+        // Get first few characters of label as display text
+        $displayText = strtoupper(substr($eventType->label, 0, 3));
+        
+        return "<span class='inline-block px-1 py-0.5 rounded text-xs {$classes}' {$style} {$title}>{$displayText}</span>";
     }
 
     // Helper methods
     public static function getForCalendar($year, $month, $userIds = null, $departmentGroupId = null)
     {
-        $query = static::with(['user:id,name,department_id', 'user.department:id,name,department_group_id', 'eventType:id,code,label,color'])
+        $query = static::with(['user:id,name,department_id', 'user.department:id,name,department_group_id', 'eventType:id,label,color,tailwind_classes'])
                        ->overlapsMonth($year, $month);
 
         if ($departmentGroupId) {

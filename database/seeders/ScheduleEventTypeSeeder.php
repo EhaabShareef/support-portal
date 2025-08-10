@@ -25,35 +25,38 @@ class ScheduleEventTypeSeeder extends Seeder
         }
 
         $eventTypes = [
-            ['name' => 'PR', 'label' => 'Project Remote', 'color' => 'bg-blue-500', 'sort_order' => 1],
-            ['name' => 'PO', 'label' => 'Project Onsite', 'color' => 'bg-green-500', 'sort_order' => 2],
-            ['name' => 'HAS', 'label' => 'Afternoon Shift', 'color' => 'bg-yellow-500', 'sort_order' => 3],
-            ['name' => 'WFH', 'label' => 'Work From Home', 'color' => 'bg-purple-500', 'sort_order' => 4],
-            ['name' => 'DIL', 'label' => 'Day in Leave', 'color' => 'bg-red-500', 'sort_order' => 5],
-            ['name' => 'SO', 'label' => 'Office Support', 'color' => 'bg-indigo-500', 'sort_order' => 6], // Default
-            ['name' => 'A', 'label' => 'Absence', 'color' => 'bg-gray-500', 'sort_order' => 7],
-            ['name' => 'OS', 'label' => 'Onsite Support', 'color' => 'bg-teal-500', 'sort_order' => 8],
-            ['name' => 'S', 'label' => 'Sick', 'color' => 'bg-red-600', 'sort_order' => 9],
-            ['name' => 'HS', 'label' => 'Hotline Support', 'color' => 'bg-orange-500', 'sort_order' => 10],
-            ['name' => 'H', 'label' => 'Public Holidays', 'color' => 'bg-pink-500', 'sort_order' => 11],
-            ['name' => 'FRL', 'label' => 'Family Emergency Leave', 'color' => 'bg-red-700', 'sort_order' => 12],
-            ['name' => 'L', 'label' => 'Leave', 'color' => 'bg-amber-500', 'sort_order' => 13],
-            ['name' => 'TR', 'label' => 'Travelling', 'color' => 'bg-cyan-500', 'sort_order' => 14],
-            ['name' => 'D', 'label' => 'Demo', 'color' => 'bg-emerald-500', 'sort_order' => 15],
-            ['name' => 'CL', 'label' => 'Compassionate Leave', 'color' => 'bg-rose-500', 'sort_order' => 16],
-            ['name' => 'IT', 'label' => 'Internal Training', 'color' => 'bg-violet-500', 'sort_order' => 17],
-            ['name' => 'NL', 'label' => 'National Leave', 'color' => 'bg-slate-500', 'sort_order' => 18],
+            ['label' => 'Project Remote', 'description' => 'Remote project work', 'color' => '#3b82f6', 'tailwind_classes' => 'bg-blue-500 text-white border-blue-600', 'sort_order' => 1],
+            ['label' => 'Project Onsite', 'description' => 'Onsite project work', 'color' => '#10b981', 'tailwind_classes' => 'bg-green-500 text-white border-green-600', 'sort_order' => 2],
+            ['label' => 'Afternoon Shift', 'description' => 'Afternoon shift work', 'color' => '#f59e0b', 'tailwind_classes' => 'bg-yellow-500 text-white border-yellow-600', 'sort_order' => 3],
+            ['label' => 'Work From Home', 'description' => 'Remote work from home', 'color' => '#8b5cf6', 'tailwind_classes' => 'bg-purple-500 text-white border-purple-600', 'sort_order' => 4],
+            ['label' => 'Day in Leave', 'description' => 'Personal day leave', 'color' => '#ef4444', 'tailwind_classes' => 'bg-red-500 text-white border-red-600', 'sort_order' => 5],
+            ['label' => 'Office Support', 'description' => 'General office support work', 'color' => '#6366f1', 'tailwind_classes' => 'bg-indigo-500 text-white border-indigo-600', 'sort_order' => 6],
+            ['label' => 'Absence', 'description' => 'Unplanned absence', 'color' => '#6b7280', 'tailwind_classes' => 'bg-gray-500 text-white border-gray-600', 'sort_order' => 7],
+            ['label' => 'Onsite Support', 'description' => 'Client onsite support', 'color' => '#14b8a6', 'tailwind_classes' => 'bg-teal-500 text-white border-teal-600', 'sort_order' => 8],
+            ['label' => 'Sick Leave', 'description' => 'Medical leave', 'color' => '#dc2626', 'tailwind_classes' => 'bg-red-600 text-white border-red-700', 'sort_order' => 9],
+            ['label' => 'Hotline Support', 'description' => 'Phone support duty', 'color' => '#ea580c', 'tailwind_classes' => 'bg-orange-500 text-white border-orange-600', 'sort_order' => 10],
+            ['label' => 'Public Holiday', 'description' => 'National public holiday', 'color' => '#ec4899', 'tailwind_classes' => 'bg-pink-500 text-white border-pink-600', 'sort_order' => 11],
+            ['label' => 'Family Emergency', 'description' => 'Family emergency leave', 'color' => '#b91c1c', 'tailwind_classes' => 'bg-red-700 text-white border-red-800', 'sort_order' => 12],
+            ['label' => 'Annual Leave', 'description' => 'Planned annual leave', 'color' => '#f59e0b', 'tailwind_classes' => 'bg-yellow-500 text-white border-yellow-600', 'sort_order' => 13],
+            ['label' => 'Travel', 'description' => 'Business travel', 'color' => '#06b6d4', 'tailwind_classes' => 'bg-cyan-500 text-white border-cyan-600', 'sort_order' => 14],
+            ['label' => 'Demo/Presentation', 'description' => 'Product demo or presentation', 'color' => '#059669', 'tailwind_classes' => 'bg-emerald-600 text-white border-emerald-700', 'sort_order' => 15],
+            ['label' => 'Compassionate Leave', 'description' => 'Bereavement or compassionate leave', 'color' => '#e11d48', 'tailwind_classes' => 'bg-rose-500 text-white border-rose-600', 'sort_order' => 16],
+            ['label' => 'Training', 'description' => 'Internal training session', 'color' => '#7c3aed', 'tailwind_classes' => 'bg-violet-600 text-white border-violet-700', 'sort_order' => 17],
+            ['label' => 'National Leave', 'description' => 'National celebration leave', 'color' => '#64748b', 'tailwind_classes' => 'bg-slate-500 text-white border-slate-600', 'sort_order' => 18],
         ];
 
         foreach ($eventTypes as $eventType) {
-            ScheduleEventType::create([
-                'name' => $eventType['name'],
-                'label' => $eventType['label'],
-                'color' => $eventType['color'],
-                'sort_order' => $eventType['sort_order'],
-                'is_active' => true,
-                'created_by' => $admin->id,
-            ]);
+            ScheduleEventType::updateOrCreate(
+                ['label' => $eventType['label']], // Use label as unique identifier
+                [
+                    'description' => $eventType['description'],
+                    'color' => $eventType['color'],
+                    'tailwind_classes' => $eventType['tailwind_classes'],
+                    'sort_order' => $eventType['sort_order'],
+                    'is_active' => true,
+                    'created_by' => $admin->id,
+                ]
+            );
         }
 
         $this->command->info('Created ' . count($eventTypes) . ' schedule event types.');

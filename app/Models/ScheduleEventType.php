@@ -12,9 +12,10 @@ class ScheduleEventType extends Model
     use HasFactory;
 
     protected $fillable = [
-        'code',
         'label',
+        'description',
         'color',
+        'tailwind_classes',
         'is_active',
         'sort_order',
         'created_by',
@@ -48,21 +49,16 @@ class ScheduleEventType extends Model
     }
 
     // Accessors & Mutators
-    public function getColorClassAttribute(): string
+    public function getTailwindClassesAttribute(): string
     {
-        // Convert hex colors to Tailwind classes or return direct class
-        if (str_starts_with($this->color, '#')) {
-            // For custom hex colors, we'll use style attribute
-            return 'custom-color';
-        }
-        
-        return $this->color;
+        return $this->attributes['tailwind_classes'] ?? 'bg-blue-500 text-white border-blue-600';
     }
 
     public function getColorStyleAttribute(): string
     {
+        // Fallback for custom colors not covered by Tailwind
         if (str_starts_with($this->color, '#')) {
-            return "background-color: {$this->color}";
+            return "background-color: {$this->color}; border-color: {$this->color};";
         }
         
         return '';
@@ -71,7 +67,7 @@ class ScheduleEventType extends Model
     // Helper methods
     public static function getDefault(): ?ScheduleEventType
     {
-        return static::where('code', 'SO')->first();
+        return static::where('label', 'Office Support')->first() ?? static::active()->first();
     }
 
     public static function options(): array

@@ -1,85 +1,18 @@
-select2.min.js:2 Uncaught ReferenceError: jQuery is not defined
-(anonymous) @ select2.min.js:2
-(anonymous) @ select2.min.js:2
-schedule:1683 Uncaught ReferenceError: $ is not defined
-    at initSelect2 (schedule:1683:9)
-    at HTMLDocument.<anonymous> (schedule:1675:9)
-initSelect2 @ schedule:1683
-(anonymous) @ schedule:1675
-schedule:1683 Uncaught ReferenceError: $ is not defined
-    at initSelect2 (schedule:1683:9)
-    at HTMLDocument.<anonymous> (schedule:1679:9)
-    at forwardEvent (livewire.js?id=df3a17f2:9440:14)
-    at HTMLDocument.<anonymous> (livewire.js?id=df3a17f2:9437:56)
-    at fireEventForOtherLibrariesToHookInto (livewire.js?id=df3a17f2:8039:14)
-    at livewire.js?id=df3a17f2:8016:7
-initSelect2 @ schedule:1683
-(anonymous) @ schedule:1679
-forwardEvent @ livewire.js?id=df3a17f2:9440
-(anonymous) @ livewire.js?id=df3a17f2:9437
-fireEventForOtherLibrariesToHookInto @ livewire.js?id=df3a17f2:8039
-(anonymous) @ livewire.js?id=df3a17f2:8016
-setTimeout
-navigate_default @ livewire.js?id=df3a17f2:8015
-(anonymous) @ livewire.js?id=df3a17f2:2200
-plugin @ livewire.js?id=df3a17f2:2200
-start2 @ livewire.js?id=df3a17f2:8808
-(anonymous) @ livewire.js?id=df3a17f2:10215
+ SQLSTATE[42S22]: Column not found: 1054 Unknown column 'label' in 'field list' (Connection: mysql, SQL: insert into `schedule_event_types` (`name`, `label`, `color`, `sort_order`, `is_active`, `created_by`, `updated_at`, `created_at`) values (PR, Project Remote, bg-blue-500, 1, 1, 1, 2025-08-10 12:54:46, 2025-08-10 12:54:46))
 
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:824
+    820▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    821▕                 );
+    822▕             }
+    823▕
+  ➜ 824▕             throw new QueryException(
+    825▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕             );
+    827▕         }
+    828▕     }
 
-select2.min.js:2 Uncaught ReferenceError: jQuery is not defined
-(anonymous) @ select2.min.js:2
-(anonymous) @ select2.min.js:2
-schedule:1683 Uncaught ReferenceError: $ is not defined
-    at initSelect2 (schedule:1683:9)
-    at HTMLDocument.<anonymous> (schedule:1675:9)
-initSelect2 @ schedule:1683
-(anonymous) @ schedule:1675
-schedule:1683 Uncaught ReferenceError: $ is not defined
-    at initSelect2 (schedule:1683:9)
-    at HTMLDocument.<anonymous> (schedule:1679:9)
-    at forwardEvent (livewire.js?id=df3a17f2:9440:14)
-    at HTMLDocument.<anonymous> (livewire.js?id=df3a17f2:9437:56)
-    at fireEventForOtherLibrariesToHookInto (livewire.js?id=df3a17f2:8039:14)
-    at livewire.js?id=df3a17f2:8016:7
-initSelect2 @ schedule:1683
-(anonymous) @ schedule:1679
-forwardEvent @ livewire.js?id=df3a17f2:9440
-(anonymous) @ livewire.js?id=df3a17f2:9437
-fireEventForOtherLibrariesToHookInto @ livewire.js?id=df3a17f2:8039
-(anonymous) @ livewire.js?id=df3a17f2:8016
-setTimeout
-navigate_default @ livewire.js?id=df3a17f2:8015
-(anonymous) @ livewire.js?id=df3a17f2:2200
-plugin @ livewire.js?id=df3a17f2:2200
-start2 @ livewire.js?id=df3a17f2:8808
-(anonymous) @ livewire.js?id=df3a17f2:10215
+  1   vendor\laravel\framework\src\Illuminate\Database\MySqlConnection.php:47
+      PDOException::("SQLSTATE[42S22]: Column not found: 1054 Unknown column 'label' in 'field list'")
 
-
-select2.min.js:2 Uncaught ReferenceError: jQuery is not defined
-(anonymous) @ select2.min.js:2
-(anonymous) @ select2.min.js:2
-schedule:1683 Uncaught ReferenceError: $ is not defined
-    at initSelect2 (schedule:1683:9)
-    at HTMLDocument.<anonymous> (schedule:1675:9)
-initSelect2 @ schedule:1683
-(anonymous) @ schedule:1675
-schedule:1683 Uncaught ReferenceError: $ is not defined
-    at initSelect2 (schedule:1683:9)
-    at HTMLDocument.<anonymous> (schedule:1679:9)
-    at forwardEvent (livewire.js?id=df3a17f2:9440:14)
-    at HTMLDocument.<anonymous> (livewire.js?id=df3a17f2:9437:56)
-    at fireEventForOtherLibrariesToHookInto (livewire.js?id=df3a17f2:8039:14)
-    at livewire.js?id=df3a17f2:8016:7
-initSelect2 @ schedule:1683
-(anonymous) @ schedule:1679
-forwardEvent @ livewire.js?id=df3a17f2:9440
-(anonymous) @ livewire.js?id=df3a17f2:9437
-fireEventForOtherLibrariesToHookInto @ livewire.js?id=df3a17f2:8039
-(anonymous) @ livewire.js?id=df3a17f2:8016
-setTimeout
-navigate_default @ livewire.js?id=df3a17f2:8015
-(anonymous) @ livewire.js?id=df3a17f2:2200
-plugin @ livewire.js?id=df3a17f2:2200
-start2 @ livewire.js?id=df3a17f2:8808
-(anonymous) @ livewire.js?id=df3a17f2:10215
+  2   vendor\laravel\framework\src\Illuminate\Database\MySqlConnection.php:47
+      PDO::prepare("insert into `schedule_event_types` (`name`, `label`, `color`, `sort_order`, `is_active`, `created_by`, `updated_at`, `created_at`) values (?, ?, ?, ?, ?, ?, ?, ?)")

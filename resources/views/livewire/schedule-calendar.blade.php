@@ -184,7 +184,7 @@
                                                         @foreach($spanningEvents as $spanEvent)
                                                             <div class="inline-block px-2 py-1 rounded text-xs text-white {{ $spanEvent->eventType->color }} event-badge spanning-event event-with-actions group relative" 
                                                                  style="width: 100%; text-align: center;">
-                                                                {{ $spanEvent->eventType->code }}
+                                                                {{ strtoupper(substr($spanEvent->eventType->label, 0, 3)) }}
                                                                 
                                                                 {{-- Edit/Delete Actions (only for Admin/Super Admin) --}}
                                                                 @can('update', $spanEvent)
@@ -222,7 +222,7 @@
                                                         {{-- Show any regular events on the same starting day below spanning events --}}
                                                         @foreach($regularEvents as $regularEvent)
                                                             <div class="inline-block px-1 rounded text-xs text-white {{ $regularEvent->eventType->color }} event-badge event-with-actions group relative">
-                                                                {{ $regularEvent->eventType->code }}
+                                                                {{ strtoupper(substr($regularEvent->eventType->label, 0, 3)) }}
                                                                 
                                                                 {{-- Edit/Delete Actions (only for Admin/Super Admin) --}}
                                                                 @can('update', $regularEvent)
@@ -266,7 +266,7 @@
                                                 {{-- Show regular single-day events --}}
                                                 @foreach($regularEvents as $schedule)
                                                     <div class="inline-block px-1 rounded text-xs text-white {{ $schedule->eventType->color }} event-badge event-with-actions group relative">
-                                                        {{ $schedule->eventType->code }}
+                                                        {{ strtoupper(substr($schedule->eventType->label, 0, 3)) }}
                                                         
                                                         {{-- Edit/Delete Actions (only for Admin/Super Admin) --}}
                                                         @can('update', $schedule)
@@ -321,7 +321,7 @@
                                                                 @foreach($regularEvents as $schedule)
                                                                     <div class="flex items-center gap-2 text-xs">
                                                                         <span class="inline-block px-2 py-1 rounded text-white {{ $schedule->eventType->color }}">
-                                                                            {{ $schedule->eventType->code }}
+                                                                            {{ strtoupper(substr($schedule->eventType->label, 0, 3)) }}
                                                                         </span>
                                                                         <span class="text-neutral-700 dark:text-neutral-300">{{ $schedule->eventType->label }}</span>
                                                                     </div>
@@ -363,7 +363,7 @@
                     @foreach($this->eventTypes as $eventType)
                         <div class="flex items-center gap-2">
                             <span class="inline-block px-2 py-1 rounded text-xs text-white {{ $eventType->color }}">
-                                {{ $eventType->code }}
+                                {{ strtoupper(substr($eventType->label, 0, 3)) }}
                             </span>
                             <span class="text-sm text-neutral-700 dark:text-neutral-300">{{ $eventType->label }}</span>
                         </div>
@@ -632,8 +632,8 @@
                                 @foreach($this->eventTypes as $eventType)
                                     <option value="{{ $eventType->id }}" 
                                             data-color="{{ $eventType->color }}" 
-                                            data-code="{{ $eventType->code }}">
-                                        {{ $eventType->code }} - {{ $eventType->label }}
+                                            data-label="{{ $eventType->label }}">
+                                        {{ strtoupper(substr($eventType->label, 0, 3)) }} - {{ $eventType->label }}
                                     </option>
                                 @endforeach
                             </select>

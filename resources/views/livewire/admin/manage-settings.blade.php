@@ -333,13 +333,13 @@
                                     <div class="flex-1 space-y-3">
                                         <div class="flex items-start justify-between">
                                             <div class="flex items-center gap-3">
-                                                <span class="inline-block px-3 py-1 rounded text-sm text-white font-medium {{ $eventType->color }}">
-                                                    {{ $eventType->code }}
+                                                <span class="inline-block px-3 py-1 rounded text-sm {{ $eventType->tailwind_classes }} font-medium">
+                                                    {{ strtoupper(substr($eventType->label, 0, 3)) }}
                                                 </span>
                                                 <div>
                                                     <h4 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">{{ $eventType->label }}</h4>
                                                     <p class="text-xs text-neutral-500 dark:text-neutral-500">
-                                                        Code: {{ $eventType->code }} | Color: {{ $eventType->color }} | Sort: {{ $eventType->sort_order }}
+                                                        Color: {{ $eventType->color }} | Sort: {{ $eventType->sort_order }}
                                                     </p>
                                                 </div>
                                             </div>
@@ -742,17 +742,17 @@
                             <div class="space-y-4">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Code *</label>
-                                        <input type="text" wire:model="eventTypeForm.code" maxlength="10" placeholder="e.g. SO, PR, WFH"
-                                               class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent uppercase">
-                                        @error('eventTypeForm.code') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Label *</label>
+                                        <input type="text" wire:model="eventTypeForm.label" maxlength="50" placeholder="e.g. Office Support, Project Remote"
+                                               class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
+                                        @error('eventTypeForm.label') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Label *</label>
-                                        <input type="text" wire:model="eventTypeForm.label" placeholder="e.g. Office Support, Project Remote"
-                                               class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                                        @error('eventTypeForm.label') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description</label>
+                                        <textarea wire:model="eventTypeForm.description" rows="2" placeholder="Optional description of the event type"
+                                                  class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"></textarea>
+                                        @error('eventTypeForm.description') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
 
@@ -785,6 +785,14 @@
                                         @endforeach
                                     </div>
                                     @error('eventTypeForm.color') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Tailwind Classes *</label>
+                                    <input type="text" wire:model="eventTypeForm.tailwind_classes" placeholder="e.g. bg-blue-500 text-white border-blue-600"
+                                           class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
+                                    <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">CSS classes used to style the event type badge (background, text color, border)</p>
+                                    @error('eventTypeForm.tailwind_classes') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

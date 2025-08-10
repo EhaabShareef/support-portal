@@ -129,7 +129,7 @@ class ScheduleCalendar extends Component
         $query = Schedule::with([
             'user:id,name,department_id,organization_id',
             'user.department:id,name,department_group_id',
-            'eventType:id,code,label,color'
+            'eventType:id,label,color,tailwind_classes'
         ])->overlapsMonth($year, $month);
 
         // Apply role-based filtering

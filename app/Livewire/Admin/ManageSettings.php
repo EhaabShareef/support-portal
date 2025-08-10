@@ -61,9 +61,10 @@ class ManageSettings extends Component
     public bool $eventTypeEditMode = false;
     public ?int $selectedEventTypeId = null;
     public array $eventTypeForm = [
-        'code' => '',
         'label' => '',
-        'color' => 'bg-blue-500',
+        'description' => '',
+        'color' => '#3b82f6',
+        'tailwind_classes' => 'bg-blue-500 text-white border-blue-600',
         'is_active' => true,
         'sort_order' => 0,
     ];
@@ -380,17 +381,18 @@ class ManageSettings extends Component
     public function saveEventType()
     {
         $rules = [
-            'eventTypeForm.code' => 'required|string|max:10',
             'eventTypeForm.label' => 'required|string|max:255',
+            'eventTypeForm.description' => 'nullable|string|max:1000',
             'eventTypeForm.color' => 'required|string|max:50',
+            'eventTypeForm.tailwind_classes' => 'required|string|max:255',
             'eventTypeForm.is_active' => 'boolean',
             'eventTypeForm.sort_order' => 'integer|min:0',
         ];
 
         if (!$this->eventTypeEditMode) {
-            $rules['eventTypeForm.code'] .= '|unique:schedule_event_types,code';
+            $rules['eventTypeForm.label'] .= '|unique:schedule_event_types,label';
         } else {
-            $rules['eventTypeForm.code'] .= '|unique:schedule_event_types,code,' . $this->selectedEventTypeId;
+            $rules['eventTypeForm.label'] .= '|unique:schedule_event_types,label,' . $this->selectedEventTypeId;
         }
 
         $validated = $this->validate($rules);
@@ -433,9 +435,10 @@ class ManageSettings extends Component
     private function resetEventTypeForm()
     {
         $this->eventTypeForm = [
-            'code' => '',
             'label' => '',
-            'color' => 'bg-blue-500',
+            'description' => '',
+            'color' => '#3b82f6',
+            'tailwind_classes' => 'bg-blue-500 text-white border-blue-600',
             'is_active' => true,
             'sort_order' => 0,
         ];
