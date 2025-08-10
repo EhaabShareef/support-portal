@@ -13,17 +13,17 @@ return new class extends Migration
     {
         Schema::create('schedule_event_types', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 10)->unique();
-            $table->string('label');
-            $table->string('color', 20); // hex or tailwind class
+            $table->string('name')->unique(); // Changed from 'code' to 'name'
+            $table->text('description')->nullable(); // Added description field
+            $table->string('color', 20)->default('#3b82f6'); // hex color with default
             $table->boolean('is_active')->default(true);
             $table->integer('sort_order')->default(0);
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->timestamps();
             
             // Indexes for performance
             $table->index(['is_active', 'sort_order']);
-            $table->index('code');
+            $table->index('name');
         });
     }
 

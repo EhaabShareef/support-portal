@@ -8,6 +8,9 @@ class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     * 
+     * For production deployment, this seeder provides only essential baseline data.
+     * For development with sample data, use: php artisan db:seed --class=DevelopmentDatabaseSeeder
      */
     public function run(): void
     {
@@ -21,20 +24,9 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,           // Creates users with proper assignments
             DashboardWidgetSeeder::class, // Creates widget catalog
             UserWidgetSettingsSeeder::class, // Creates default user widget settings
+            ApplicationSettingsSeeder::class, // Creates application settings
         ]);
         
         $this->command->info('✅ Database rebuild completed successfully!');
-        $this->command->info('');
-        $this->command->info('🔑 Default login credentials:');
-        $this->command->info('📧 Admin: superadmin@hospitalitytechnology.com.mv / password');
-        $this->command->info('📧 Admin Manager: admin@hospitalitytechnology.com.mv / password');
-        $this->command->info('📧 PMS Manager: pms@hospitalitytechnology.com.mv / password');
-        $this->command->info('📧 POS Manager: pos@hospitalitytechnology.com.mv / password');
-        $this->command->info('📧 MC Manager: mc@hospitalitytechnology.com.mv / password');
-        $this->command->info('📧 BO Manager: bo@hospitalitytechnology.com.mv / password');
-        $this->command->info('📧 Hardware Manager: hardware@hospitalitytechnology.com.mv / password');
-        $this->command->info('📧 Email Manager: email@hospitalitytechnology.com.mv / password');
-        $this->command->info('');
-        $this->command->info('👥 Roles created: admin (full access), support (limited access)');
     }
 }

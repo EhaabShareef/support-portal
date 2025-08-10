@@ -25,29 +25,29 @@ class ScheduleEventTypeSeeder extends Seeder
         }
 
         $eventTypes = [
-            ['code' => 'PR', 'label' => 'Project Remote', 'color' => 'bg-blue-500', 'sort_order' => 1],
-            ['code' => 'PO', 'label' => 'Project Onsite', 'color' => 'bg-green-500', 'sort_order' => 2],
-            ['code' => 'HAS', 'label' => 'Afternoon Shift', 'color' => 'bg-yellow-500', 'sort_order' => 3],
-            ['code' => 'WFH', 'label' => 'Work From Home', 'color' => 'bg-purple-500', 'sort_order' => 4],
-            ['code' => 'DIL', 'label' => 'Day in Leave', 'color' => 'bg-red-500', 'sort_order' => 5],
-            ['code' => 'SO', 'label' => 'Office Support', 'color' => 'bg-indigo-500', 'sort_order' => 6], // Default
-            ['code' => 'A', 'label' => 'Absence', 'color' => 'bg-gray-500', 'sort_order' => 7],
-            ['code' => 'OS', 'label' => 'Onsite Support', 'color' => 'bg-teal-500', 'sort_order' => 8],
-            ['code' => 'S', 'label' => 'Sick', 'color' => 'bg-red-600', 'sort_order' => 9],
-            ['code' => 'HS', 'label' => 'Hotline Support', 'color' => 'bg-orange-500', 'sort_order' => 10],
-            ['code' => 'H', 'label' => 'Public Holidays', 'color' => 'bg-pink-500', 'sort_order' => 11],
-            ['code' => 'FRL', 'label' => 'Family Emergency Leave', 'color' => 'bg-red-700', 'sort_order' => 12],
-            ['code' => 'L', 'label' => 'Leave', 'color' => 'bg-amber-500', 'sort_order' => 13],
-            ['code' => 'TR', 'label' => 'Travelling', 'color' => 'bg-cyan-500', 'sort_order' => 14],
-            ['code' => 'D', 'label' => 'Demo', 'color' => 'bg-emerald-500', 'sort_order' => 15],
-            ['code' => 'CL', 'label' => 'Compassionate Leave', 'color' => 'bg-rose-500', 'sort_order' => 16],
-            ['code' => 'IT', 'label' => 'Internal Training', 'color' => 'bg-violet-500', 'sort_order' => 17],
-            ['code' => 'NL', 'label' => 'National Leave', 'color' => 'bg-slate-500', 'sort_order' => 18],
+            ['name' => 'PR', 'label' => 'Project Remote', 'color' => 'bg-blue-500', 'sort_order' => 1],
+            ['name' => 'PO', 'label' => 'Project Onsite', 'color' => 'bg-green-500', 'sort_order' => 2],
+            ['name' => 'HAS', 'label' => 'Afternoon Shift', 'color' => 'bg-yellow-500', 'sort_order' => 3],
+            ['name' => 'WFH', 'label' => 'Work From Home', 'color' => 'bg-purple-500', 'sort_order' => 4],
+            ['name' => 'DIL', 'label' => 'Day in Leave', 'color' => 'bg-red-500', 'sort_order' => 5],
+            ['name' => 'SO', 'label' => 'Office Support', 'color' => 'bg-indigo-500', 'sort_order' => 6], // Default
+            ['name' => 'A', 'label' => 'Absence', 'color' => 'bg-gray-500', 'sort_order' => 7],
+            ['name' => 'OS', 'label' => 'Onsite Support', 'color' => 'bg-teal-500', 'sort_order' => 8],
+            ['name' => 'S', 'label' => 'Sick', 'color' => 'bg-red-600', 'sort_order' => 9],
+            ['name' => 'HS', 'label' => 'Hotline Support', 'color' => 'bg-orange-500', 'sort_order' => 10],
+            ['name' => 'H', 'label' => 'Public Holidays', 'color' => 'bg-pink-500', 'sort_order' => 11],
+            ['name' => 'FRL', 'label' => 'Family Emergency Leave', 'color' => 'bg-red-700', 'sort_order' => 12],
+            ['name' => 'L', 'label' => 'Leave', 'color' => 'bg-amber-500', 'sort_order' => 13],
+            ['name' => 'TR', 'label' => 'Travelling', 'color' => 'bg-cyan-500', 'sort_order' => 14],
+            ['name' => 'D', 'label' => 'Demo', 'color' => 'bg-emerald-500', 'sort_order' => 15],
+            ['name' => 'CL', 'label' => 'Compassionate Leave', 'color' => 'bg-rose-500', 'sort_order' => 16],
+            ['name' => 'IT', 'label' => 'Internal Training', 'color' => 'bg-violet-500', 'sort_order' => 17],
+            ['name' => 'NL', 'label' => 'National Leave', 'color' => 'bg-slate-500', 'sort_order' => 18],
         ];
 
         foreach ($eventTypes as $eventType) {
             ScheduleEventType::create([
-                'code' => $eventType['code'],
+                'name' => $eventType['name'],
                 'label' => $eventType['label'],
                 'color' => $eventType['color'],
                 'sort_order' => $eventType['sort_order'],
