@@ -46,17 +46,21 @@ class Dashboard extends Component
         $user = Auth::user();
         $userRole = $user->roles->first()?->name ?? 'client';
         
-        // Get available widgets for user's role with proper permission filtering
+        // Get available widgets for user's role with proper permission filtering and eager loading
         $availableWidgets = DashboardWidget::where('is_active', true)
             ->where('category', $userRole)
+            ->with(['userSettings' => function($query) use ($user) {
+                $query->where('user_id', $user->id);
+            }])
             ->orderBy('sort_order')
             ->get()
             ->filter(function ($widget) use ($user) {
                 return $widget->isVisibleForUser($user);
             });
         
-        // Get user's widget settings
+        // Get user's widget settings with eager loading
         $userSettings = UserWidgetSetting::where('user_id', $user->id)
+            ->with('widget')
             ->get()
             ->keyBy('widget_id');
         

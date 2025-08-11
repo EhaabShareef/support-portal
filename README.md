@@ -1,6 +1,6 @@
 # Support Portal
 
-Support Portal is a web-based application for managing customer support requests. It is built with **Laravel 12**, **Livewire 3**, and **Tailwind CSS**, providing a modern stack for building responsive, reactive interfaces.
+Support Portal is a web-based application for managing customer support requests. It is built with **Laravel 11**, **Livewire 3**, and **Tailwind CSS**, providing a modern stack for building responsive, reactive interfaces.
 
 The application features a comprehensive **Role-Based Access Control (RBAC)** system using **Spatie Laravel Permission** for secure, scalable user and permission management.
 
@@ -38,8 +38,11 @@ The application features a comprehensive **Role-Based Access Control (RBAC)** sy
    - **Alternative**: For existing setups, run individual seeders in order:
      - `php artisan db:seed --class=RolePermissionSeeder` (clears existing data)
      - `php artisan db:seed --class=DepartmentGroupSeeder`
-     - `php artisan db:seed --class=DepartmentSeeder`
+     - `php artisan db:seed --class=DepartmentSeeder`  
      - `php artisan db:seed --class=UserSeeder`
+     - `php artisan db:seed --class=DashboardWidgetSeeder`
+   - **Optional**: Add sample client data with `php artisan db:seed --class=ClientSampleDataSeeder`
+     - Creates 3 hotel/resort organizations with users, contracts, hardware, and tickets
 6. Start development servers: `php artisan serve` and `npm run dev`
 
 ## Project Structure
@@ -147,6 +150,7 @@ The Support Portal features a comprehensive dashboard widget system that provide
 
 #### **🎧 Support Widgets**
 - **My Workload** - Personal ticket queue with priority indicators and resolution metrics
+- **Agent Ticket Contributions** - GitHub-style activity heatmap tracking daily ticket interactions
 - **Team Performance** - Department rankings and comparative metrics *(planned)*
 - **Quick Actions** - Common support shortcuts and ticket creation tools *(planned)*
 - **Recent Activity** - Latest tickets and updates within department *(planned)*
@@ -306,13 +310,40 @@ The Support Portal features a powerful admin-only reporting system that provides
 
 ## Recent Updates
 
-### 🚀 **v4.2.0 - Dashboard Widget System Implementation** (Latest)
+### 🚀 **v4.3.0 - Agent Contributions Widget & Beta Readiness** (Latest)
+
+#### 🎯 **Agent Ticket Contributions Widget**
+
+- ✅ **GitHub-Style Activity Heatmap**: Professional contribution tracking for support agents
+  - **Small (1x1)**: 7-day activity view with daily contribution counts
+  - **Medium (2x2)**: Monthly calendar-style heatmap with weekly organization
+  - **Large (3x2)**: Yearly contribution overview with 52-week display
+  - **Smart Data Aggregation**: Tracks ticket creation, updates, and closures per agent per day
+  - **Visual Color Scale**: 5-level green color coding from no activity to high activity
+  - **Accessibility Features**: Full keyboard navigation, ARIA labels, and tooltips
+
+#### 🛡️ **Beta Readiness Security Fixes**
+
+- ✅ **Enhanced Authorization**: Fixed all P1/P2 security issues from beta readiness audit
+  - **Dashboard Access Control**: Multi-layer permission checking with role-specific validation
+  - **Widget Policy Enforcement**: Server-side authorization in CustomizeDashboard with explicit permission checks
+  - **Idempotent Database Seeding**: RolePermissionSeeder now uses updateOrCreate for safe re-runs
+  - **N+1 Query Optimization**: Added eager loading to prevent performance issues in widget retrieval
+
+#### 🏨 **Sample Client Data System**
+
+- ✅ **Hospitality-Focused Sample Data**: Comprehensive sample data generator for testing and demos
+  - **3 Resort Organizations**: Paradise Bay Resort, Crystal Waters Hotel, Sunset Villas Resort
+  - **12 Client Users**: Realistic hospitality staff with proper roles and email addresses
+  - **7 Service Contracts**: PMS, POS, Hardware support contracts with proper departments
+  - **15 Hardware Assets**: Servers, workstations, POS terminals with warranties and locations  
+  - **10 Sample Tickets**: Real hospitality technology issues across different organizations
 
 #### 📊 **Comprehensive Dashboard Widget Framework**
 
 - ✅ **Role-Based Widget System**: Dynamic dashboard widgets customized for user roles (Admin, Support, Client)
   - **Admin Widgets**: System Health Monitor, Ticket Analytics, Organization Management, User Activity, Department Performance
-  - **Support Widgets**: My Workload, Team Performance, Quick Actions, Recent Activity, Knowledge Insights  
+  - **Support Widgets**: My Workload, Team Performance, Quick Actions, Recent Activity, Knowledge Insights, **Agent Ticket Contributions**
   - **Client Widgets**: My Tickets Overview, Service Status, Contract Information, Hardware Assets, Quick Support
   - Each widget supports multiple size variants: Small (1x1), Medium (2x2), Large (3x2)
 
@@ -345,6 +376,12 @@ The Support Portal features a powerful admin-only reporting system that provides
   - Daily resolution metrics and total workload overview
   - Real-time updates with 5-minute cache TTL
 
+- ✅ **Agent Ticket Contributions** (Support - All sizes): GitHub-style activity tracking
+  - **Small**: 7-day contribution heatmap with daily activity counts
+  - **Medium**: Monthly calendar view with week-by-week organization  
+  - **Large**: Yearly overview with 52-week contribution history
+  - Color-coded activity levels and accessible tooltips with contribution details
+
 - ✅ **My Tickets Overview** (Client - Small): Organization ticket dashboard
   - Recent tickets with creation dates and status indicators
   - Organization-scoped filtering for multi-tenant security
@@ -358,6 +395,7 @@ The Support Portal features a powerful admin-only reporting system that provides
   ├── Admin/SystemHealth/{Small,Medium,Large}.php
   ├── Admin/TicketAnalytics/{Small,Medium,Large}.php  
   ├── Support/MyWorkload/{Small,Medium,Large}.php
+  ├── Support/AgentContributions/{Small,Medium,Large}.php
   ├── Client/MyTickets/{Small,Medium,Large}.php
   └── FallbackWidget.php
   ```
@@ -368,7 +406,7 @@ The Support Portal features a powerful admin-only reporting system that provides
   - Dashboard template updated to handle missing components gracefully
 
 - ✅ **Database-Driven Configuration**: Complete widget system in database
-  - 16 widget definitions across all roles with size variants and permissions
+  - 17 widget definitions across all roles with size variants and permissions  
   - User settings table stores personal widget preferences
   - Dynamic component resolution based on database configuration
 
@@ -410,7 +448,7 @@ The Support Portal features a powerful admin-only reporting system that provides
 
 - ✅ **Expansion Capabilities**: Easy to add new widgets
   - Standardized component patterns for consistent development
-  - Database seeder with 16 widget definitions (5 implemented, 11 planned)
+  - Database seeder with 17 widget definitions (6 implemented, 11 planned)
   - Template structure supports rapid widget development
 
 - ✅ **Customization Options**: Rich configuration possibilities
@@ -418,7 +456,7 @@ The Support Portal features a powerful admin-only reporting system that provides
   - Size variant system supports different layouts per widget
   - User preferences persist across sessions
 
-### 🚀 **v4.1.0 - Reports & Analytics Module Implementation** (Previous)
+### 🚀 **v4.2.0 - Dashboard Widget System Implementation** (Previous)
 
 #### 📊 **Major Features**
 

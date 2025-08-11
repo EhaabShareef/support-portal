@@ -110,7 +110,7 @@ class RolePermissionSeeder extends Seeder
         $createdRoles = [];
 
         // Create Admin role with all permissions
-        $adminRole = Role::create([
+        $adminRole = Role::updateOrCreate([
             'name' => 'admin',
             'guard_name' => 'web'
         ]);
@@ -119,10 +119,10 @@ class RolePermissionSeeder extends Seeder
         $allPermissions = Permission::all();
         $adminRole->syncPermissions($allPermissions);
         $createdRoles['admin'] = $adminRole;
-        $this->command->info("✓ Admin role created with " . $allPermissions->count() . " permissions");
+        $this->command->info("✓ Admin role updated/created with " . $allPermissions->count() . " permissions");
 
         // Create Support role with limited permissions (will be configured later via UI)
-        $supportRole = Role::create([
+        $supportRole = Role::updateOrCreate([
             'name' => 'support',
             'guard_name' => 'web'
         ]);
@@ -136,10 +136,10 @@ class RolePermissionSeeder extends Seeder
             ->get();
         $supportRole->syncPermissions($basicPermissions);
         $createdRoles['support'] = $supportRole;
-        $this->command->info("✓ Support role created with " . $basicPermissions->count() . " permissions");
+        $this->command->info("✓ Support role updated/created with " . $basicPermissions->count() . " permissions");
 
         // Create Client role for external users
-        $clientRole = Role::create([
+        $clientRole = Role::updateOrCreate([
             'name' => 'client',
             'guard_name' => 'web'
         ]);
@@ -155,7 +155,7 @@ class RolePermissionSeeder extends Seeder
         ])->get();
         $clientRole->syncPermissions($clientPermissions);
         $createdRoles['client'] = $clientRole;
-        $this->command->info("✓ Client role created with " . $clientPermissions->count() . " permissions");
+        $this->command->info("✓ Client role updated/created with " . $clientPermissions->count() . " permissions");
 
         return $createdRoles;
     }

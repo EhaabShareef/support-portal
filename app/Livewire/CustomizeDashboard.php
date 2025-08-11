@@ -139,6 +139,18 @@ class CustomizeDashboard extends Component
     {
         $user = Auth::user();
         
+        // Explicit authorization check - verify user can access dashboard
+        if (!$user->can('dashboard.access')) {
+            abort(403, 'Insufficient permissions to modify dashboard settings.');
+        }
+        
+        // Verify user's role-specific dashboard permission
+        $userRole = $user->roles->first()?->name ?? 'client';
+        $requiredPermission = "dashboard.{$userRole}";
+        if (!$user->can($requiredPermission)) {
+            abort(403, 'Insufficient role permissions to modify dashboard settings.');
+        }
+        
         // Delete existing user settings
         UserWidgetSetting::where('user_id', $user->id)->delete();
         
@@ -154,10 +166,28 @@ class CustomizeDashboard extends Component
     public function saveChanges(): void
     {
         $user = Auth::user();
+        
+        // Explicit authorization check - verify user can access dashboard
+        if (!$user->can('dashboard.access')) {
+            abort(403, 'Insufficient permissions to modify dashboard settings.');
+        }
+        
+        // Verify user's role-specific dashboard permission
+        $userRole = $user->roles->first()?->name ?? 'client';
+        $requiredPermission = "dashboard.{$userRole}";
+        if (!$user->can($requiredPermission)) {
+            abort(403, 'Insufficient role permissions to modify dashboard settings.');
+        }
 
         foreach ($this->widgets as $widget) {
             if (!$widget['can_view']) {
                 continue; // Skip widgets user can't view
+            }
+            
+            // Additional server-side validation: verify widget is accessible for user's role
+            $dbWidget = DashboardWidget::find($widget['id']);
+            if (!$dbWidget || !$dbWidget->isAccessibleForUser($user)) {
+                continue; // Skip widgets that are not accessible
             }
 
             // Validate size is available for this widget
