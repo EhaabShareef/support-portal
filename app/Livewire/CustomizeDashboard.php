@@ -64,9 +64,22 @@ class CustomizeDashboard extends Component
             ];
         })->toArray();
 
-        // Sort by current order
+        // Sort by current order with fallback to widget id and name for consistency
         usort($this->widgets, function ($a, $b) {
-            return $a['sort_order'] <=> $b['sort_order'];
+            // Primary sort: by sort_order
+            $sortComparison = $a['sort_order'] <=> $b['sort_order'];
+            if ($sortComparison !== 0) {
+                return $sortComparison;
+            }
+            
+            // Secondary sort: by widget id
+            $idComparison = $a['id'] <=> $b['id'];
+            if ($idComparison !== 0) {
+                return $idComparison;
+            }
+            
+            // Tertiary sort: by widget name
+            return strcmp($a['name'], $b['name']);
         });
     }
 

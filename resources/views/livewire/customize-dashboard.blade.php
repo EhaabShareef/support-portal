@@ -26,7 +26,7 @@
                         </button>
                     </div>
                     <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                        Configure which widgets to display and how they appear on your dashboard.
+                        Configure which widgets to display, their sizes, and their order on your dashboard. Use the arrows to reorder widgets.
                     </p>
                 </div>
 
@@ -87,17 +87,27 @@
                                             </select>
 
                                             {{-- Order Controls --}}
-                                            <div class="flex items-center gap-1">
-                                                <button wire:click="moveUp({{ $index }})"
-                                                        class="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 disabled:opacity-50"
-                                                        {{ $index === 0 || !$widget['can_view'] ? 'disabled' : '' }}>
-                                                    <x-heroicon-o-chevron-up class="h-4 w-4" />
-                                                </button>
-                                                <button wire:click="moveDown({{ $index }})"
-                                                        class="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 disabled:opacity-50"
-                                                        {{ $index === count($widgets) - 1 || !$widget['can_view'] ? 'disabled' : '' }}>
-                                                    <x-heroicon-o-chevron-down class="h-4 w-4" />
-                                                </button>
+                                            <div class="flex items-center gap-2">
+                                                {{-- Order Number Display --}}
+                                                <span class="text-xs text-neutral-500 dark:text-neutral-400 font-mono bg-neutral-100 dark:bg-neutral-600 px-2 py-1 rounded">
+                                                    #{{ $index + 1 }}
+                                                </span>
+                                                
+                                                {{-- Move Buttons --}}
+                                                <div class="flex items-center gap-1">
+                                                    <button wire:click="moveUp({{ $index }})"
+                                                            class="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 disabled:opacity-50 transition-colors"
+                                                            title="Move up"
+                                                            {{ $index === 0 || !$widget['can_view'] ? 'disabled' : '' }}>
+                                                        <x-heroicon-o-chevron-up class="h-4 w-4" />
+                                                    </button>
+                                                    <button wire:click="moveDown({{ $index }})"
+                                                            class="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 disabled:opacity-50 transition-colors"
+                                                            title="Move down"
+                                                            {{ $index === count($widgets) - 1 || !$widget['can_view'] ? 'disabled' : '' }}>
+                                                        <x-heroicon-o-chevron-down class="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

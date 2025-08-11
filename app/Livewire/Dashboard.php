@@ -76,7 +76,11 @@ class Dashboard extends Component
             ];
         })->filter(function ($item) {
             return $item->is_visible;
-        })->sortBy('sort_order');
+        })->sortBy([
+            ['sort_order', 'asc'],
+            ['widget.id', 'asc'], 
+            ['widget.name', 'asc']
+        ]);
         
         return $widgets;
     }

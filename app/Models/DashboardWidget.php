@@ -169,8 +169,12 @@ class DashboardWidget extends Model
     {
         $componentName = $this->getComponentForSize($size);
         
-        // Convert component name to class path
-        $className = 'App\\Livewire\\' . str_replace('.', '\\', ucwords($componentName, '.'));
+        // Convert component name to class path with proper case conversion
+        $parts = explode('.', $componentName);
+        $className = 'App\\Livewire\\' . implode('\\', array_map(function($part) {
+            // Convert kebab-case to PascalCase (e.g., system-health -> SystemHealth)
+            return str_replace(' ', '', ucwords(str_replace('-', ' ', $part)));
+        }, $parts));
         
         return class_exists($className);
     }
