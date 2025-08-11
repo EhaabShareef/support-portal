@@ -393,6 +393,7 @@
                                     {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
                                 </span>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketPriority::from($ticket->priority)->cssClass() }}">
+                                    <x-dynamic-component :component="\App\Enums\TicketPriority::from($ticket->priority)->icon()" class="h-3 w-3 mr-1" />
                                     {{ \App\Enums\TicketPriority::from($ticket->priority)->label() }}
                                 </span>
                             </div>

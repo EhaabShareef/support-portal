@@ -97,7 +97,7 @@ class ViewTicket extends Component
         $this->ticket->setRelation(
             'messages',
             $ticket->messages()
-                   ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
+                   ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
                    ->with([
                        'sender:id,name',
                        'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
@@ -229,21 +229,38 @@ class ViewTicket extends Component
                 'form.department_id' => 'required|exists:departments,id',
             ]);
 
+            // Check if this is a ticket reopening (from closed to any other status)
+            $wasTicketClosed = $this->ticket->status === 'closed';
+            $isTicketBeingReopened = $wasTicketClosed && $this->form['status'] !== 'closed';
+
             // Remove subject and description from update to prevent modification
             $updateData = $this->form;
             unset($updateData['subject'], $updateData['description']);
             
             $this->ticket->update($updateData);
+            
+            // If ticket is being reopened, create an automatic message
+            if ($isTicketBeingReopened) {
+                $user = auth()->user();
+                TicketMessage::create([
+                    'ticket_id' => $this->ticket->id,
+                    'sender_id' => $user->id,
+                    'message' => "Ticket has been reopened by {$user->name} on " . now()->format('M d, Y \a\t H:i'),
+                    'is_internal' => false,
+                    'is_system_message' => true,
+                ]);
+            }
             $this->ticket->refresh();
             $this->editMode = false;
 
             session()->flash('message', 'Ticket updated successfully.');
 
             // Refresh messages with optimized eager loading
+            $this->ticket->unsetRelation('messages');
             $this->ticket->setRelation(
                 'messages',
                 $this->ticket->messages()
-                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
+                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
                              ->with([
                                  'sender:id,name',
                                  'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
@@ -307,6 +324,10 @@ class ViewTicket extends Component
                 return;
             }
 
+            // Check if this is a ticket reopening (from closed to any other status)
+            $wasTicketClosed = $this->ticket->status === 'closed';
+            $isTicketBeingReopened = $wasTicketClosed && $status !== 'closed';
+
             $updateData = ['status' => $status];
 
             if ($status === 'closed') {
@@ -316,7 +337,34 @@ class ViewTicket extends Component
             }
 
             $this->ticket->update($updateData);
+
+            // If ticket is being reopened, create an automatic message
+            if ($isTicketBeingReopened) {
+                TicketMessage::create([
+                    'ticket_id' => $this->ticket->id,
+                    'sender_id' => $user->id,
+                    'message' => "Ticket has been reopened by {$user->name} on " . now()->format('M d, Y \a\t H:i'),
+                    'is_internal' => false,
+                    'is_system_message' => true,
+                ]);
+            }
+
             $this->ticket->refresh();
+            
+            // Refresh messages to show the new system message if ticket was reopened
+            $this->ticket->unsetRelation('messages');
+            $this->ticket->setRelation(
+                'messages',
+                $this->ticket->messages()
+                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
+                             ->with([
+                                 'sender:id,name',
+                                 'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+                             ])
+                             ->latest('created_at')
+                             ->get()
+            );
+            
             session()->flash('message', 'Ticket status updated successfully.');
         } catch (\Exception $e) {
             logger()->error('Failed to update ticket status', [
@@ -369,10 +417,11 @@ class ViewTicket extends Component
             ]);
 
             $this->ticket = $this->ticket->fresh();
+            $this->ticket->unsetRelation('messages');
             $this->ticket->setRelation(
                 'messages',
                 $this->ticket->messages()
-                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
+                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
                              ->with([
                                  'sender:id,name',
                                  'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
@@ -438,12 +487,16 @@ class ViewTicket extends Component
                 ]);
             }
 
-            $this->ticket = $this->ticket->fresh();
+            // Refresh ticket attributes but preserve message relationship control
+            $this->ticket->refresh(['status', 'updated_at']);
             $this->replyStatus = $this->ticket->status;
+            
+            // Clear and reload messages with explicit ordering
+            $this->ticket->unsetRelation('messages');
             $this->ticket->setRelation(
                 'messages',
                 $this->ticket->messages()
-                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
+                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
                              ->with([
                                  'sender:id,name',
                                  'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
@@ -454,6 +507,9 @@ class ViewTicket extends Component
 
             Ticket::logEmail("Reply added to ticket {$this->ticket->ticket_number} by " . auth()->user()->email);
             session()->flash('message', 'Message sent successfully.');
+            
+            // Dispatch event for auto-scroll to latest message
+            $this->dispatch('message-sent');
             
         } catch (\Exception $e) {
             logger()->error('Failed to send message', [

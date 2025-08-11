@@ -533,6 +533,7 @@
 
 
                     {{-- Messages --}}
+                    <div id="messages-start"></div>
                     @foreach($ticket->messages as $message)
                         @if(!$loop->first)
                             <hr class="border-neutral-200 dark:border-neutral-700">
@@ -540,28 +541,51 @@
                         
                         @php
                             $isCurrentUser = $message->sender_id === auth()->id();
-                            $avatarClass = $isCurrentUser 
-                                ? 'bg-gradient-to-br bg-green-400/60' 
-                                : 'bg-gradient-to-br bg-orange-400/60';
+                            $isSystemMessage = $message->is_system_message ?? false;
                             
-                            // Check if this is a closing message
-                            $isClosingMessage = $ticket->status === 'closed' && 
-                                              $ticket->closed_at && 
-                                              $message->created_at->diffInMinutes($ticket->closed_at) <= 2;
-                            
-                            $messageBackgroundClass = $isClosingMessage 
-                                ? 'bg-red-100/30 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30'
-                                : 'bg-white/20 dark:bg-neutral-800/20';
+                            if ($isSystemMessage) {
+                                $avatarClass = 'bg-gradient-to-br from-blue-400 to-blue-600';
+                                $messageBackgroundClass = 'bg-blue-50/50 dark:bg-blue-900/20 border border-blue-200/50 dark:border-blue-800/30';
+                            } else {
+                                $avatarClass = $isCurrentUser 
+                                    ? 'bg-gradient-to-br bg-green-400/60' 
+                                    : 'bg-gradient-to-br bg-orange-400/60';
+                                
+                                // Check if this is a closing message
+                                $isClosingMessage = $ticket->status === 'closed' && 
+                                                  $ticket->closed_at && 
+                                                  $message->created_at->diffInMinutes($ticket->closed_at) <= 2;
+                                
+                                $messageBackgroundClass = $isClosingMessage 
+                                    ? 'bg-red-100/30 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30'
+                                    : 'bg-white/20 dark:bg-neutral-800/20';
+                            }
                         @endphp
                         
                         <div class="flex items-start gap-3">
                             <div class="w-8 h-8 {{ $avatarClass }} rounded-full flex items-center justify-center">
-                                <span class="text-white text-xs font-medium">{{ substr($message->sender->name, 0, 1) }}</span>
+                                @if($isSystemMessage)
+                                    <x-heroicon-o-cog-6-tooth class="h-4 w-4 text-white" />
+                                @else
+                                    <span class="text-white text-xs font-medium">{{ substr($message->sender->name, 0, 1) }}</span>
+                                @endif
                             </div>
                         <div class="flex-1 {{ $messageBackgroundClass }} rounded-lg p-4">
                             <div class="flex items-center gap-2 mb-2">
-                                <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $message->sender->name }}</span>
+                                <span class="font-medium text-neutral-800 dark:text-neutral-200">
+                                    @if($isSystemMessage)
+                                        System
+                                    @else
+                                        {{ $message->sender->name }}
+                                    @endif
+                                </span>
                                 <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $message->created_at?->diffForHumans() ?? 'Unknown time' }}</span>
+                                @if($isSystemMessage)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                        <x-heroicon-o-information-circle class="h-3 w-3 mr-1" />
+                                        System Message
+                                    </span>
+                                @endif
                             </div>
                             <div class="text-sm text-neutral-700 dark:text-neutral-300">
                                 {!! nl2br(e($message->message)) !!}
@@ -617,6 +641,20 @@
             </div>
 
         </div>
+
+        {{-- Auto-scroll to latest message after reply --}}
+        <script>
+            document.addEventListener('livewire:initialized', () => {
+                Livewire.on('message-sent', () => {
+                    setTimeout(() => {
+                        const messagesStart = document.getElementById('messages-start');
+                        if (messagesStart) {
+                            messagesStart.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 100);
+                });
+            });
+        </script>
     </div>
     @if($showCloseModal)
     <div class="fixed inset-0 z-50 overflow-y-auto" x-data="{ show: @entangle('showCloseModal') }" x-show="show" x-cloak>

@@ -333,6 +333,10 @@ class ManageTickets extends Component
                 return;
             }
             
+            // Check if this is a ticket reopening (from closed to any other status)
+            $wasTicketClosed = $ticket->status === 'closed';
+            $isTicketBeingReopened = $wasTicketClosed && $status !== 'closed';
+            
             $updateData = ['status' => $status];
             
             // Set closed_at if closing the ticket
@@ -343,6 +347,18 @@ class ManageTickets extends Component
             }
             
             $ticket->update($updateData);
+            
+            // If ticket is being reopened, create an automatic message
+            if ($isTicketBeingReopened) {
+                \App\Models\TicketMessage::create([
+                    'ticket_id' => $ticket->id,
+                    'sender_id' => $user->id,
+                    'message' => "Ticket has been reopened by {$user->name} on " . now()->format('M d, Y \a\t H:i'),
+                    'is_internal' => false,
+                    'is_system_message' => true,
+                ]);
+            }
+            
             session()->flash('message', 'Ticket status updated successfully.');
             
         } catch (\Exception $e) {
