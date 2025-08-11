@@ -46,7 +46,6 @@ class ViewTicket extends Component
     public array $closeForm = [
         'remarks' => '',
         'solution' => '',
-        'internal' => false,
     ];
 
     public $attachments = [];
@@ -335,7 +334,6 @@ class ViewTicket extends Component
         $this->closeForm = [
             'remarks' => '',
             'solution' => '',
-            'internal' => false,
         ];
         $this->showCloseModal = true;
     }
@@ -351,7 +349,6 @@ class ViewTicket extends Component
             $this->validate([
                 'closeForm.remarks' => 'required|string|max:2000',
                 'closeForm.solution' => 'nullable|string|max:500',
-                'closeForm.internal' => 'boolean',
             ]);
 
             $content = $this->closeForm['remarks'];
@@ -363,7 +360,7 @@ class ViewTicket extends Component
                 'ticket_id' => $this->ticket->id,
                 'sender_id' => Auth::id(),
                 'message' => $content,
-                'is_internal' => $this->closeForm['internal'],
+                'is_internal' => false,
             ]);
 
             $this->ticket->update([

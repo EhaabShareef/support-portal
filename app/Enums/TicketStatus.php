@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Services\TicketColorService;
+
 enum TicketStatus: string
 {
     case OPEN = 'open';
@@ -31,17 +33,8 @@ enum TicketStatus: string
 
     public function cssClass(): string
     {
-        return match ($this) {
-            self::OPEN => 'bg-lime-100 text-lime-700',
-            self::IN_PROGRESS => 'bg-blue-100 text-blue-700',
-            self::AWAITING_CUSTOMER_RESPONSE => 'bg-yellow-100 text-yellow-700',
-            self::AWAITING_CASE_CLOSURE => 'bg-cyan-100 text-cyan-700',
-            self::SALES_ENGAGEMENT => 'bg-pink-100 text-pink-700',
-            self::MONITORING => 'bg-teal-100 text-teal-700',
-            self::SOLUTION_PROVIDED => 'bg-emerald-100 text-emerald-700',
-            self::CLOSED => 'bg-red-100 text-red-700',
-            self::ON_HOLD => 'bg-neutral-100 text-neutral-700',
-        };
+        $colorService = app(TicketColorService::class);
+        return $colorService->getStatusClasses($this->value);
     }
 
     public static function values(): array

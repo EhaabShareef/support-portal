@@ -18,7 +18,7 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 relative z-50">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketPriority::from($ticket->priority)->cssClass() }}">
                     {{ \App\Enums\TicketPriority::from($ticket->priority)->label() }}
                 </span>
@@ -35,31 +35,13 @@
                         </button>
                     @endif
 
-                    <div class="relative" x-data="{ open: false }" @click.away="open = false">
-                        <button @click="open = !open"
+                    <div class="relative">
+                        <button @click="$dispatch('toggle-status-dropdown')"
+                                x-ref="statusButton"
                                 class="inline-flex items-center px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded transition-all duration-200"
                                 title="Change Status">
                             <x-heroicon-o-arrow-path class="h-4 w-4" />
                         </button>
-                        <div x-show="open"
-                             x-transition:enter="transition ease-out duration-100"
-                             x-transition:enter-start="transform opacity-0 scale-95"
-                             x-transition:enter-end="transform opacity-100 scale-100"
-                             x-transition:leave="transition ease-in duration-75"
-                             x-transition:leave-start="transform opacity-100 scale-100"
-                             x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-1 w-40 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg z-10">
-                            <div class="py-1">
-                                @foreach($statusOptions as $value => $label)
-                                    @if($value !== $ticket->status && $value !== 'closed')
-                                        <button wire:click="changeStatus('{{ $value }}')" @click="open = false"
-                                                class="w-full text-left px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
-                                            {{ $label }}
-                                        </button>
-                                    @endif
-                                @endforeach
-                            </div>
-                        </div>
                     </div>
                 @endif
             </div>
@@ -261,7 +243,16 @@
                         @if($ticket->description)
                         <div>
                             <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Description</dt>
-                            <dd class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{{ $ticket->description }}</dd>
+                            <dd class="mt-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $ticket->client->name }}</span>
+                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">opened this ticket</span>
+                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $ticket->created_at?->diffForHumans() ?? 'Unknown time' }}</span>
+                                </div>
+                                <div class="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                                    {!! nl2br(e($ticket->description)) !!}
+                                </div>
+                            </dd>
                         </div>
                         @endif
                     </dl>
@@ -539,26 +530,6 @@
                     </div>
                     @endif
 
-                    {{-- Initial Description --}}
-                    @if($ticket->description)
-                    <div class="bg-neutral-50 dark:bg-neutral-800/50 p-4 border-l-4 border-sky-500">
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 bg-gradient-to-br bg-sky-500/75 rounded-full flex items-center justify-center">
-                                <span class="text-white text-xs font-medium">{{ substr($ticket->client->name, 0, 1) }}</span>
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $ticket->client->name }}</span>
-                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">opened this ticket</span>
-                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $ticket->created_at?->diffForHumans() ?? 'Unknown time' }}</span>
-                                </div>
-                                <div class="text-sm text-neutral-700 dark:text-neutral-300">
-                                    {!! nl2br(e($ticket->description)) !!}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
 
                     {{-- Messages --}}
                     @foreach($ticket->messages as $message)
@@ -571,13 +542,22 @@
                             $avatarClass = $isCurrentUser 
                                 ? 'bg-gradient-to-br bg-green-400/60' 
                                 : 'bg-gradient-to-br bg-orange-400/60';
+                            
+                            // Check if this is a closing message
+                            $isClosingMessage = $ticket->status === 'closed' && 
+                                              $ticket->closed_at && 
+                                              $message->created_at->diffInMinutes($ticket->closed_at) <= 2;
+                            
+                            $messageBackgroundClass = $isClosingMessage 
+                                ? 'bg-red-100/30 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30'
+                                : 'bg-white/20 dark:bg-neutral-800/20';
                         @endphp
                         
                         <div class="flex items-start gap-3">
                             <div class="w-8 h-8 {{ $avatarClass }} rounded-full flex items-center justify-center">
                                 <span class="text-white text-xs font-medium">{{ substr($message->sender->name, 0, 1) }}</span>
                             </div>
-                        <div class="flex-1 bg-white/20 dark:bg-neutral-800/20 rounded-lg p-4">
+                        <div class="flex-1 {{ $messageBackgroundClass }} rounded-lg p-4">
                             <div class="flex items-center gap-2 mb-2">
                                 <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $message->sender->name }}</span>
                                 <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $message->created_at?->diffForHumans() ?? 'Unknown time' }}</span>
@@ -646,17 +626,15 @@
                 <form wire:submit="submitClose" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Remarks</label>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-2">This will be visible to all users including the client.</p>
                         <textarea wire:model="closeForm.remarks" rows="3" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
                         @error('closeForm.remarks') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Solution Summary</label>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Internal only - visible to admin and support users only.</p>
                         <textarea wire:model="closeForm.solution" rows="2" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
                         @error('closeForm.solution') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" id="closeInternal" wire:model="closeForm.internal" class="rounded border-neutral-300 text-sky-600 focus:border-sky-300 focus:ring focus:ring-sky-200 focus:ring-opacity-50">
-                        <label for="closeInternal" class="ml-2 text-sm text-neutral-700 dark:text-neutral-300">Internal Only</label>
                     </div>
                     <div class="mt-4 flex justify-end gap-2">
                         <button type="button" @click="show = false" class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200">Cancel</button>
@@ -750,5 +728,45 @@
             </div>
         </div>
     </div>
+
+    {{-- Status Dropdown (positioned outside stacking contexts) --}}
+    @if(auth()->user()->can('tickets.update'))
+    <div x-data="{ open: false }" 
+         x-on:toggle-status-dropdown.window="
+             open = !open; 
+             if(open) { 
+                 $nextTick(() => { 
+                     const button = document.querySelector('[x-ref=statusButton]'); 
+                     if(button) {
+                         const rect = button.getBoundingClientRect(); 
+                         $refs.dropdown.style.top = (rect.bottom + window.scrollY + 4) + 'px'; 
+                         $refs.dropdown.style.left = (rect.right - 160) + 'px'; 
+                     }
+                 }); 
+             }"
+         @click.away="open = false"
+         x-show="open"
+         class="fixed inset-0 z-[9999] pointer-events-none">
+        <div x-ref="dropdown"
+             x-transition:enter="transition ease-out duration-100"
+             x-transition:enter-start="transform opacity-0 scale-95"
+             x-transition:enter-end="transform opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-75"
+             x-transition:leave-start="transform opacity-100 scale-100"
+             x-transition:leave-end="transform opacity-0 scale-95"
+             class="absolute w-40 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-xl pointer-events-auto">
+            <div class="py-1">
+                @foreach($statusOptions as $value => $label)
+                    @if($value !== $ticket->status && $value !== 'closed')
+                        <button wire:click="changeStatus('{{ $value }}')" @click="open = false"
+                                class="w-full text-left px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
+                            {{ $label }}
+                        </button>
+                    @endif
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 </div>

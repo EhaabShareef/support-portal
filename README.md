@@ -310,7 +310,38 @@ The Support Portal features a powerful admin-only reporting system that provides
 
 ## Recent Updates
 
-### 🚀 **v4.3.0 - Agent Contributions Widget & Beta Readiness** (Latest)
+### 🚀 **v4.3.1 - Ticket Close Modal Enhancement** (Latest)
+
+#### 🎫 **Improved Ticket Closing Experience**
+
+- ✅ **Enhanced Close Modal Interface**: Updated ticket close modal with clearer user guidance
+  - **Helper Text Added**: Clear descriptions for both "Remarks" and "Solution Summary" fields
+    - "Remarks": "This will be visible to all users including the client"
+    - "Solution Summary": "Internal only - visible to admin and support users only"
+  - **Simplified UI**: Removed unnecessary "Internal Only" checkbox for cleaner interface
+  - **Always Public Closing Messages**: All ticket closing messages are now visible to clients for transparency
+
+#### 🔧 **Technical Implementation**
+
+- ✅ **ViewTicket Component Updates**: Streamlined closing logic in `app/Livewire/ViewTicket.php`
+  - Removed `internal` field from `$closeForm` array
+  - Updated validation rules to exclude internal checkbox
+  - Set `is_internal => false` directly for all closing messages
+  - Ensured closing messages are always public for client visibility
+
+- ✅ **Template Improvements**: Enhanced close modal in `resources/views/livewire/view-ticket.blade.php`
+  - Added descriptive helper text for field visibility
+  - Removed internal checkbox input and validation
+  - Improved user understanding of field purposes
+
+#### 🎯 **User Experience Benefits**
+
+- **Clear Communication**: Users now understand exactly what information is visible to whom
+- **Simplified Process**: Removed confusing internal-only option from closing workflow
+- **Consistent Behavior**: All closing remarks are visible to clients, promoting transparency
+- **Better UX**: Helper text guides users on appropriate content for each field
+
+### 🚀 **v4.3.0 - Agent Contributions Widget & Beta Readiness** (Previous)
 
 #### 🎯 **Agent Ticket Contributions Widget**
 

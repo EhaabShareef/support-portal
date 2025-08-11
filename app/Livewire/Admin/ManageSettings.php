@@ -6,6 +6,9 @@ use App\Models\Department;
 use App\Models\DepartmentGroup;
 use App\Models\Setting;
 use App\Models\ScheduleEventType;
+use App\Services\TicketColorService;
+use App\Enums\TicketStatus;
+use App\Enums\TicketPriority;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -69,6 +72,12 @@ class ManageSettings extends Component
         'sort_order' => 0,
     ];
 
+    // Ticket Colors
+    public array $statusColors = [];
+    public array $priorityColors = [];
+    public bool $showColorResetConfirm = false;
+    public string $colorResetType = '';
+
     // Delete confirmations
     public ?int $confirmingDeptGroupDelete = null;
     public ?int $confirmingDeptDelete = null;
@@ -81,6 +90,11 @@ class ManageSettings extends Component
         if (!auth()->user()->hasRole('admin')) {
             abort(403, 'You do not have permission to manage settings.');
         }
+
+        // Load ticket colors
+        $colorService = app(TicketColorService::class);
+        $this->statusColors = $colorService->getStatusColors();
+        $this->priorityColors = $colorService->getPriorityColors();
     }
 
     #[Computed]
@@ -111,6 +125,35 @@ class ManageSettings extends Component
     public function scheduleEventTypes()
     {
         return ScheduleEventType::ordered()->get();
+    }
+
+    #[Computed]
+    public function availableColors()
+    {
+        $colorService = app(TicketColorService::class);
+        return $colorService->getColorPalette();
+    }
+
+    #[Computed]
+    public function ticketStatuses()
+    {
+        return collect(TicketStatus::cases())->map(function ($status) {
+            return [
+                'value' => $status->value,
+                'label' => $status->label(),
+            ];
+        });
+    }
+
+    #[Computed]
+    public function ticketPriorities()
+    {
+        return collect(TicketPriority::cases())->map(function ($priority) {
+            return [
+                'value' => $priority->value,
+                'label' => $priority->label(),
+            ];
+        });
     }
 
     public function setActiveTab($tab)
@@ -452,6 +495,79 @@ class ManageSettings extends Component
         $this->confirmingDeptDelete = null;
         $this->confirmingSettingDelete = null;
         $this->confirmingEventTypeDelete = null;
+    }
+
+    // Ticket Colors Management
+    public function saveTicketColors()
+    {
+        $colorService = app(TicketColorService::class);
+        
+        // Validate that all statuses and priorities have colors assigned
+        foreach (TicketStatus::cases() as $status) {
+            if (!isset($this->statusColors[$status->value]) || empty($this->statusColors[$status->value])) {
+                session()->flash('error', 'All ticket statuses must have colors assigned.');
+                return;
+            }
+        }
+
+        foreach (TicketPriority::cases() as $priority) {
+            if (!isset($this->priorityColors[$priority->value]) || empty($this->priorityColors[$priority->value])) {
+                session()->flash('error', 'All ticket priorities must have colors assigned.');
+                return;
+            }
+        }
+
+        // Save the colors
+        $colorService->updateStatusColors($this->statusColors);
+        $colorService->updatePriorityColors($this->priorityColors);
+
+        session()->flash('message', 'Ticket colors updated successfully.');
+    }
+
+    public function updateStatusColor($status, $color)
+    {
+        $this->statusColors[$status] = $color;
+    }
+
+    public function updatePriorityColor($priority, $color)
+    {
+        $this->priorityColors[$priority] = $color;
+    }
+
+    public function confirmResetColors($type)
+    {
+        $this->colorResetType = $type;
+        $this->showColorResetConfirm = true;
+    }
+
+    public function resetColorsToDefaults()
+    {
+        $colorService = app(TicketColorService::class);
+        
+        if ($this->colorResetType === 'status') {
+            $colorService->resetStatusColorsToDefaults();
+            $this->statusColors = $colorService->getStatusColors();
+            session()->flash('message', 'Status colors reset to defaults.');
+        } elseif ($this->colorResetType === 'priority') {
+            $colorService->resetPriorityColorsToDefaults();
+            $this->priorityColors = $colorService->getPriorityColors();
+            session()->flash('message', 'Priority colors reset to defaults.');
+        }
+
+        $this->showColorResetConfirm = false;
+        $this->colorResetType = '';
+    }
+
+    public function cancelResetColors()
+    {
+        $this->showColorResetConfirm = false;
+        $this->colorResetType = '';
+    }
+
+    public function getColorPreview($colorName)
+    {
+        $colorService = app(TicketColorService::class);
+        return $colorService->getPreviewClasses($colorName);
     }
 
     public function render()

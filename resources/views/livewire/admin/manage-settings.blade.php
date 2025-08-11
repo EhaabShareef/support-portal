@@ -63,6 +63,11 @@
                     <x-heroicon-o-calendar-days class="h-5 w-5 mr-2 inline" />
                     Schedule Events
                 </button>
+                <button wire:click="setActiveTab('ticket-colors')"
+                    class="py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 {{ $activeTab === 'ticket-colors' ? 'border-sky-500 text-sky-600 dark:text-sky-400' : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-400 dark:hover:text-neutral-300' }}">
+                    <x-heroicon-o-swatch class="h-5 w-5 mr-2 inline" />
+                    Ticket Colors
+                </button>
             </nav>
         </div>
 
@@ -385,6 +390,100 @@
                         <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Get started by creating your first schedule event type.</p>
                     </div>
                 @endif
+            @endif
+
+            {{-- Ticket Colors Tab --}}
+            @if($activeTab === 'ticket-colors')
+                <div class="space-y-8">
+                    {{-- Header --}}
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Ticket Colors Configuration</h3>
+                        <button wire:click="saveTicketColors" 
+                            class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200">
+                            <x-heroicon-o-check class="h-4 w-4 mr-2" />
+                            Save Colors
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {{-- Status Colors --}}
+                        <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-md font-semibold text-neutral-800 dark:text-neutral-100">Status Colors</h4>
+                                <button wire:click="confirmResetColors('status')" 
+                                    class="inline-flex items-center px-3 py-1.5 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-md transition-all duration-200">
+                                    <x-heroicon-o-arrow-path class="h-3 w-3 mr-1" />
+                                    Reset
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                @foreach($this->ticketStatuses as $status)
+                                    <div class="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                                        <div class="flex items-center gap-3">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $this->getColorPreview($statusColors[$status['value']] ?? 'gray') }}">
+                                                {{ $status['label'] }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            @foreach($this->availableColors as $color)
+                                                <button wire:click="updateStatusColor('{{ $status['value'] }}', '{{ $color }}')"
+                                                    class="w-6 h-6 rounded-full border-2 {{ $this->getColorPreview($color) }} {{ ($statusColors[$status['value']] ?? '') === $color ? 'border-neutral-800 dark:border-neutral-200 ring-2 ring-offset-1 ring-sky-500' : 'border-neutral-300 dark:border-neutral-600' }} transition-all hover:scale-110"
+                                                    title="{{ ucfirst($color) }}">
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        {{-- Priority Colors --}}
+                        <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-md font-semibold text-neutral-800 dark:text-neutral-100">Priority Colors</h4>
+                                <button wire:click="confirmResetColors('priority')" 
+                                    class="inline-flex items-center px-3 py-1.5 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-md transition-all duration-200">
+                                    <x-heroicon-o-arrow-path class="h-3 w-3 mr-1" />
+                                    Reset
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                @foreach($this->ticketPriorities as $priority)
+                                    <div class="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                                        <div class="flex items-center gap-3">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $this->getColorPreview($priorityColors[$priority['value']] ?? 'gray') }}">
+                                                {{ $priority['label'] }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            @foreach($this->availableColors as $color)
+                                                <button wire:click="updatePriorityColor('{{ $priority['value'] }}', '{{ $color }}')"
+                                                    class="w-6 h-6 rounded-full border-2 {{ $this->getColorPreview($color) }} {{ ($priorityColors[$priority['value']] ?? '') === $color ? 'border-neutral-800 dark:border-neutral-200 ring-2 ring-offset-1 ring-sky-500' : 'border-neutral-300 dark:border-neutral-600' }} transition-all hover:scale-110"
+                                                    title="{{ ucfirst($color) }}">
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Color Legend --}}
+                    <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
+                        <h4 class="text-md font-semibold text-neutral-800 dark:text-neutral-100 mb-4">Available Colors</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            @foreach($this->availableColors as $color)
+                                <div class="flex items-center gap-2">
+                                    <div class="w-4 h-4 rounded-full {{ $this->getColorPreview($color) }}"></div>
+                                    <span class="text-sm text-neutral-700 dark:text-neutral-300 capitalize">{{ $color }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
             @endif
         </div>
     </div>
@@ -825,6 +924,45 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Reset Colors Confirmation Modal --}}
+    @if($showColorResetConfirm)
+        <div class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="cancelResetColors"></div>
+                
+                <div class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white dark:bg-neutral-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/40 sm:mx-0 sm:h-10 sm:w-10">
+                                <x-heroicon-o-arrow-path class="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+                                    Reset {{ ucfirst($colorResetType) }} Colors
+                                </h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                        Are you sure you want to reset all {{ $colorResetType }} colors to their default values? This action cannot be undone.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-neutral-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button wire:click="resetColorsToDefaults"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Reset to Defaults
+                        </button>
+                        <button wire:click="cancelResetColors"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-neutral-600 shadow-sm px-4 py-2 bg-white dark:bg-neutral-800 text-base font-medium text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:mt-0 sm:w-auto sm:text-sm">
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

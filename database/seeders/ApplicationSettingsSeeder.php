@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Setting;
 use App\Models\Organization;
+use App\Services\TicketColorService;
 
 class ApplicationSettingsSeeder extends Seeder
 {
@@ -50,6 +51,10 @@ class ApplicationSettingsSeeder extends Seeder
                 'is_encrypted' => false,
             ],
         ];
+
+        // Add ticket color settings
+        $colorSettings = TicketColorService::getDefaultSettings();
+        $settings = array_merge($settings, $colorSettings);
 
         foreach ($settings as $setting) {
             Setting::updateOrCreate(

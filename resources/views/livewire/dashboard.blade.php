@@ -10,6 +10,9 @@
                 <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                     Welcome back, {{ auth()->user()->name }} | {{ ucfirst($userRole) }}
                 </p>
+                <span class="bg-emerald-100 text-emerald-900">
+                    COLOR CHECK
+                </span>
             </div>
             <div class="flex items-center gap-2">
                 <button wire:click="openCustomizeModal" 

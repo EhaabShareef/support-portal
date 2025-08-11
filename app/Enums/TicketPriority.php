@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Services\TicketColorService;
+
 enum TicketPriority: string
 {
     case LOW = 'low';
@@ -34,13 +36,8 @@ enum TicketPriority: string
 
     public function cssClass(): string
     {
-        return match ($this) {
-            self::LOW => 'text-neutral-700 dark:text-neutral-300',
-            self::NORMAL => 'text-sky-700 dark:text-sky-500',
-            self::HIGH => 'text-orange-700',
-            self::URGENT => 'text-red-600',
-            self::CRITICAL => 'bg-red-100 text-red-700 dark:text-red-500',
-        };
+        $colorService = app(TicketColorService::class);
+        return $colorService->getPriorityClasses($this->value);
     }
 
     public function displayText(): string

@@ -195,7 +195,6 @@
                                 <div class="text-xs font-medium text-sky-600 dark:text-sky-400">
                                     #{{ $ticket->ticket_number }}
                                 </div>
-                                </div>
                             </div>
 
                             {{-- Subject --}}
