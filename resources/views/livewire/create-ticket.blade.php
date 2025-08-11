@@ -46,20 +46,6 @@
                 @enderror
             </div>
 
-            <div>
-                <label for="type" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Type</label>
-                <select wire:model.defer="form.type" 
-                        id="type"
-                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                    @foreach($typeOptions as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-                @error('form.type') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                @enderror
-            </div>
-
             {{-- Client Selection (for Admins/Agents only) --}}
             @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('support'))
             <div>

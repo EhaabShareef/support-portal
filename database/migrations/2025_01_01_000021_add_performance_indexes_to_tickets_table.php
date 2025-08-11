@@ -18,9 +18,6 @@ return new class extends Migration
             // Index for priority filtering
             $table->index('priority', 'idx_tickets_priority');
             
-            // Index for type filtering
-            $table->index('type', 'idx_tickets_type');
-            
             // Composite index for agent ticket queries (department + status)
             $table->index(['department_id', 'status'], 'idx_tickets_dept_status');
             
@@ -87,7 +84,6 @@ return new class extends Migration
         Schema::table('tickets', function (Blueprint $table) {
             $table->dropIndex('idx_tickets_status');
             $table->dropIndex('idx_tickets_priority');
-            $table->dropIndex('idx_tickets_type');
             $table->dropIndex('idx_tickets_dept_status');
             $table->dropIndex('idx_tickets_org_status');
             $table->dropIndex('idx_tickets_assigned_to');

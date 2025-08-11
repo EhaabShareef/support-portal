@@ -101,18 +101,10 @@
                 @endforeach
             </select>
 
-            <select wire:model.live="filterPriority" 
+            <select wire:model.live="filterPriority"
                     class="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
                 <option value="">All Priorities</option>
                 @foreach ($priorityOptions as $value => $label)
-                    <option value="{{ $value }}">{{ $label }}</option>
-                @endforeach
-            </select>
-
-            <select wire:model.live="filterType" 
-                    class="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
-                <option value="">All Types</option>
-                @foreach ($typeOptions as $value => $label)
                     <option value="{{ $value }}">{{ $label }}</option>
                 @endforeach
             </select>
@@ -141,7 +133,7 @@
 
 
     {{-- Tickets Table --}}
-    <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md overflow-hidden">
+    <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md">
         @if($tickets->count() > 0)
             {{-- Desktop Table Header --}}
             <div class="hidden lg:block bg-neutral-50 dark:bg-neutral-800/50 px-6 py-3 border-b border-neutral-200 dark:border-neutral-700">
@@ -203,21 +195,14 @@
                                 <div class="text-xs font-medium text-sky-600 dark:text-sky-400">
                                     #{{ $ticket->ticket_number }}
                                 </div>
-                                <div class="text-xs text-neutral-500 dark:text-neutral-400">
-                                    {{ ucfirst($ticket->type) }}
                                 </div>
                             </div>
 
                             {{-- Subject --}}
                             <div class="col-span-2">
-                                <div class="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                                <div class="text-sm font-medium text-neutral-800 dark:text-neutral-200" title="{{ Str::limit(strip_tags($ticket->description), 100) }}">
                                     {{ Str::limit($ticket->subject, 40) }}
                                 </div>
-                                @if($ticket->description)
-                                <div class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                                    {{ Str::limit(strip_tags($ticket->description), 60) }}
-                                </div>
-                                @endif
                             </div>
 
                             {{-- Client --}}
@@ -359,11 +344,8 @@
                                         <span class="text-sm font-medium text-sky-600 dark:text-sky-400">
                                             #{{ $ticket->ticket_number }}
                                         </span>
-                                        <span class="text-xs text-neutral-500 dark:text-neutral-400">
-                                            {{ ucfirst($ticket->type) }}
-                                        </span>
                                     </div>
-                                    <h3 class="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                                    <h3 class="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate" title="{{ Str::limit(strip_tags($ticket->description), 100) }}">
                                         {{ $ticket->subject }}
                                     </h3>
                                 </div>
@@ -445,7 +427,7 @@
                 <x-heroicon-o-ticket class="mx-auto h-12 w-12 text-neutral-400 dark:text-neutral-600" />
                 <h3 class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">No tickets found</h3>
                 <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                    @if($search || $filterStatus || $filterPriority || $filterType || $filterOrg || $filterDept || $quickFilter !== 'all')
+                    @if($search || $filterStatus || $filterPriority || $filterOrg || $filterDept || $quickFilter !== 'all')
                         Try adjusting your search criteria or filters.
                     @else
                         Get started by creating your first ticket.
@@ -502,23 +484,11 @@
                                 @error('form.subject') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {{-- Type --}}
-                                <div>
-                                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Type *</label>
-                                    <select wire:model="form.type" 
-                                            class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                                        @foreach($typeOptions as $value => $label)
-                                            <option value="{{ $value }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('form.type') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                                </div>
-
+                            <div class="grid grid-cols-1 gap-4">
                                 {{-- Priority --}}
                                 <div>
                                     <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Priority *</label>
-                                    <select wire:model="form.priority" 
+                                    <select wire:model="form.priority"
                                             class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
                                         @foreach($priorityOptions as $value => $label)
                                             <option value="{{ $value }}">{{ $label }}</option>

@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Enums\TicketPriority;
-use App\Enums\TicketType;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Models\Ticket;
@@ -27,7 +26,6 @@ class CreateTicket extends Component
 
     public array $form = [
         'subject'   => '',
-        'type'      => 'issue',
         'organization_id' => '',
         'client_id' => '',
         'department_id' => '',
@@ -42,7 +40,6 @@ class CreateTicket extends Component
         
         return [
             'form.subject'   => 'required|string|max:255',
-            'form.type'      => TicketType::validationRule(),
             'form.organization_id' => 'required|exists:organizations,id',
             // Clients cannot select client, Admins/Agents can select on behalf of clients
             'form.client_id' => $user->hasRole('client') ? 'nullable' : 'required|exists:users,id',
@@ -55,7 +52,6 @@ class CreateTicket extends Component
     protected $messages = [
         'form.subject.required' => 'Please enter a subject for your ticket.',
         'form.subject.max' => 'Subject must not exceed 255 characters.',
-        'form.type.required' => 'Please select a ticket type.',
         'form.organization_id.required' => 'Please select an organization.',
         'form.organization_id.exists' => 'The selected organization is invalid.',
         'form.client_id.required' => 'Please select a client for this ticket.',
@@ -158,7 +154,6 @@ class CreateTicket extends Component
             'departments' => Department::all(),
             'users' => User::all(),
             'clients' => $clients,
-            'typeOptions' => TicketType::options(),
             'priorityOptions' => TicketPriority::options(),
         ]);
     }
