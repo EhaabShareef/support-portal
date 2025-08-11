@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
-use App\Enums\TicketType;
 use App\Models\Attachment;
 use App\Models\Department;
 use App\Models\Ticket;
@@ -31,7 +30,6 @@ class ViewTicket extends Component
 
     public array $form = [
         'subject' => '',
-        'type' => '',
         'status' => '',
         'priority' => '',
         'assigned_to' => '',
@@ -40,6 +38,16 @@ class ViewTicket extends Component
     ];
 
     public string $replyMessage = '';
+
+    public string $replyStatus = '';
+
+    public bool $showCloseModal = false;
+
+    public array $closeForm = [
+        'remarks' => '',
+        'solution' => '',
+        'internal' => false,
+    ];
 
     public $attachments = [];
 
@@ -101,7 +109,6 @@ class ViewTicket extends Component
 
         $this->form = [
             'subject' => $ticket->subject,
-            'type' => $ticket->type,
             'status' => $ticket->status,
             'priority' => $ticket->priority,
             'assigned_to' => $ticket->assigned_to,
@@ -110,6 +117,7 @@ class ViewTicket extends Component
         ];
 
         $this->noteInputKey = uniqid();
+        $this->replyStatus = $ticket->status;
     }
 
     private function canAccessTicket($user, $ticket): bool
@@ -199,7 +207,6 @@ class ViewTicket extends Component
         $this->editMode = false;
         $this->form = [
             'subject' => $this->ticket->subject,
-            'type' => $this->ticket->type,
             'status' => $this->ticket->status,
             'priority' => $this->ticket->priority,
             'assigned_to' => $this->ticket->assigned_to,
@@ -217,7 +224,6 @@ class ViewTicket extends Component
             }
 
             $this->validate([
-                'form.type' => TicketType::validationRule(),
                 'form.status' => TicketStatus::validationRule(),
                 'form.priority' => TicketPriority::validationRule(),
                 'form.assigned_to' => 'nullable|exists:users,id',
@@ -259,6 +265,139 @@ class ViewTicket extends Component
         }
     }
 
+    public function assignToMe()
+    {
+        try {
+            $user = auth()->user();
+
+            if (!$user->can('tickets.update')) {
+                session()->flash('error', 'You do not have permission to assign tickets.');
+                return;
+            }
+
+            if (!$this->canAccessTicket($user, $this->ticket)) {
+                session()->flash('error', 'You cannot assign this ticket.');
+                return;
+            }
+
+            $this->ticket->update(['assigned_to' => $user->id]);
+            $this->ticket->refresh();
+            session()->flash('message', 'Ticket assigned to you successfully.');
+        } catch (\Exception $e) {
+            logger()->error('Failed to assign ticket', [
+                'ticket_id' => $this->ticket->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to assign ticket.');
+        }
+    }
+
+    public function changeStatus($status)
+    {
+        try {
+            $user = auth()->user();
+
+            if (!$user->can('tickets.update')) {
+                session()->flash('error', 'You do not have permission to update tickets.');
+                return;
+            }
+
+            if (!$this->canAccessTicket($user, $this->ticket)) {
+                session()->flash('error', 'You cannot update this ticket.');
+                return;
+            }
+
+            $updateData = ['status' => $status];
+
+            if ($status === 'closed') {
+                $updateData['closed_at'] = now();
+            } elseif ($status === 'resolved') {
+                $updateData['resolved_at'] = now();
+            }
+
+            $this->ticket->update($updateData);
+            $this->ticket->refresh();
+            session()->flash('message', 'Ticket status updated successfully.');
+        } catch (\Exception $e) {
+            logger()->error('Failed to update ticket status', [
+                'ticket_id' => $this->ticket->id,
+                'status' => $status,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to update ticket status.');
+        }
+    }
+
+    public function openCloseModal()
+    {
+        $this->closeForm = [
+            'remarks' => '',
+            'solution' => '',
+            'internal' => false,
+        ];
+        $this->showCloseModal = true;
+    }
+
+    public function submitClose()
+    {
+        try {
+            if (! auth()->user()->can('tickets.update')) {
+                session()->flash('error', 'You do not have permission to close tickets.');
+                return;
+            }
+
+            $this->validate([
+                'closeForm.remarks' => 'required|string|max:2000',
+                'closeForm.solution' => 'nullable|string|max:500',
+                'closeForm.internal' => 'boolean',
+            ]);
+
+            $content = $this->closeForm['remarks'];
+            if ($this->closeForm['solution']) {
+                $content .= "\n\nSolution: " . $this->closeForm['solution'];
+            }
+
+            TicketMessage::create([
+                'ticket_id' => $this->ticket->id,
+                'sender_id' => Auth::id(),
+                'message' => $content,
+                'is_internal' => $this->closeForm['internal'],
+            ]);
+
+            $this->ticket->update([
+                'status' => 'closed',
+                'closed_at' => now(),
+            ]);
+
+            $this->ticket = $this->ticket->fresh();
+            $this->ticket->setRelation(
+                'messages',
+                $this->ticket->messages()
+                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'created_at'])
+                             ->with([
+                                 'sender:id,name',
+                                 'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+                             ])
+                             ->latest('created_at')
+                             ->get()
+            );
+            $this->replyStatus = $this->ticket->status;
+            $this->showCloseModal = false;
+
+            Ticket::logEmail("Ticket {$this->ticket->ticket_number} closed by " . auth()->user()->email);
+            session()->flash('message', 'Ticket closed successfully.');
+        } catch (\Exception $e) {
+            logger()->error('Failed to close ticket', [
+                'ticket_id' => $this->ticket->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to close ticket.');
+        }
+    }
+
     public function sendMessage()
     {
         try {
@@ -270,6 +409,7 @@ class ViewTicket extends Component
             $this->validate([
                 'replyMessage' => 'required|string|max:2000',
                 'attachments.*' => 'file|max:10240|mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,txt,zip,rar',
+                'replyStatus' => 'required|in:' . implode(',', array_diff(TicketStatus::values(), ['closed'])),
             ]);
 
             $message = TicketMessage::create([
@@ -285,9 +425,13 @@ class ViewTicket extends Component
                 }
             }
 
-            $this->replyMessage = '';
+            $this->reset('replyMessage');
             $this->attachments = [];
             $this->activeInput = ''; // hide input after submit
+
+            if ($this->replyStatus !== $this->ticket->status) {
+                $this->ticket->update(['status' => $this->replyStatus]);
+            }
 
             // Update first response time if this is the first response
             if (! $this->ticket->first_response_at && auth()->user()->hasRole(['support', 'admin'])) {
@@ -298,6 +442,7 @@ class ViewTicket extends Component
             }
 
             $this->ticket = $this->ticket->fresh();
+            $this->replyStatus = $this->ticket->status;
             $this->ticket->setRelation(
                 'messages',
                 $this->ticket->messages()
@@ -310,6 +455,7 @@ class ViewTicket extends Component
                              ->get()
             );
 
+            Ticket::logEmail("Reply added to ticket {$this->ticket->ticket_number} by " . auth()->user()->email);
             session()->flash('message', 'Message sent successfully.');
             
         } catch (\Exception $e) {
@@ -478,7 +624,6 @@ class ViewTicket extends Component
             'users' => $users,
             'statusOptions' => TicketStatus::options(),
             'priorityOptions' => TicketPriority::options(),
-            'typeOptions' => TicketType::options(),
         ]);
     }
 

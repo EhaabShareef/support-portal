@@ -25,6 +25,43 @@
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketStatus::from($ticket->status)->cssClass() }}">
                     {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
                 </span>
+
+                @if(auth()->user()->can('tickets.update'))
+                    @if(!$ticket->assigned_to && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
+                        <button wire:click="assignToMe"
+                                class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
+                                title="Assign to Me">
+                            <x-heroicon-o-user-plus class="h-4 w-4" />
+                        </button>
+                    @endif
+
+                    <div class="relative" x-data="{ open: false }" @click.away="open = false">
+                        <button @click="open = !open"
+                                class="inline-flex items-center px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded transition-all duration-200"
+                                title="Change Status">
+                            <x-heroicon-o-arrow-path class="h-4 w-4" />
+                        </button>
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="absolute right-0 mt-1 w-40 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg z-10">
+                            <div class="py-1">
+                                @foreach($statusOptions as $value => $label)
+                                    @if($value !== $ticket->status && $value !== 'closed')
+                                        <button wire:click="changeStatus('{{ $value }}')" @click="open = false"
+                                                class="w-full text-left px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
+                                            {{ $label }}
+                                        </button>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -81,19 +118,8 @@
 
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Type</label>
-                                <select wire:model="form.type" 
-                                        class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                                    @foreach($typeOptions as $value => $label)
-                                        <option value="{{ $value }}">{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                                @error('form.type') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                            </div>
-                            
-                            <div>
                                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Priority</label>
-                                <select wire:model="form.priority" 
+                                <select wire:model="form.priority"
                                         class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
                                     @foreach($priorityOptions as $value => $label)
                                         <option value="{{ $value }}">{{ $label }}</option>
@@ -101,12 +127,10 @@
                                 </select>
                                 @error('form.priority') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
-                        </div>
 
-                        <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Status</label>
-                                <select wire:model="form.status" 
+                                <select wire:model="form.status"
                                         class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
                                     @foreach($statusOptions as $value => $label)
                                         <option value="{{ $value }}">{{ $label }}</option>
@@ -114,30 +138,32 @@
                                 </select>
                                 @error('form.status') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Department</label>
-                                <select wire:model="form.department_id" 
-                                        class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                                    @foreach($departments as $dept)
-                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('form.department_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                            </div>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Assigned To</label>
-                            <select wire:model="form.assigned_to" 
-                                    class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
-                                <option value="">Unassigned</option>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('form.assigned_to') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
+        <div class="grid grid-cols-2 gap-3 mt-4">
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Department</label>
+                <select wire:model="form.department_id"
+                        class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    @foreach($departments as $dept)
+                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                    @endforeach
+                </select>
+                @error('form.department_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Assigned To</label>
+                <select wire:model="form.assigned_to"
+                        class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <option value="">Unassigned</option>
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                    @endforeach
+                </select>
+                @error('form.assigned_to') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            </div>
+        </div>
 
                         <div>
                             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description</label>
@@ -162,11 +188,6 @@
                 @else
                     {{-- Display Mode --}}
                     <dl class="space-y-3">
-                        <div>
-                            <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Type</dt>
-                            <dd class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">{{ ucfirst($ticket->type) }}</dd>
-                        </div>
-                        
                         <div>
                             <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Client</dt>
                             <dd class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">{{ $ticket->client->name }}</dd>
@@ -386,16 +407,138 @@
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Conversation</h3>
                         @if($this->canReply)
-                        <button wire:click="$set('activeInput', 'reply')" 
-                                class="inline-flex items-center px-3 py-1.5 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-md transition-all duration-200">
-                            <x-heroicon-o-chat-bubble-left class="h-3 w-3 mr-1" />
-                            Reply
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button wire:click="$set('activeInput', 'reply')"
+                                    class="inline-flex items-center px-3 py-1.5 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-md transition-all duration-200">
+                                <x-heroicon-o-chat-bubble-left class="h-3 w-3 mr-1" />
+                                Reply
+                            </button>
+                            @if($ticket->status !== 'closed')
+                            <button wire:click="openCloseModal"
+                                    class="inline-flex items-center px-3 py-1.5 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-all duration-200">
+                                <x-heroicon-o-x-circle class="h-3 w-3 mr-1" />
+                                Close
+                            </button>
+                            @endif
+                        </div>
                         @endif
                     </div>
                 </div>
 
                 <div class="p-6 space-y-4">
+                    {{-- Reply Form --}}
+                    @if($activeInput === 'reply')
+                    <div class="border-b border-neutral-200 dark:border-neutral-700 pb-4 mb-4">
+                        <form wire:submit="sendMessage">
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Your Reply</label>
+                                <textarea wire:model="replyMessage" rows="4"
+                                          class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                          placeholder="Type your reply..."></textarea>
+                                @error('replyMessage') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Update Status</label>
+                                <select wire:model="replyStatus"
+                                        class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                    @foreach($statusOptions as $value => $label)
+                                        @if($value !== 'closed')
+                                            <option value="{{ $value }}">{{ $label }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                                @error('replyStatus') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+
+                            {{-- File Upload Section --}}
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Attachments</label>
+
+                                {{-- Drag & Drop Zone --}}
+                                <div x-data="{
+                                    dragging: false,
+                                    handleDrop($event) {
+                                        this.dragging = false;
+                                        const files = Array.from($event.dataTransfer.files);
+                                        files.forEach(file => {
+                                            if (file.size <= 10485760) { // 10MB limit
+                                                @this.upload('attachments', file, () => {}, () => {}, () => {});
+                                            } else {
+                                                alert('File size must be less than 10MB');
+                                            }
+                                        });
+                                    }
+                                }"
+                                @dragover.prevent="dragging = true"
+                                @dragleave.prevent="dragging = false"
+                                @drop.prevent="handleDrop($event)"
+                                :class="{'border-sky-400 bg-sky-50 dark:bg-sky-900/20': dragging}"
+                                class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg p-6 text-center transition-colors duration-200">
+                                    <input type="file" wire:model="attachments" multiple
+                                           accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                                           class="hidden" id="fileInput">
+
+                                    <div class="space-y-2">
+                                        <x-heroicon-o-cloud-arrow-up class="mx-auto h-12 w-12 text-neutral-400" />
+                                        <div class="text-sm text-neutral-600 dark:text-neutral-400">
+                                            <label for="fileInput" class="cursor-pointer text-sky-600 hover:text-sky-500">
+                                                Click to upload
+                                            </label>
+                                            or drag and drop files here
+                                        </div>
+                                        <p class="text-xs text-neutral-500">PDF, DOC, XLS, TXT, ZIP, Images (max 10MB each)</p>
+                                    </div>
+                                </div>
+
+                                {{-- Upload Progress --}}
+                                <div wire:loading wire:target="attachments" class="mt-2">
+                                    <div class="flex items-center text-sm text-sky-600">
+                                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Uploading files...
+                                    </div>
+                                </div>
+
+                                {{-- File List --}}
+                                @if(!empty($attachments))
+                                    <div class="mt-3 space-y-2">
+                                        @foreach($attachments as $index => $file)
+                                            <div class="flex items-center justify-between p-2 bg-neutral-50 dark:bg-neutral-800 rounded border">
+                                                <div class="flex items-center space-x-2">
+                                                    <x-heroicon-o-document class="h-4 w-4 text-neutral-400" />
+                                                    <span class="text-sm text-neutral-600 dark:text-neutral-300">{{ $file->getClientOriginalName() }}</span>
+                                                    <span class="text-xs text-neutral-500">({{ number_format($file->getSize() / 1024, 1) }} KB)</span>
+                                                </div>
+                                                <button type="button" wire:click="removeAttachment({{ $index }})"
+                                                        class="text-red-500 hover:text-red-700 transition-colors">
+                                                    <x-heroicon-o-x-mark class="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                @error('attachments.*') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div class="flex items-center gap-2 mt-3">
+                                <button type="submit"
+                                        class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200">
+                                    <x-heroicon-o-paper-airplane class="h-4 w-4 mr-1" />
+                                    Send Reply
+                                </button>
+                                <button type="button" wire:click="$set('activeInput', '')"
+                                        class="inline-flex items-center px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 text-sm font-medium transition-all duration-200">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    @endif
+
                     {{-- Initial Description --}}
                     @if($ticket->description)
                     <div class="bg-neutral-50 dark:bg-neutral-800/50 p-4 border-l-4 border-sky-500">
@@ -489,109 +632,41 @@
                     @endif
                 </div>
 
-                    {{-- Reply Form --}}
-                    @if($activeInput === 'reply')
-                    <div class="border-t border-neutral-200 dark:border-neutral-700 px-6 py-4">
-                        <form wire:submit="sendMessage">
-                            <div>
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Your Reply</label>
-                                <textarea wire:model="replyMessage" rows="4"
-                                          class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                          placeholder="Type your reply..."></textarea>
-                                @error('replyMessage') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                            </div>
-
-                            {{-- File Upload Section --}}
-                            <div class="mt-4">
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Attachments</label>
-                                
-                                {{-- Drag & Drop Zone --}}
-                                <div x-data="{ 
-                                    dragging: false,
-                                    handleDrop($event) {
-                                        this.dragging = false;
-                                        const files = Array.from($event.dataTransfer.files);
-                                        files.forEach(file => {
-                                            if (file.size <= 10485760) { // 10MB limit
-                                                @this.upload('attachments', file, () => {}, () => {}, () => {});
-                                            } else {
-                                                alert('File size must be less than 10MB');
-                                            }
-                                        });
-                                    }
-                                }"
-                                @dragover.prevent="dragging = true"
-                                @dragleave.prevent="dragging = false"
-                                @drop.prevent="handleDrop($event)"
-                                :class="{'border-sky-400 bg-sky-50 dark:bg-sky-900/20': dragging}"
-                                class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg p-6 text-center transition-colors duration-200">
-                                    <input type="file" wire:model="attachments" multiple 
-                                           accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
-                                           class="hidden" id="fileInput">
-                                    
-                                    <div class="space-y-2">
-                                        <x-heroicon-o-cloud-arrow-up class="mx-auto h-12 w-12 text-neutral-400" />
-                                        <div class="text-sm text-neutral-600 dark:text-neutral-400">
-                                            <label for="fileInput" class="cursor-pointer text-sky-600 hover:text-sky-500">
-                                                Click to upload
-                                            </label>
-                                            or drag and drop files here
-                                        </div>
-                                        <p class="text-xs text-neutral-500">PDF, DOC, XLS, TXT, ZIP, Images (max 10MB each)</p>
-                                    </div>
-                                </div>
-
-                                {{-- Upload Progress --}}
-                                <div wire:loading wire:target="attachments" class="mt-2">
-                                    <div class="flex items-center text-sm text-sky-600">
-                                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Uploading files...
-                                    </div>
-                                </div>
-
-                                {{-- File List --}}
-                                @if(!empty($attachments))
-                                    <div class="mt-3 space-y-2">
-                                        @foreach($attachments as $index => $file)
-                                            <div class="flex items-center justify-between p-2 bg-neutral-50 dark:bg-neutral-800 rounded border">
-                                                <div class="flex items-center space-x-2">
-                                                    <x-heroicon-o-document class="h-4 w-4 text-neutral-400" />
-                                                    <span class="text-sm text-neutral-600 dark:text-neutral-300">{{ $file->getClientOriginalName() }}</span>
-                                                    <span class="text-xs text-neutral-500">({{ number_format($file->getSize() / 1024, 1) }} KB)</span>
-                                                </div>
-                                                <button type="button" wire:click="removeAttachment({{ $index }})"
-                                                        class="text-red-500 hover:text-red-700 transition-colors">
-                                                    <x-heroicon-o-x-mark class="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @endif
-
-                                @error('attachments.*') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-                            <div class="flex items-center gap-2 mt-3">
-                                <button type="submit" 
-                                        class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200">
-                                    <x-heroicon-o-paper-airplane class="h-4 w-4 mr-1" />
-                                    Send Reply
-                                </button>
-                                <button type="button" wire:click="$set('activeInput', '')"
-                                        class="inline-flex items-center px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 text-sm font-medium transition-all duration-200">
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    @endif
                 </div>
             </div>
 
         </div>
     </div>
+    @if($showCloseModal)
+    <div class="fixed inset-0 z-50 overflow-y-auto" x-data="{ show: @entangle('showCloseModal') }" x-show="show" x-cloak>
+        <div class="flex items-center justify-center min-h-screen p-4 text-center">
+            <div class="fixed inset-0 bg-neutral-500 bg-opacity-75" @click="show = false"></div>
+            <div class="inline-block bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full p-6 relative z-10">
+                <h3 class="text-lg leading-6 font-medium text-neutral-900 dark:text-neutral-100 mb-4">Close Ticket</h3>
+                <form wire:submit="submitClose" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Remarks</label>
+                        <textarea wire:model="closeForm.remarks" rows="3" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+                        @error('closeForm.remarks') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Solution Summary</label>
+                        <textarea wire:model="closeForm.solution" rows="2" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+                        @error('closeForm.solution') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="closeInternal" wire:model="closeForm.internal" class="rounded border-neutral-300 text-sky-600 focus:border-sky-300 focus:ring focus:ring-sky-200 focus:ring-opacity-50">
+                        <label for="closeInternal" class="ml-2 text-sm text-neutral-700 dark:text-neutral-300">Internal Only</label>
+                    </div>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button type="button" @click="show = false" class="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md">Close Ticket</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- Attachment Preview Modal (moved inside main wrapper) --}}
     <div x-data="{ 

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Models\User;
 
 /**
  * App\Models\Ticket
@@ -19,7 +20,6 @@ use Illuminate\Support\Str;
  * @property string $uuid
  * @property string $ticket_number
  * @property string $subject
- * @property string $type
  * @property string $status
  * @property string $priority
  * @property string|null $description
@@ -50,7 +50,6 @@ class Ticket extends Model
         'uuid',
         'ticket_number',
         'subject',
-        'type',
         'status',
         'priority',
         'critical_confirmed',
@@ -85,6 +84,20 @@ class Ticket extends Model
             }
             if (empty($ticket->ticket_number)) {
                 $ticket->ticket_number = static::generateTicketNumber();
+            }
+        });
+
+        static::updated(function ($ticket) {
+            if ($ticket->wasChanged('assigned_to')) {
+                if ($ticket->assigned_to) {
+                    $user = User::find($ticket->assigned_to);
+                    static::logEmail("Ticket {$ticket->ticket_number} assigned to {$user->name} ({$user->email})");
+                }
+            }
+
+            if ($ticket->wasChanged('client_id')) {
+                $owner = User::find($ticket->client_id);
+                static::logEmail("Ticket {$ticket->ticket_number} owner changed to {$owner->name} ({$owner->email})");
             }
         });
     }
@@ -225,10 +238,6 @@ class Ticket extends Model
         return $query->where('status', $status);
     }
 
-    public function scopeByType($query, $type)
-    {
-        return $query->where('type', $type);
-    }
 
     public function scopeAssignedTo($query, $userId)
     {
@@ -268,9 +277,11 @@ class Ticket extends Model
         return $this->messages()->count();
     }
 
-    public function getCategoryAttribute(): string
+
+    public static function logEmail(string $message): void
     {
-        return ucfirst(str_replace('_', ' ', $this->type));
+        $logFile = storage_path('logs/ticket_notifications.log');
+        file_put_contents($logFile, '[' . now() . '] ' . $message . PHP_EOL, FILE_APPEND);
     }
 
     public function getStatusLabelAttribute(): string

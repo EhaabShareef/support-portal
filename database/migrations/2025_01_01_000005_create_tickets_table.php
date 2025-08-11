@@ -17,13 +17,9 @@ return new class extends Migration
             $table->string('ticket_number')->unique(); // Human-readable ticket number
             $table->string('subject')->index(); // Indexed for search
             
-            $table->enum('type', ['issue', 'feedback', 'bug', 'lead', 'task', 'incident', 'request'])
-                  ->default('task')
-                  ->index(); // Indexed for filtering
-                  
             $table->enum('status', [
                 'open',
-                'in_progress', 
+                'in_progress',
                 'awaiting_customer_response',
                 'awaiting_case_closure',
                 'sales_engagement',

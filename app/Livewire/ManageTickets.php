@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
-use App\Enums\TicketType;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Models\Ticket;
@@ -32,7 +31,6 @@ class ManageTickets extends Component
 
     public string $filterPriority = '';
 
-    public string $filterType = '';
 
     public string $filterOrg = '';
 
@@ -53,7 +51,6 @@ class ManageTickets extends Component
 
     public array $form = [
         'subject' => '',
-        'type' => 'task',
         'priority' => 'normal',
         'description' => '',
         'organization_id' => '',
@@ -63,7 +60,6 @@ class ManageTickets extends Component
 
     protected $rules = [
         'form.subject' => 'required|string|max:255',
-        'form.type' => 'required|in:issue,feedback,bug,lead,task,incident,request', // Will be updated dynamically
         'form.priority' => 'required|in:low,normal,high,urgent,critical', // Will be updated dynamically  
         'form.description' => 'nullable|string',
         'form.organization_id' => 'required|exists:organizations,id',
@@ -75,7 +71,6 @@ class ManageTickets extends Component
     {
         return [
             'form.subject' => 'required|string|max:255',
-            'form.type' => TicketType::validationRule(),
             'form.priority' => TicketPriority::validationRule(),
             'form.description' => 'nullable|string',
             'form.organization_id' => 'required|exists:organizations,id',
@@ -87,7 +82,6 @@ class ManageTickets extends Component
     protected $messages = [
         'form.subject.required' => 'Please enter a subject for the ticket.',
         'form.subject.max' => 'Subject must not exceed 255 characters.',
-        'form.type.required' => 'Please select a ticket type.',
         'form.priority.required' => 'Please select a priority level.',
         'form.organization_id.required' => 'Please select an organization.',
         'form.organization_id.exists' => 'The selected organization is invalid.',
@@ -99,7 +93,7 @@ class ManageTickets extends Component
 
     public function updating($field)
     {
-        if (in_array($field, ['search', 'filterStatus', 'filterPriority', 'filterType', 'filterOrg', 'filterDept', 'filterAssigned', 'quickFilter', 'showClosed'])) {
+        if (in_array($field, ['search', 'filterStatus', 'filterPriority', 'filterOrg', 'filterDept', 'filterAssigned', 'quickFilter', 'showClosed'])) {
             $this->resetPage();
         }
     }
@@ -153,7 +147,6 @@ class ManageTickets extends Component
     {
         $this->form = [
             'subject' => '',
-            'type' => 'task',
             'priority' => 'normal',
             'description' => '',
             'organization_id' => '',
@@ -467,9 +460,6 @@ class ManageTickets extends Component
             $query->where('priority', $this->filterPriority);
         }
 
-        if ($this->filterType) {
-            $query->where('type', $this->filterType);
-        }
 
         if ($this->filterOrg) {
             $query->where('organization_id', $this->filterOrg);
@@ -532,7 +522,6 @@ class ManageTickets extends Component
             'agents' => $agents,
             'statusOptions' => TicketStatus::options(),
             'priorityOptions' => TicketPriority::options(),
-            'typeOptions' => TicketType::options(),
             'showFilters' => $this->quickFilter === 'all',
         ]);
     }
