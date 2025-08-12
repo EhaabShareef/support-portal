@@ -42,7 +42,7 @@
 ## Backend / Database Considerations
 - Introduce a `critical_confirmed` boolean on tickets to track whether hotline guidance was acknowledged.
 - Create a dedicated `latest_message_at` column updated via events to avoid subqueries or N+1 issues when listing tickets.
-- Add indexes on `status`, `priority`, and `assigned_to` to improve filtering performance on large datasets.
+- Add indexes on `status`, `priority`, and `owner_id` to improve filtering performance on large datasets.
 
 ## Test Plan
 1. **Authorization**

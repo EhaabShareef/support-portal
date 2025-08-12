@@ -465,7 +465,7 @@ class ClientSampleDataSeeder extends Seeder
                     'organization_id' => $organization->id,
                     'client_id' => $clientUser->id,
                     'department_id' => $department->id,
-                    'assigned_to' => rand(0, 1) ? $assignedUser->id : null,
+                    'owner_id' => rand(0, 1) ? $assignedUser->id : null,
                 ]);
                 $ticket->created_at = $createdAt;
                 $ticket->updated_at = $createdAt;

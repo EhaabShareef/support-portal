@@ -42,10 +42,10 @@
                                         {{ $ticket->client->name }}
                                     </span>
                                     @endif
-                                    @if($ticket->assigned)
+                                    @if($ticket->owner)
                                     <span class="flex items-center gap-1">
                                         <x-heroicon-o-user-circle class="h-3 w-3" />
-                                        {{ $ticket->assigned->name }}
+                                        {{ $ticket->owner->name }}
                                     </span>
                                     @endif
                                     @if($ticket->department)

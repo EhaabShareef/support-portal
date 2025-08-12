@@ -40,7 +40,7 @@ class ViewOrganization extends Component
             abort(403, 'You can only view your own organization.');
         }
 
-        $this->organization = $organization->load(['users.roles', 'contracts', 'hardware.contract', 'tickets.client', 'tickets.assigned', 'tickets.department']);
+        $this->organization = $organization->load(['users.roles', 'contracts', 'hardware.contract', 'tickets.client', 'tickets.owner', 'tickets.department']);
         $this->syncForm();
     }
 
@@ -185,7 +185,7 @@ class ViewOrganization extends Component
     public function refreshOrganization()
     {
         $this->organization->refresh();
-        $this->organization->load(['users.roles', 'contracts', 'hardware.contract', 'tickets.client', 'tickets.assigned', 'tickets.department']);
+        $this->organization->load(['users.roles', 'contracts', 'hardware.contract', 'tickets.client', 'tickets.owner', 'tickets.department']);
     }
 
     public function deleteContract($contractId)
@@ -237,7 +237,7 @@ class ViewOrganization extends Component
     public function filteredTickets()
     {
         return $this->organization->tickets()
-            ->with(['client', 'department', 'assigned'])
+            ->with(['client', 'department', 'owner'])
             ->whereNotIn('status', ['closed', 'solution_provided']) // Hide closed tickets by default
             ->when($this->ticketSearch, function ($query) {
                 $query->where(function ($q) {

@@ -117,7 +117,7 @@ class User extends Authenticatable
 
     public function assignedTickets()
     {
-        return $this->hasMany(Ticket::class, 'assigned_to');
+        return $this->hasMany(Ticket::class, 'owner_id');
     }
 
     public function schedules()

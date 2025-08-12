@@ -83,7 +83,7 @@ class Large extends Component
 
         $ticketClosures = DB::table('tickets')
             ->select(DB::raw('DATE(COALESCE(resolved_at, closed_at)) as date'), 'id as ticket_id')
-            ->where('assigned_to', $userId)
+            ->where('owner_id', $userId)
             ->where(function($q) {
                 $q->whereNotNull('resolved_at')->orWhereNotNull('closed_at');
             })

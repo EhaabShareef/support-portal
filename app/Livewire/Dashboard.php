@@ -149,13 +149,13 @@ class Dashboard extends Component
         
         return [
             'metrics' => [
-                'my_tickets' => Ticket::where('assigned_to', $user->id)->count(),
-                'my_open_tickets' => Ticket::where('assigned_to', $user->id)
+                'my_tickets' => Ticket::where('owner_id', $user->id)->count(),
+                'my_open_tickets' => Ticket::where('owner_id', $user->id)
                     ->where('status', '!=', 'closed')->count(),
                 'department_tickets' => Ticket::where('department_id', $departmentId)->count(),
-                'resolved_today' => Ticket::where('assigned_to', $user->id)
+                'resolved_today' => Ticket::where('owner_id', $user->id)
                     ->whereDate('resolved_at', today())->count(),
-                'resolved_this_week' => Ticket::where('assigned_to', $user->id)
+                'resolved_this_week' => Ticket::where('owner_id', $user->id)
                     ->whereBetween('resolved_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
             ],
             'ticket_breakdown' => [
@@ -201,7 +201,7 @@ class Dashboard extends Component
                 ->get(),
             'recent_tickets' => Ticket::where('organization_id', $organizationId)
                 ->whereNotIn('status', ['closed', 'solution_provided']) // Hide closed tickets from recent list
-                ->with(['department', 'assigned'])
+                ->with(['department', 'owner'])
                 ->latest()
                 ->limit(5)
                 ->get(),
@@ -219,7 +219,7 @@ class Dashboard extends Component
         
         return DB::table('tickets')
             ->select(DB::raw('DATE(resolved_at) as date'), DB::raw('COUNT(*) as count'))
-            ->where('assigned_to', $userId)
+            ->where('owner_id', $userId)
             ->where('status', 'closed')
             ->whereBetween('resolved_at', [$startDate, $endDate])
             ->groupBy(DB::raw('DATE(resolved_at)'))
@@ -311,7 +311,7 @@ class Dashboard extends Component
     {
         return Ticket::where('department_id', $departmentId)
             ->whereNotIn('status', ['closed', 'solution_provided']) // Hide closed tickets from recent activity
-            ->with(['client', 'assigned'])
+            ->with(['client', 'owner'])
             ->latest()
             ->limit(10)
             ->get();

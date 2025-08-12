@@ -24,11 +24,11 @@ return new class extends Migration
             // Composite index for client ticket queries (organization + status)
             $table->index(['organization_id', 'status'], 'idx_tickets_org_status');
             
-            // Index for assigned tickets queries
-            $table->index('assigned_to', 'idx_tickets_assigned_to');
-            
-            // Composite index for unassigned tickets filtering
-            $table->index(['assigned_to', 'department_id'], 'idx_tickets_unassigned_dept');
+            // Index for owner ticket queries
+            $table->index('owner_id', 'idx_tickets_owner_id');
+
+            // Composite index for owner and department filtering
+            $table->index(['owner_id', 'department_id'], 'idx_tickets_owner_dept');
             
             // Index for creation date ordering (most common sort)
             $table->index('created_at', 'idx_tickets_created_at');
@@ -86,8 +86,8 @@ return new class extends Migration
             $table->dropIndex('idx_tickets_priority');
             $table->dropIndex('idx_tickets_dept_status');
             $table->dropIndex('idx_tickets_org_status');
-            $table->dropIndex('idx_tickets_assigned_to');
-            $table->dropIndex('idx_tickets_unassigned_dept');
+            $table->dropIndex('idx_tickets_owner_id');
+            $table->dropIndex('idx_tickets_owner_dept');
             $table->dropIndex('idx_tickets_created_at');
             $table->dropIndex('idx_tickets_number');
         });

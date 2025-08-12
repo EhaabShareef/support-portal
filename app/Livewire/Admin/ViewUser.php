@@ -71,7 +71,7 @@ class ViewUser extends Component
         }
 
         return $this->user->organization->tickets()
-            ->with(['department', 'assigned', 'client'])
+            ->with(['department', 'owner', 'client'])
             ->when($this->ticketSearch, function ($query) {
                 $query->where(function ($q) {
                     $q->where('subject', 'like', '%'.$this->ticketSearch.'%')

@@ -52,10 +52,10 @@ return new class extends Migration
                   ->constrained('departments')
                   ->onDelete('restrict'); // Prevent department deletion if has tickets
                   
-            $table->foreignId('assigned_to')
+            $table->foreignId('owner_id')
                   ->nullable()
                   ->constrained('users')
-                  ->onDelete('set null'); // If agent deleted, unassign ticket
+                  ->onDelete('set null'); // If owner deleted, unassign ticket
             
             // Tracking fields
             $table->timestamp('first_response_at')->nullable();
@@ -70,7 +70,7 @@ return new class extends Migration
             // Composite indexes for common queries
             $table->index(['organization_id', 'status']);
             $table->index(['department_id', 'status']);
-            $table->index(['assigned_to', 'status']);
+            $table->index(['owner_id', 'status']);
             $table->index(['priority', 'status']);
             $table->index(['created_at', 'status']);
             $table->index('ticket_number');
