@@ -1,26 +1,25 @@
 <div class="space-y-6">
     {{-- Page Header --}}
-    <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
+    <div
+        class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-neutral-800 dark:text-neutral-100 flex items-center gap-3">
+                <h1
+                    class="text-2xl sm:text-3xl font-bold text-neutral-800 dark:text-neutral-100 flex items-center gap-3">
                     <x-heroicon-o-chart-bar-square class="h-8 w-8 text-sky-500" />
                     Dashboard
                 </h1>
                 <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                     Welcome back, {{ auth()->user()->name }} | {{ ucfirst($userRole) }}
                 </p>
-                <span class="bg-emerald-100 text-emerald-900">
-                    COLOR CHECK
-                </span>
             </div>
             <div class="flex items-center gap-2">
-                <button wire:click="openCustomizeModal" 
+                <button wire:click="openCustomizeModal"
                     class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md">
                     <x-heroicon-o-cog-6-tooth class="h-4 w-4 mr-2" />
                     Customize
                 </button>
-                <button wire:click="refreshData" 
+                <button wire:click="refreshData"
                     class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
                     <x-heroicon-o-arrow-path class="h-4 w-4 mr-2" />
                     Refresh
@@ -30,15 +29,15 @@
     </div>
 
     {{-- Widget-Based Dashboard --}}
-    @if($userWidgets->isNotEmpty())
+    @if ($userWidgets->isNotEmpty())
         <div class="dashboard-grid grid gap-6 auto-rows-min grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            @foreach($userWidgets as $userWidget)
+            @foreach ($userWidgets as $userWidget)
                 @php
                     $widget = $userWidget->widget;
                     $size = $userWidget->size;
                     $componentInfo = $widget->getComponentForSizeWithFallback($size);
                 @endphp
-                
+
                 <div class="{{ $this->getWidgetClasses($size) }}" wire:key="widget-{{ $widget->id }}">
                     {{-- Render the widget component with fallback support --}}
                     @livewire($componentInfo['component'], $componentInfo['params'], key('widget-' . $widget->id . '-' . $size))
@@ -68,7 +67,7 @@
             </div>
         </div>
     </div>
-    
+
     {{-- Inline Scripts --}}
     <script>
         document.addEventListener('livewire:initialized', () => {
