@@ -19,7 +19,7 @@ use App\Livewire\UserProfile;
 use App\Livewire\Admin\ManageUsers as AdminManageUsers;
 use App\Livewire\Admin\ViewUser;
 use App\Livewire\Admin\ManageRoles;
-use App\Livewire\Admin\ManageSettings;
+use App\Livewire\Admin\Settings\ManageSettings;
 use App\Livewire\Admin\UsersRoles;
 use App\Livewire\ScheduleCalendar;
 use App\Livewire\Admin\Reports\ReportsDashboard;

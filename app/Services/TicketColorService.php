@@ -79,7 +79,15 @@ class TicketColorService
     public function getStatusColors(): array
     {
         return Cache::remember('ticket_status_colors', 3600, function () {
-            return Setting::get('ticket_status_colors', self::DEFAULT_STATUS_COLORS);
+            $value = Setting::get('ticket_status_colors', self::DEFAULT_STATUS_COLORS);
+            
+            // Ensure we always return an array
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                return is_array($decoded) ? $decoded : self::DEFAULT_STATUS_COLORS;
+            }
+            
+            return is_array($value) ? $value : self::DEFAULT_STATUS_COLORS;
         });
     }
 
@@ -89,7 +97,15 @@ class TicketColorService
     public function getPriorityColors(): array
     {
         return Cache::remember('ticket_priority_colors', 3600, function () {
-            return Setting::get('ticket_priority_colors', self::DEFAULT_PRIORITY_COLORS);
+            $value = Setting::get('ticket_priority_colors', self::DEFAULT_PRIORITY_COLORS);
+            
+            // Ensure we always return an array
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                return is_array($decoded) ? $decoded : self::DEFAULT_PRIORITY_COLORS;
+            }
+            
+            return is_array($value) ? $value : self::DEFAULT_PRIORITY_COLORS;
         });
     }
 
@@ -117,6 +133,17 @@ class TicketColorService
     public function getColorPalette(): array
     {
         return array_keys(self::COLOR_PALETTE);
+    }
+
+    /**
+     * Get available color palette with values for dropdowns
+     */
+    public function getColorPaletteWithValues(): array
+    {
+        return array_combine(
+            array_keys(self::COLOR_PALETTE),
+            array_keys(self::COLOR_PALETTE)
+        );
     }
 
     /**

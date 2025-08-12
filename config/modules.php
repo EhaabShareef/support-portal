@@ -37,6 +37,13 @@ return [
             'icon' => 'heroicon-o-building-office-2',
         ],
         
+        'department-groups' => [
+            'label' => 'Department Groups',
+            'description' => 'Manage department group categories',
+            'actions' => ['create', 'read', 'update', 'delete'],
+            'icon' => 'heroicon-o-rectangle-group',
+        ],
+        
         'tickets' => [
             'label' => 'Tickets',
             'description' => 'Support ticket management',
@@ -63,6 +70,13 @@ return [
             'description' => 'Application configuration',
             'actions' => ['read', 'update'],
             'icon' => 'heroicon-o-cog-6-tooth',
+        ],
+        
+        'ticket-colors' => [
+            'label' => 'Ticket Colors',
+            'description' => 'Manage ticket status and priority colors',
+            'actions' => ['read', 'update'],
+            'icon' => 'heroicon-o-swatch',
         ],
         
         'notes' => [
@@ -130,7 +144,7 @@ return [
             'label' => 'Core Management',
             'description' => 'Essential system management features',
             'icon' => 'heroicon-o-squares-2x2',
-            'modules' => ['users', 'organizations', 'departments', 'settings'],
+            'modules' => ['users', 'organizations', 'departments', 'department-groups', 'settings', 'ticket-colors'],
         ],
         
         'support' => [
@@ -198,10 +212,12 @@ return [
                 'users.*',
                 'organizations.read', 'organizations.update',
                 'departments.*',
+                'department-groups.*',
                 'tickets.*',
                 'contracts.*',
                 'hardware.*',
                 'settings.*',
+                'ticket-colors.*',
                 'notes.*',
                 'messages.*',
                 'articles.*',
@@ -217,10 +233,13 @@ return [
             'permissions' => [
                 'users.read',
                 'organizations.read',
-                'departments.read',
+                'departments.read', 'departments.update',
+                'department-groups.read',
                 'tickets.create', 'tickets.read', 'tickets.update', 'tickets.assign',
                 'contracts.read',
                 'hardware.read',
+                'settings.read',
+                'ticket-colors.read',
                 'notes.create', 'notes.read', 'notes.update',
                 'messages.create', 'messages.read', 'messages.update',
                 'articles.read',
