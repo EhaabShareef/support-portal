@@ -30,17 +30,17 @@ class Small extends Component
             $user = Auth::user();
             
             $this->workloadData = Cache::remember("support_workload_small_{$user->id}", 300, function () use ($user) {
-                $assignedTickets = Ticket::where('assigned_to', $user->id);
+                $assignedTickets = Ticket::where('owner_id', $user->id);
                 $openTickets = clone $assignedTickets;
                 
                 return [
                     'total_assigned' => $assignedTickets->count(),
                     'open_assigned' => $openTickets->whereNotIn('status', ['closed', 'resolved'])->count(),
-                    'high_priority' => Ticket::where('assigned_to', $user->id)
+                    'high_priority' => Ticket::where('owner_id', $user->id)
                         ->where('priority', 'high')
                         ->whereNotIn('status', ['closed', 'resolved'])
                         ->count(),
-                    'resolved_today' => Ticket::where('assigned_to', $user->id)
+                    'resolved_today' => Ticket::where('owner_id', $user->id)
                         ->whereIn('status', ['closed', 'resolved'])
                         ->whereDate('updated_at', today())
                         ->count(),
