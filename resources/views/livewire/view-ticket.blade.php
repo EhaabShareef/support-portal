@@ -613,7 +613,7 @@
                             </div>
                             
                             {{-- Message Attachments (only for messages, not notes) --}}
-                            @if(!$isNote && isset($item->attachments) && $item->attachments->isNotEmpty())
+                            @if(!$isNote && isset($item->attachments) && $item->attachments && $item->attachments->isNotEmpty())
                                 <div class="mt-3 space-y-2">
                                     <div class="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Attachments:</div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">

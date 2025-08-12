@@ -111,7 +111,11 @@ class ViewTicket extends Component
             ->selectRaw("'note' as type")
             ->selectRaw("null as ticket_id")
             ->selectRaw("false as is_system_message")
-            ->get();
+            ->get()
+            ->map(function ($note) {
+                $note->attachments = collect(); // Add empty attachments collection
+                return $note;
+            });
             
         // Combine and sort by created_at descending
         $conversation = $messages->concat($publicNotes)->sortByDesc('created_at')->values();
@@ -150,7 +154,11 @@ class ViewTicket extends Component
             ->selectRaw("'note' as type")
             ->selectRaw("null as ticket_id")
             ->selectRaw("false as is_system_message")
-            ->get();
+            ->get()
+            ->map(function ($note) {
+                $note->attachments = collect(); // Add empty attachments collection
+                return $note;
+            });
             
         // Combine and sort by created_at descending
         $conversation = $messages->concat($publicNotes)->sortByDesc('created_at')->values();
