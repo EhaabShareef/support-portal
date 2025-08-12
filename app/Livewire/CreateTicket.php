@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\Ticket;
 use App\Models\TicketNote;
 use App\Models\User;
+use App\Services\HotlineService;
 use Livewire\Component;
 
 class CreateTicket extends Component
@@ -26,6 +27,7 @@ class CreateTicket extends Component
 
     public array $form = [
         'subject'   => '',
+        'description' => '',
         'organization_id' => '',
         'client_id' => '',
         'department_id' => '',
@@ -40,6 +42,7 @@ class CreateTicket extends Component
         
         return [
             'form.subject'   => 'required|string|max:255',
+            'form.description' => 'required|string|max:2000',
             'form.organization_id' => 'required|exists:organizations,id',
             // Clients cannot select client, Admins/Agents can select on behalf of clients
             'form.client_id' => $user->hasRole('client') ? 'nullable' : 'required|exists:users,id',
@@ -52,6 +55,8 @@ class CreateTicket extends Component
     protected $messages = [
         'form.subject.required' => 'Please enter a subject for your ticket.',
         'form.subject.max' => 'Subject must not exceed 255 characters.',
+        'form.description.required' => 'Please enter a description for your ticket.',
+        'form.description.max' => 'Description must not exceed 2000 characters.',
         'form.organization_id.required' => 'Please select an organization.',
         'form.organization_id.exists' => 'The selected organization is invalid.',
         'form.client_id.required' => 'Please select a client for this ticket.',
@@ -97,12 +102,15 @@ class CreateTicket extends Component
 
             // Add hotline note only for critical and urgent tickets
             if (in_array($validated['priority'], ['critical', 'urgent'])) {
+                $hotlineService = app(HotlineService::class);
+                $hotlineText = $hotlineService->getHotlinesText();
+                
                 TicketNote::create([
                     'ticket_id' => $ticket->id,
                     'user_id' => auth()->id(),
                     'is_internal' => false,
                     'color' => 'red',
-                    'note' => 'PRIORITY ALERT: This ticket has been marked as ' . strtoupper($validated['priority']) . '. For immediate assistance, please contact our technical hotline at [HOTLINE_NUMBER]. Our support team is available to provide additional guidance and ensure timely resolution of your request.',
+                    'note' => 'PRIORITY ALERT: This ticket has been marked as ' . strtoupper($validated['priority']) . '. For immediate assistance, please contact:\n\n' . $hotlineText . '\n\nOur team is available to provide additional guidance and ensure timely resolution of your request.',
                 ]);
             }
 

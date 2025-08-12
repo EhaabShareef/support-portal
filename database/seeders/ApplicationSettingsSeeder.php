@@ -50,6 +50,48 @@ class ApplicationSettingsSeeder extends Seeder
                 'is_public' => false,
                 'is_encrypted' => false,
             ],
+
+            // Support Hotline Numbers - used by CreateTicket and other components
+            [
+                'key' => 'support_hotlines',
+                'value' => json_encode([
+                    'pms_hotline' => [
+                        'name' => 'PMS Hotline',
+                        'number' => '+1-800-PMS-HELP',
+                        'description' => 'Property Management System technical support',
+                        'is_active' => true,
+                        'sort_order' => 1,
+                    ],
+                    'pos_hotline' => [
+                        'name' => 'POS Hotline', 
+                        'number' => '+1-800-POS-HELP',
+                        'description' => 'Point of Sale system technical support',
+                        'is_active' => true,
+                        'sort_order' => 2,
+                    ],
+                    'mc_hotline' => [
+                        'name' => 'MC Hotline',
+                        'number' => '+1-800-MC-HELP',
+                        'description' => 'Management Center technical support',
+                        'is_active' => true,
+                        'sort_order' => 3,
+                    ],
+                    'manager_on_duty' => [
+                        'name' => 'Manager on Duty',
+                        'number' => '+1-800-MOD-HELP',
+                        'description' => 'Emergency escalation and management assistance',
+                        'is_active' => true,
+                        'sort_order' => 4,
+                    ],
+                ]),
+                'type' => 'json',
+                'label' => 'Support Hotline Numbers',
+                'description' => 'Technical support hotline numbers for different systems',
+                'group' => 'support',
+                'validation_rules' => ['required', 'json'],
+                'is_public' => true,
+                'is_encrypted' => false,
+            ],
         ];
 
         // Add ticket color settings

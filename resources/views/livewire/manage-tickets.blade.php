@@ -285,7 +285,7 @@
                                         @endif
 
                                         {{-- Close Ticket (for resolved/open tickets) --}}
-                                        @if(in_array($ticket->status, ['resolved', 'solution_provided', 'in_progress']))
+                                        @if(in_array($ticket->status, ['solution_provided', 'in_progress']))
                                             <button wire:click="closeTicket({{ $ticket->id }})" 
                                                     class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200"
                                                     title="Close Ticket">
@@ -369,7 +369,7 @@
                                         @endif
 
                                         {{-- Close Ticket --}}
-                                        @if(in_array($ticket->status, ['resolved', 'solution_provided', 'in_progress']))
+                                        @if(in_array($ticket->status, ['solution_provided', 'in_progress']))
                                             <button wire:click="closeTicket({{ $ticket->id }})" 
                                                     class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200"
                                                     title="Close Ticket">

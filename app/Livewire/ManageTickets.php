@@ -42,7 +42,7 @@ class ManageTickets extends Component
 
     public string $sortDirection = 'desc';
 
-    public string $quickFilter = 'all'; // 'all', 'my_tickets', 'my_department', 'unassigned'
+    public string $quickFilter = 'all'; // 'all', 'my_tickets', 'my_department', 'my_department_group', 'unassigned'
 
     public bool $showClosed = false; // Toggle to show/hide closed and solution_provided tickets
 
@@ -225,7 +225,7 @@ class ManageTickets extends Component
             $ticket = Ticket::findOrFail($ticketId);
             
             // Check if user can assign tickets
-            if (!$user->can('tickets.update')) {
+            if (!$user->can('tickets.assign')) {
                 session()->flash('error', 'You do not have permission to assign tickets.');
                 return;
             }
@@ -342,7 +342,7 @@ class ManageTickets extends Component
             // Set closed_at if closing the ticket
             if ($status === 'closed') {
                 $updateData['closed_at'] = now();
-            } elseif ($status === 'resolved') {
+            } elseif ($status === 'solution_provided') {
                 $updateData['resolved_at'] = now();
             }
             

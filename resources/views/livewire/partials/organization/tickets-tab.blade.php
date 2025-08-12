@@ -27,14 +27,8 @@
                                     <h4 class="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
                                         {{ $ticket->subject }}
                                     </h4>
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0
-                                        @if($ticket->status === 'open') bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300
-                                        @elseif($ticket->status === 'in_progress') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300
-                                        @elseif($ticket->status === 'resolved') bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300
-                                        @elseif($ticket->status === 'closed') bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300
-                                        @else bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300
-                                        @endif">
-                                        {{ str_replace('_', ' ', ucfirst($ticket->status)) }}
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 {{ \App\Enums\TicketStatus::from($ticket->status)->cssClass() }}">
+                                        {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
                                     </span>
                                 </div>
                                 <div class="flex items-center gap-4 text-xs text-neutral-600 dark:text-neutral-400">

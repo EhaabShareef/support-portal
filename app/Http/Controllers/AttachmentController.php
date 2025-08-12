@@ -107,7 +107,13 @@ class AttachmentController extends Controller
             }
 
             // Support can access attachments from their department's tickets
-            if ($user->hasRole('support')) {
+            if ($user->hasRole('support') && $user->department) {
+                // Check if same department group first
+                if ($user->department->department_group_id && 
+                    $user->department->department_group_id === $ticket->department?->department_group_id) {
+                    return true;
+                }
+                // Fallback to same department
                 return $ticket->department_id === $user->department_id;
             }
 
@@ -126,7 +132,13 @@ class AttachmentController extends Controller
                 return $ticket->organization_id === $user->organization_id;
             }
 
-            if ($user->hasRole('support')) {
+            if ($user->hasRole('support') && $user->department) {
+                // Check if same department group first
+                if ($user->department->department_group_id && 
+                    $user->department->department_group_id === $ticket->department?->department_group_id) {
+                    return true;
+                }
+                // Fallback to same department
                 return $ticket->department_id === $user->department_id;
             }
 

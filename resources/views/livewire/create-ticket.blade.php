@@ -46,6 +46,18 @@
                 @enderror
             </div>
 
+            <div class="col-span-2">
+                <label for="description" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description *</label>
+                <textarea wire:model.defer="form.description" 
+                          id="description"
+                          rows="4"
+                          class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+                          placeholder="Please provide detailed information about your issue or request..."></textarea>
+                @error('form.description') 
+                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                @enderror
+            </div>
+
             {{-- Client Selection (for Admins/Agents only) --}}
             @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('support'))
             <div>

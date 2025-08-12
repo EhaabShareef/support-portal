@@ -310,7 +310,7 @@
                                     @endif
                                 </p>
                             </div>
-                            <a href="{{ route('tickets.view', $ticket) }}" 
+                            <a href="{{ route('tickets.show', $ticket) }}" 
                                class="inline-flex items-center px-3 py-2 text-sm font-medium text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-md transition-all duration-200">
                                 <x-heroicon-o-eye class="h-4 w-4 mr-1" />
                                 View

@@ -30,7 +30,6 @@ class UpdateLatestMessageAt extends Command
         $this->info('Updating latest_message_at for all tickets...');
         
         $tickets = Ticket::whereNull('latest_message_at')
-            ->orWhereNull('latest_message_at')
             ->get();
         
         $bar = $this->output->createProgressBar($tickets->count());

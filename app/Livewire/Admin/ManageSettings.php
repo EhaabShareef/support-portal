@@ -7,6 +7,7 @@ use App\Models\DepartmentGroup;
 use App\Models\Setting;
 use App\Models\ScheduleEventType;
 use App\Services\TicketColorService;
+use App\Services\HotlineService;
 use App\Enums\TicketStatus;
 use App\Enums\TicketPriority;
 use Livewire\Attributes\Computed;
@@ -78,6 +79,19 @@ class ManageSettings extends Component
     public bool $showColorResetConfirm = false;
     public string $colorResetType = '';
 
+    // Hotline Management
+    public array $hotlines = [];
+    public bool $showHotlineModal = false;
+    public bool $hotlineEditMode = false;
+    public string $selectedHotlineKey = '';
+    public array $hotlineForm = [
+        'name' => '',
+        'number' => '',
+        'description' => '',
+        'is_active' => true,
+        'sort_order' => 1,
+    ];
+
     // Delete confirmations
     public ?int $confirmingDeptGroupDelete = null;
     public ?int $confirmingDeptDelete = null;
@@ -95,6 +109,10 @@ class ManageSettings extends Component
         $colorService = app(TicketColorService::class);
         $this->statusColors = $colorService->getStatusColors();
         $this->priorityColors = $colorService->getPriorityColors();
+
+        // Load hotlines
+        $hotlineService = app(HotlineService::class);
+        $this->hotlines = $hotlineService->getHotlinesForAdmin();
     }
 
     #[Computed]
@@ -568,6 +586,135 @@ class ManageSettings extends Component
     {
         $colorService = app(TicketColorService::class);
         return $colorService->getPreviewClasses($colorName);
+    }
+
+    // === HOTLINE MANAGEMENT METHODS ===
+
+    public function openHotlineModal()
+    {
+        $this->hotlineEditMode = false;
+        $this->selectedHotlineKey = '';
+        $this->hotlineForm = [
+            'name' => '',
+            'number' => '',
+            'description' => '',
+            'is_active' => true,
+            'sort_order' => count($this->hotlines) + 1,
+        ];
+        $this->showHotlineModal = true;
+    }
+
+    public function editHotline($key)
+    {
+        $hotline = $this->hotlines[$key] ?? null;
+        
+        if (!$hotline) {
+            session()->flash('error', 'Hotline not found.');
+            return;
+        }
+
+        $this->hotlineEditMode = true;
+        $this->selectedHotlineKey = $key;
+        $this->hotlineForm = $hotline;
+        $this->showHotlineModal = true;
+    }
+
+    public function saveHotline()
+    {
+        $this->validate([
+            'hotlineForm.name' => 'required|string|max:255',
+            'hotlineForm.number' => 'required|string|max:255',
+            'hotlineForm.description' => 'required|string|max:500',
+            'hotlineForm.is_active' => 'boolean',
+            'hotlineForm.sort_order' => 'required|integer|min:1',
+        ]);
+
+        try {
+            $hotlineService = app(HotlineService::class);
+            
+            if ($this->hotlineEditMode && $this->selectedHotlineKey) {
+                // Update existing hotline
+                $this->hotlines[$this->selectedHotlineKey] = $this->hotlineForm;
+            } else {
+                // Add new hotline with generated key
+                $key = strtolower(str_replace(' ', '_', $this->hotlineForm['name']));
+                $key = preg_replace('/[^a-z0-9_]/', '', $key);
+                
+                // Ensure unique key
+                $originalKey = $key;
+                $counter = 1;
+                while (isset($this->hotlines[$key])) {
+                    $key = $originalKey . '_' . $counter;
+                    $counter++;
+                }
+                
+                $this->hotlines[$key] = $this->hotlineForm;
+            }
+
+            // Save to database
+            $hotlineService->updateHotlines($this->hotlines);
+            
+            $this->showHotlineModal = false;
+            session()->flash('message', 'Hotline saved successfully.');
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to save hotline: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteHotline($key)
+    {
+        if (!isset($this->hotlines[$key])) {
+            session()->flash('error', 'Hotline not found.');
+            return;
+        }
+
+        try {
+            unset($this->hotlines[$key]);
+            
+            $hotlineService = app(HotlineService::class);
+            $hotlineService->updateHotlines($this->hotlines);
+            
+            session()->flash('message', 'Hotline deleted successfully.');
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to delete hotline: ' . $e->getMessage());
+        }
+    }
+
+    public function toggleHotlineStatus($key)
+    {
+        if (!isset($this->hotlines[$key])) {
+            session()->flash('error', 'Hotline not found.');
+            return;
+        }
+
+        try {
+            $this->hotlines[$key]['is_active'] = !$this->hotlines[$key]['is_active'];
+            
+            $hotlineService = app(HotlineService::class);
+            $hotlineService->updateHotlines($this->hotlines);
+            
+            $status = $this->hotlines[$key]['is_active'] ? 'enabled' : 'disabled';
+            session()->flash('message', "Hotline {$status} successfully.");
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to update hotline status: ' . $e->getMessage());
+        }
+    }
+
+    public function closeHotlineModal()
+    {
+        $this->showHotlineModal = false;
+        $this->hotlineEditMode = false;
+        $this->selectedHotlineKey = '';
+        $this->hotlineForm = [
+            'name' => '',
+            'number' => '',
+            'description' => '',
+            'is_active' => true,
+            'sort_order' => 1,
+        ];
     }
 
     public function render()

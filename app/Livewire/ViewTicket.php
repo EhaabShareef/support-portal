@@ -286,7 +286,7 @@ class ViewTicket extends Component
         try {
             $user = auth()->user();
 
-            if (!$user->can('tickets.update')) {
+            if (!$user->can('tickets.assign')) {
                 session()->flash('error', 'You do not have permission to assign tickets.');
                 return;
             }
@@ -332,7 +332,7 @@ class ViewTicket extends Component
 
             if ($status === 'closed') {
                 $updateData['closed_at'] = now();
-            } elseif ($status === 'resolved') {
+            } elseif ($status === 'solution_provided') {
                 $updateData['resolved_at'] = now();
             }
 

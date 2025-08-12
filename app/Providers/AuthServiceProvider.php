@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Models\Schedule;
 use App\Models\ScheduleEventType;
+use App\Models\Ticket;
 use App\Policies\SchedulePolicy;
 use App\Policies\ScheduleEventTypePolicy;
+use App\Policies\TicketPolicy;
 use App\Policies\RolePolicy;
 use Spatie\Permission\Models\Role;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -21,6 +23,7 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         Schedule::class => SchedulePolicy::class,
         ScheduleEventType::class => ScheduleEventTypePolicy::class,
+        Ticket::class => TicketPolicy::class,
         Role::class => RolePolicy::class,
     ];
 
