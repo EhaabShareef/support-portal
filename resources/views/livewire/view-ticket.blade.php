@@ -28,7 +28,7 @@
                 </span>
 
                 @if(auth()->user()->can('tickets.update'))
-                    @if(!$ticket->assigned_to && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
+                    @if(!$ticket->owner_id && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
                         <button wire:click="assignToMe"
                                 class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
                                 title="Assign to Me">
@@ -97,12 +97,12 @@
 
                 @if($editMode)
                     {{-- Edit Form --}}
-                    <form wire:submit="updateTicket" class="space-y-4">
+                    <form wire:submit="updateTicket" class="space-y-4" id="updateTicketForm" onsubmit="return confirmTicketUpdate(event, '{{ $ticket->priority }}')">
 
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Priority</label>
-                                <select wire:model="form.priority"
+                                <select wire:model="form.priority" id="prioritySelect"
                                         class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
                                     @foreach($priorityOptions as $value => $label)
                                         <option value="{{ $value }}">{{ $label }}</option>
@@ -136,15 +136,15 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Assigned To</label>
-                <select wire:model="form.assigned_to"
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Owner</label>
+                <select wire:model="form.owner_id"
                         class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
                     <option value="">Unassigned</option>
                     @foreach($users as $user)
                         <option value="{{ $user->id }}">{{ $user->name }}</option>
                     @endforeach
                 </select>
-                @error('form.assigned_to') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                @error('form.owner_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
         </div>
 
@@ -226,10 +226,10 @@
                         </div>
                         
                         <div>
-                            <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Assigned To</dt>
+                            <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Owner</dt>
                             <dd class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
-                                @if($ticket->assigned)
-                                    {{ $ticket->assigned->name }}
+                                @if($ticket->owner)
+                                    {{ $ticket->owner->name }}
                                 @else
                                     <span class="text-neutral-500 dark:text-neutral-400">Unassigned</span>
                                 @endif
@@ -246,27 +246,18 @@
             </div>
 
             {{-- Organization Notes Section --}}
-            <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
-                <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">Organization Notes</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-sky-600 dark:text-sky-400">{{ $ticket->organization->users()->count() }}</div>
-                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Users</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $ticket->organization->contracts()->count() }}</div>
-                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Contracts</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $ticket->organization->hardware()->count() }}</div>
-                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Hardware</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ $ticket->organization->tickets()->count() }}</div>
-                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Tickets</div>
+            @if($ticket->organization->notes)
+            <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md">
+                <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+                    <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Organization Note</h3>
+                </div>
+                <div class="p-6">
+                    <div class="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                        {!! nl2br(e($ticket->organization->notes)) !!}
                     </div>
                 </div>
             </div>
+            @endif
 
             {{-- Internal Notes Section --}}
             @if($this->canAddNotes)
@@ -284,7 +275,7 @@
 
                 <div class="p-6 space-y-4">
                     {{-- Notes --}}
-                    @foreach($ticket->notes as $note)
+                    @foreach($ticket->notes->where('is_internal', true) as $note)
                     @php
                         $colorClasses = [
                             'sky' => 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800',
@@ -313,10 +304,26 @@
                                 </div>
                             </div>
                             @if($note->user_id === auth()->id() || auth()->user()->hasRole('admin'))
-                            <button wire:click="confirmDelete({{ $note->id }})" 
-                                    class="ml-2 text-red-500 hover:text-red-700 transition-colors duration-200">
-                                <x-heroicon-o-trash class="h-4 w-4" />
-                            </button>
+                            <div class="flex items-center gap-2 ml-2">
+                                @can('update', $note)
+                                <button wire:click="editNote({{ $note->id }})" 
+                                        class="text-blue-500 hover:text-blue-700 transition-colors duration-200"
+                                        title="Edit note">
+                                    <x-heroicon-o-pencil class="h-4 w-4" />
+                                </button>
+                                @else
+                                <button disabled 
+                                        class="text-neutral-400 cursor-not-allowed"
+                                        title="You don't have permission to edit this note">
+                                    <x-heroicon-o-pencil class="h-4 w-4" />
+                                </button>
+                                @endcan
+                                <button wire:click="confirmDelete({{ $note->id }})" 
+                                        class="text-red-500 hover:text-red-700 transition-colors duration-200"
+                                        title="Delete note">
+                                    <x-heroicon-o-trash class="h-4 w-4" />
+                                </button>
+                            </div>
                             @endif
                         </div>
 
@@ -342,21 +349,23 @@
                     {{-- Add Note Form --}}
                     @if($activeInput === 'note')
                     <div class="border-t border-neutral-200 dark:border-neutral-700 pt-4">
-                        <form wire:submit="addNote">
+                        <form wire:submit="{{ $editingNoteId ? 'updateNote' : 'addNote' }}">
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Note</label>
+                                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                        {{ $editingNoteId ? 'Edit Note' : 'Note' }}
+                                    </label>
                                     <textarea wire:model="note" rows="3"
                                               class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"
                                               placeholder="Add your note..."></textarea>
                                     @error('note') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div class="flex items-center gap-4">
-                                    <div>
+                                <div class="flex items-end gap-4">
+                                    <div class="flex-1">
                                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Color</label>
                                         <select wire:model="noteColor" 
-                                                class="px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                                class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
                                             <option value="sky">Blue</option>
                                             <option value="green">Green</option>
                                             <option value="yellow">Yellow</option>
@@ -365,10 +374,10 @@
                                         </select>
                                     </div>
 
-                                    <div class="flex items-center">
+                                    <div class="flex items-center pb-2">
                                         <input type="checkbox" wire:model="noteInternal" id="noteInternal" 
                                                class="rounded border-neutral-300 text-sky-600 focus:border-sky-300 focus:ring focus:ring-sky-200 focus:ring-opacity-50">
-                                        <label for="noteInternal" class="ml-2 text-sm text-neutral-700 dark:text-neutral-300">Internal only</label>
+                                        <label for="noteInternal" class="ml-2 text-sm text-neutral-700 dark:text-neutral-300 whitespace-nowrap">Internal only</label>
                                     </div>
                                 </div>
                             </div>
@@ -376,10 +385,15 @@
                             <div class="flex items-center gap-2 mt-4">
                                 <button type="submit" 
                                         class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-all duration-200">
-                                    <x-heroicon-o-plus class="h-4 w-4 mr-1" />
-                                    Add Note
+                                    @if($editingNoteId)
+                                        <x-heroicon-o-pencil class="h-4 w-4 mr-1" />
+                                        Update Note
+                                    @else
+                                        <x-heroicon-o-plus class="h-4 w-4 mr-1" />
+                                        Add Note
+                                    @endif
                                 </button>
-                                <button type="button" wire:click="$set('activeInput', '')"
+                                <button type="button" wire:click="{{ $editingNoteId ? 'cancelEditNote' : '$set(\'activeInput\', \'\')' }}"
                                         class="inline-flex items-center px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 text-sm font-medium transition-all duration-200">
                                     Cancel
                                 </button>
@@ -542,7 +556,7 @@
 
                     {{-- Messages --}}
                     <div id="messages-start"></div>
-                    @foreach($ticket->conversation as $item)
+                    @foreach($ticket->conversation ?? collect() as $item)
                         @if(!$loop->first)
                             <hr class="border-neutral-200 dark:border-neutral-700">
                         @endif
@@ -649,7 +663,7 @@
                     </div>
                     @endforeach
 
-                    @if($ticket->conversation->isEmpty())
+                    @if(($ticket->conversation ?? collect())->isEmpty())
                     <div class="text-center py-8">
                         <x-heroicon-o-chat-bubble-left class="mx-auto h-12 w-12 text-neutral-400" />
                         <h3 class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">No messages yet</h3>
@@ -675,6 +689,43 @@
                     }, 100);
                 });
             });
+            
+            // Priority change confirmation function
+            window.confirmTicketUpdate = function(event, currentPriority) {
+                const prioritySelect = document.getElementById('prioritySelect');
+                if (!prioritySelect) return true;
+                
+                const newPriority = prioritySelect.value;
+                
+                // Priority hierarchy for comparison
+                const priorityLevels = {
+                    'low': 1,
+                    'normal': 2,
+                    'high': 3,
+                    'urgent': 4,
+                    'critical': 5
+                };
+                
+                const isEscalation = priorityLevels[newPriority] > priorityLevels[currentPriority];
+                
+                if (isEscalation) {
+                    // Show confirmation for escalation
+                    const priorityLabels = {
+                        'low': 'Low',
+                        'normal': 'Normal',
+                        'high': 'High',
+                        'urgent': 'Urgent',
+                        'critical': 'Critical'
+                    };
+                    
+                    if (!confirm(`Are you sure you want to escalate this ticket's priority to ${priorityLabels[newPriority]}?\n\nThis action will be logged for audit purposes.`)) {
+                        event.preventDefault();
+                        return false;
+                    }
+                }
+                
+                return true;
+            };
         </script>
     </div>
     @if($showCloseModal)
@@ -685,13 +736,13 @@
                 <h3 class="text-lg leading-6 font-medium text-neutral-900 dark:text-neutral-100 mb-4">Close Ticket</h3>
                 <form wire:submit="submitClose" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Remarks</label>
+                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Remarks <span class="text-neutral-500 font-normal">(optional)</span></label>
                         <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-2">This will be visible to all users including the client.</p>
                         <textarea wire:model="closeForm.remarks" rows="3" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
                         @error('closeForm.remarks') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Solution Summary</label>
+                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Solution Summary <span class="text-neutral-500 font-normal">(optional)</span></label>
                         <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Internal only - visible to admin and support users only.</p>
                         <textarea wire:model="closeForm.solution" rows="2" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
                         @error('closeForm.solution') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror

@@ -4,8 +4,10 @@ namespace App\Livewire;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Models\ActivityLog;
 use App\Models\Department;
 use App\Models\Organization;
+use App\Models\Setting;
 use App\Models\Ticket;
 use App\Models\User;
 use Livewire\Attributes\Computed;
@@ -186,7 +188,7 @@ class ManageTickets extends Component
             // Set defaults for new tickets
             $ticketData = $this->form;
             $ticketData['status'] = 'open';
-            $ticketData['assigned_to'] = null; // Keep unassigned
+            $ticketData['owner_id'] = null; // Keep unassigned
 
             // Enforce security constraints based on user role
             if ($user->hasRole('client')) {
@@ -236,7 +238,7 @@ class ManageTickets extends Component
                 return;
             }
             
-            $ticket->update(['assigned_to' => $user->id]);
+            $ticket->update(['owner_id' => $user->id]);
             session()->flash('message', 'Ticket assigned to you successfully.');
             
         } catch (\Exception $e) {
@@ -300,8 +302,31 @@ class ManageTickets extends Component
                 session()->flash('error', 'You cannot update this ticket.');
                 return;
             }
-            
+
+            // Check if client is trying to escalate priority
+            if ($user->hasRole('client') && TicketPriority::compare($priority, $ticket->priority) > 0) {
+                session()->flash('error', 'Clients cannot escalate ticket priority.');
+                return;
+            }
+
+            // Check escalation authorization for all users
+            if (!$user->can('escalatePriority', [$ticket, $priority])) {
+                session()->flash('error', 'You are not authorized to change this ticket priority.');
+                return;
+            }
+
+            $oldPriority = $ticket->priority;
             $ticket->update(['priority' => $priority]);
+
+            // Log priority escalation if it's an increase
+            if (TicketPriority::compare($priority, $oldPriority) > 0) {
+                ActivityLog::record('ticket.priority_escalated', $ticket->id, $ticket, [
+                    'description' => "Priority escalated from {$oldPriority} to {$priority}",
+                    'old_priority' => $oldPriority,
+                    'new_priority' => $priority
+                ]);
+            }
+
             session()->flash('message', 'Ticket priority updated successfully.');
             
         } catch (\Exception $e) {
@@ -405,14 +430,18 @@ class ManageTickets extends Component
                 'department:id,name,department_group_id',
                 'department.departmentGroup:id,name',
                 'client:id,name,email',
-                'assigned:id,name',
+                'owner:id,name',
             ])
-            ->withCount('messages');
+            ->withCount([
+                'messages',
+                'notes as internal_note_count' => fn($q) => $q->where('is_internal', true),
+                'attachments'
+            ]);
 
         // Apply quick filter first
         switch ($this->quickFilter) {
             case 'my_tickets':
-                $query->where('assigned_to', $user->id);
+                $query->where('owner_id', $user->id);
                 break;
             case 'my_department':
                 if ($user->department_id) {
@@ -425,7 +454,7 @@ class ManageTickets extends Component
                 }
                 break;
             case 'unassigned':
-                $query->whereNull('assigned_to');
+                $query->whereNull('owner_id');
                 if ($user->hasRole('support')) {
                     // Allow agents to see unassigned tickets from their department group
                     if ($user->department?->department_group_id) {
@@ -486,7 +515,7 @@ class ManageTickets extends Component
         }
 
         if ($this->filterAssigned) {
-            $query->where('assigned_to', $this->filterAssigned);
+            $query->where('owner_id', $this->filterAssigned);
         }
 
         // Apply sorting
@@ -540,5 +569,63 @@ class ManageTickets extends Component
             'priorityOptions' => TicketPriority::options(),
             'showFilters' => $this->quickFilter === 'all',
         ]);
+    }
+
+    public function reopenTicket($ticketId)
+    {
+        try {
+            $user = auth()->user();
+            $ticket = Ticket::findOrFail($ticketId);
+            
+            // Check if user can update tickets
+            if (!$user->can('tickets.update')) {
+                session()->flash('error', 'You do not have permission to update tickets.');
+                return;
+            }
+            
+            // Check if user can access this ticket
+            if (!$this->canAccessTicket($user, $ticket)) {
+                session()->flash('error', 'You cannot update this ticket.');
+                return;
+            }
+
+            // Check if ticket is actually closed
+            if ($ticket->status !== 'closed') {
+                session()->flash('error', 'Only closed tickets can be reopened.');
+                return;
+            }
+
+            // Check reopen authorization based on policy
+            if (!$user->can('reopen', $ticket)) {
+                $reopenLimit = Setting::get('tickets.reopen_window_days', 3);
+                session()->flash('error', 'Ticket closed more than ' . $reopenLimit . ' days ago. Please create a new ticket.');
+                return;
+            }
+            
+            // Reopen the ticket
+            $ticket->update([
+                'status' => 'open',
+                'closed_at' => null
+            ]);
+            
+            // Create system message for reopening
+            \App\Models\TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'sender_id' => $user->id,
+                'message' => "Ticket reopened by {$user->name} on " . now()->format('M d, Y \\a\\t H:i'),
+                'is_internal' => false,
+                'is_system_message' => true,
+            ]);
+            
+            session()->flash('message', 'Ticket reopened successfully.');
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to reopen ticket', [
+                'ticket_id' => $ticketId,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to reopen ticket.');
+        }
     }
 }

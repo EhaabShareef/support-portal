@@ -192,27 +192,14 @@
             </div>
 
             {{-- Organization Notes --}}
+            @if($organization->notes)
             <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
-                <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">Organization Notes</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-sky-600 dark:text-sky-400">{{ $organization->users()->count() }}</div>
-                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Users</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $organization->contracts()->count() }}</div>
-                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Contracts</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $organization->hardware()->count() }}</div>
-                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Hardware</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ $organization->tickets()->count() }}</div>
-                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Tickets</div>
-                    </div>
+                <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">Organization Note</h3>
+                <div class="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                    {!! nl2br(e($organization->notes)) !!}
                 </div>
             </div>
+            @endif
         </div>
 
         {{-- Right Column - Tabbed Content --}}

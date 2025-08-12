@@ -4,8 +4,10 @@ namespace App\Livewire;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Models\ActivityLog;
 use App\Models\Attachment;
 use App\Models\Department;
+use App\Models\Setting;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketNote;
@@ -32,7 +34,7 @@ class ViewTicket extends Component
         'subject' => '',
         'status' => '',
         'priority' => '',
-        'assigned_to' => '',
+        'owner_id' => '',
         'department_id' => '',
         'description' => '',
     ];
@@ -59,6 +61,8 @@ class ViewTicket extends Component
     public string $noteColor = 'sky';
 
     public bool $noteInternal = true;
+    
+    public ?int $editingNoteId = null;
 
     public function mount(Ticket $ticket)
     {
@@ -74,7 +78,7 @@ class ViewTicket extends Component
         }
 
         $this->ticket = $ticket->load([
-            'organization:id,name',
+            'organization:id,name,notes',
             'organization.contracts' => function($query) use ($ticket) {
                 $query->select(['id', 'organization_id', 'department_id', 'contract_number', 'type', 'status', 'start_date', 'end_date', 'contract_value', 'currency'])
                       ->where('department_id', $ticket->department_id)
@@ -84,7 +88,7 @@ class ViewTicket extends Component
             },
             'department:id,name,department_group_id',
             'department.departmentGroup:id,name',
-            'assigned:id,name',
+            'owner:id,name',
             'client:id,name,email,organization_id',
             'notes' => function($query) {
                 $query->select(['id', 'ticket_id', 'user_id', 'note', 'color', 'is_internal', 'created_at'])
@@ -126,7 +130,7 @@ class ViewTicket extends Component
             'subject' => $ticket->subject,
             'status' => $ticket->status,
             'priority' => $ticket->priority,
-            'assigned_to' => $ticket->assigned_to,
+            'owner_id' => $ticket->owner_id,
             'department_id' => $ticket->department_id,
             'description' => $ticket->description,
         ];
@@ -137,6 +141,10 @@ class ViewTicket extends Component
 
     private function refreshConversation(): void
     {
+        // Ensure ticket relationships are fresh
+        $this->ticket->unsetRelation('messages');
+        $this->ticket->unsetRelation('notes');
+        
         // Create unified conversation combining messages and public notes
         $messages = $this->ticket->messages()
             ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
@@ -255,7 +263,7 @@ class ViewTicket extends Component
             'subject' => $this->ticket->subject,
             'status' => $this->ticket->status,
             'priority' => $this->ticket->priority,
-            'assigned_to' => $this->ticket->assigned_to,
+            'owner_id' => $this->ticket->owner_id,
             'department_id' => $this->ticket->department_id,
             'description' => $this->ticket->description,
         ];
@@ -272,13 +280,36 @@ class ViewTicket extends Component
             $this->validate([
                 'form.status' => TicketStatus::validationRule(),
                 'form.priority' => TicketPriority::validationRule(),
-                'form.assigned_to' => 'nullable|exists:users,id',
+                'form.owner_id' => 'nullable|exists:users,id',
                 'form.department_id' => 'required|exists:departments,id',
             ]);
 
+            // Check priority escalation for clients
+            $user = auth()->user();
+            $previousPriority = $this->ticket->priority;
+            if ($user->hasRole('client') && TicketPriority::compare($this->form['priority'], $previousPriority) > 0) {
+                session()->flash('error', 'Clients cannot escalate ticket priority.');
+                return;
+            }
+
+            // Check escalation authorization
+            if (!$user->can('escalatePriority', [$this->ticket, $this->form['priority']])) {
+                session()->flash('error', 'You are not authorized to change this ticket priority.');
+                return;
+            }
+
             // Check if this is a ticket reopening (from closed to any other status)
             $wasTicketClosed = $this->ticket->status === 'closed';
-            $isTicketBeingReopened = $wasTicketClosed && $this->form['status'] !== 'closed';
+            $reopenLimit = Setting::get('tickets.reopen_window_days', 3);
+            $isWithinWindow = $this->ticket->closed_at && now()->diffInDays($this->ticket->closed_at) <= $reopenLimit;
+            $isTicketBeingReopened = $wasTicketClosed && $this->form['status'] !== 'closed' && $isWithinWindow;
+            
+            // Check reopen authorization for clients
+            if ($wasTicketClosed && !$isWithinWindow && $user->hasRole('client')) {
+                session()->flash('error', 'Ticket closed more than ' . $reopenLimit . ' days ago. Please create a new ticket.');
+                return redirect()->route('tickets.create', ['subject' => 'Re: ' . $this->ticket->ticket_number]);
+            }
+            
             $previousStatus = $this->ticket->status;
 
             // Remove subject and description from update to prevent modification
@@ -286,6 +317,15 @@ class ViewTicket extends Component
             unset($updateData['subject'], $updateData['description']);
             
             $this->ticket->update($updateData);
+
+            // Log priority escalation if it's an increase
+            if (TicketPriority::compare($this->form['priority'], $previousPriority) > 0) {
+                ActivityLog::record('ticket.priority_escalated', $this->ticket->id, $this->ticket, [
+                    'description' => "Priority escalated from {$previousPriority} to {$this->form['priority']}",
+                    'old_priority' => $previousPriority,
+                    'new_priority' => $this->form['priority']
+                ]);
+            }
             
             // Create system message for status changes
             if ($previousStatus !== $this->form['status']) {
@@ -343,7 +383,7 @@ class ViewTicket extends Component
                 return;
             }
 
-            $this->ticket->update(['assigned_to' => $user->id]);
+            $this->ticket->update(['owner_id' => $user->id]);
             $this->ticket->refresh();
             session()->flash('message', 'Ticket assigned to you successfully.');
         } catch (\Exception $e) {
@@ -373,7 +413,15 @@ class ViewTicket extends Component
 
             // Check if this is a ticket reopening (from closed to any other status)
             $wasTicketClosed = $this->ticket->status === 'closed';
-            $isTicketBeingReopened = $wasTicketClosed && $status !== 'closed';
+            $reopenLimit = Setting::get('tickets.reopen_window_days', 3);
+            $isWithinWindow = $this->ticket->closed_at && now()->diffInDays($this->ticket->closed_at) <= $reopenLimit;
+            $isTicketBeingReopened = $wasTicketClosed && $status !== 'closed' && $isWithinWindow;
+            
+            // Check reopen authorization for clients
+            if ($wasTicketClosed && !$isWithinWindow && $user->hasRole('client')) {
+                session()->flash('error', 'Ticket closed more than ' . $reopenLimit . ' days ago. Please create a new ticket.');
+                return redirect()->route('tickets.create', ['subject' => 'Re: ' . $this->ticket->ticket_number]);
+            }
 
             $updateData = ['status' => $status];
 
@@ -440,21 +488,27 @@ class ViewTicket extends Component
             }
 
             $this->validate([
-                'closeForm.remarks' => 'required|string|max:2000',
+                'closeForm.remarks' => 'nullable|string|max:2000',
                 'closeForm.solution' => 'nullable|string|max:500',
             ]);
 
-            $content = $this->closeForm['remarks'];
-            if ($this->closeForm['solution']) {
-                $content .= "\n\nSolution: " . $this->closeForm['solution'];
-            }
+            // Only create a message if there are remarks or solution
+            if (!empty($this->closeForm['remarks']) || !empty($this->closeForm['solution'])) {
+                $content = '';
+                if (!empty($this->closeForm['remarks'])) {
+                    $content = $this->closeForm['remarks'];
+                }
+                if (!empty($this->closeForm['solution'])) {
+                    $content .= ($content ? "\n\n" : '') . "Solution: " . $this->closeForm['solution'];
+                }
 
-            TicketMessage::create([
-                'ticket_id' => $this->ticket->id,
-                'sender_id' => Auth::id(),
-                'message' => $content,
-                'is_internal' => false,
-            ]);
+                TicketMessage::create([
+                    'ticket_id' => $this->ticket->id,
+                    'sender_id' => Auth::id(),
+                    'message' => $content,
+                    'is_internal' => false,
+                ]);
+            }
 
             $this->ticket->update([
                 'status' => 'closed',
@@ -589,6 +643,79 @@ class ViewTicket extends Component
         }]);
         session()->flash('message', 'Note added successfully.');
         $this->dispatch('noteAdded', ['ticket' => $this->ticket]);
+    }
+
+    public function editNote($noteId)
+    {
+        $note = TicketNote::where('ticket_id', $this->ticket->id)
+            ->where('id', $noteId)
+            ->first();
+
+        if (!$note || !auth()->user()->can('update', $note)) {
+            session()->flash('error', 'Unauthorized to edit this note.');
+            return;
+        }
+
+        $this->editingNoteId = $noteId;
+        $this->note = $note->note;
+        $this->noteColor = $note->color;
+        $this->noteInternal = $note->is_internal;
+        $this->activeInput = 'note';
+    }
+
+    public function updateNote()
+    {
+        if (!$this->editingNoteId) {
+            return $this->addNote();
+        }
+
+        $note = TicketNote::where('ticket_id', $this->ticket->id)
+            ->where('id', $this->editingNoteId)
+            ->first();
+
+        if (!$note || !auth()->user()->can('update', $note)) {
+            session()->flash('error', 'Unauthorized to edit this note.');
+            return;
+        }
+
+        $this->validate([
+            'note' => 'required|string|max:2000',
+            'noteColor' => 'required',
+        ]);
+
+        $note->update([
+            'note' => $this->note,
+            'color' => $this->noteColor,
+            'is_internal' => $this->noteInternal,
+        ]);
+
+        $this->note = '';
+        $this->noteColor = 'sky';
+        $this->noteInternal = true;
+        $this->editingNoteId = null;
+        $this->noteInputKey = uniqid();
+        $this->activeInput = '';
+
+        $this->ticket->refresh()->load(['notes' => function($query) {
+            $query->select(['id', 'ticket_id', 'user_id', 'note', 'color', 'is_internal', 'created_at'])
+                  ->with('user:id,name')
+                  ->latest();
+        }]);
+        
+        // Refresh conversation to show updated public notes
+        $this->refreshConversation();
+        
+        session()->flash('message', 'Note updated successfully.');
+        $this->dispatch('noteUpdated', ['ticket' => $this->ticket]);
+    }
+
+    public function cancelEditNote()
+    {
+        $this->editingNoteId = null;
+        $this->note = '';
+        $this->noteColor = 'sky';
+        $this->noteInternal = true;
+        $this->activeInput = '';
     }
 
     public function confirmDelete($noteId)

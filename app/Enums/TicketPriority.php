@@ -68,4 +68,33 @@ enum TicketPriority: string
     {
         return 'required|in:' . implode(',', self::values());
     }
+
+    /**
+     * Get the numeric value for priority comparison.
+     */
+    public function getValue(): int
+    {
+        return match ($this) {
+            self::LOW => 1,
+            self::NORMAL => 2,
+            self::HIGH => 3,
+            self::URGENT => 4,
+            self::CRITICAL => 5,
+        };
+    }
+
+    /**
+     * Compare two priorities.
+     * Returns:
+     *  - negative if $priority1 < $priority2
+     *  - 0 if $priority1 == $priority2
+     *  - positive if $priority1 > $priority2
+     */
+    public static function compare(string $priority1, string $priority2): int
+    {
+        $p1Value = self::from($priority1)->getValue();
+        $p2Value = self::from($priority2)->getValue();
+        
+        return $p1Value - $p2Value;
+    }
 }

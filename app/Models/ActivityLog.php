@@ -115,4 +115,23 @@ class ActivityLog extends Model
     {
         return $this->new_values[$attribute] ?? null;
     }
+
+    /**
+     * Static helper to record an activity.
+     */
+    public static function record(string $event, $subjectId, $subject = null, array $properties = []): self
+    {
+        $user = auth()->user();
+        
+        return self::create([
+            'event' => $event,
+            'subject_type' => $subject ? get_class($subject) : 'App\Models\Ticket',
+            'subject_id' => $subjectId,
+            'user_id' => $user?->id,
+            'description' => $properties['description'] ?? null,
+            'properties' => $properties,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
 }

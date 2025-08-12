@@ -26,7 +26,7 @@ use App\Models\User;
  * @property int $organization_id
  * @property int $client_id
  * @property int $department_id
- * @property int|null $assigned_to
+ * @property int|null $owner_id
  * @property \Illuminate\Support\Carbon|null $first_response_at
  * @property \Illuminate\Support\Carbon|null $resolved_at
  * @property \Illuminate\Support\Carbon|null $closed_at
@@ -57,7 +57,7 @@ class Ticket extends Model
         'organization_id',
         'client_id',
         'department_id',
-        'assigned_to',
+        'owner_id',
         'first_response_at',
         'resolved_at',
         'closed_at',
@@ -88,9 +88,9 @@ class Ticket extends Model
         });
 
         static::updated(function ($ticket) {
-            if ($ticket->wasChanged('assigned_to')) {
-                if ($ticket->assigned_to) {
-                    $user = User::find($ticket->assigned_to);
+            if ($ticket->wasChanged('owner_id')) {
+                if ($ticket->owner_id) {
+                    $user = User::find($ticket->owner_id);
                     static::logEmail("Ticket {$ticket->ticket_number} assigned to {$user->name} ({$user->email})");
                 }
             }
@@ -121,9 +121,9 @@ class Ticket extends Model
     }
 
     // Assigned User
-    public function assigned(): BelongsTo
+    public function owner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(User::class, 'owner_id');
     }
 
     // Messages
@@ -239,9 +239,9 @@ class Ticket extends Model
     }
 
 
-    public function scopeAssignedTo($query, $userId)
+    public function scopeOwnedBy($query, $userId)
     {
-        return $query->where('assigned_to', $userId);
+        return $query->where('owner_id', $userId);
     }
 
     public function scopeForOrganization($query, $organizationId)
@@ -269,7 +269,7 @@ class Ticket extends Model
 
     public function isAssigned(): bool
     {
-        return ! is_null($this->assigned_to);
+        return ! is_null($this->owner_id);
     }
 
     public function getResponsesCountAttribute(): int

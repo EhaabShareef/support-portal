@@ -138,7 +138,7 @@
             {{-- Desktop Table Header --}}
             <div class="hidden lg:block bg-neutral-50 dark:bg-neutral-800/50 px-6 py-3 border-b border-neutral-200 dark:border-neutral-700">
                 <div class="grid grid-cols-12 gap-4 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
-                    <div class="col-span-2">
+                    <div class="col-span-1">
                         <button wire:click="sortBy('ticket_number')" class="flex items-center hover:text-neutral-700 dark:hover:text-neutral-300">
                             Ticket
                             @if($sortBy === 'ticket_number')
@@ -146,6 +146,7 @@
                             @endif
                         </button>
                     </div>
+                    <div class="col-span-1"></div> {{-- Icons column --}}
                     <div class="col-span-2">
                         <button wire:click="sortBy('subject')" class="flex items-center hover:text-neutral-700 dark:hover:text-neutral-300">
                             Subject
@@ -154,7 +155,8 @@
                             @endif
                         </button>
                     </div>
-                    <div class="col-span-2">Client</div>
+                    <div class="col-span-1">Client</div>
+                    <div class="col-span-1">Department</div>
                     <div class="col-span-1">
                         <button wire:click="sortBy('priority')" class="flex items-center hover:text-neutral-700 dark:hover:text-neutral-300">
                             Priority
@@ -171,7 +173,7 @@
                             @endif
                         </button>
                     </div>
-                    <div class="col-span-1">Assigned</div>
+                    <div class="col-span-1">Owner</div>
                     <div class="col-span-1">Last Reply</div>
                     <div class="col-span-1">
                         <button wire:click="sortBy('created_at')" class="flex items-center hover:text-neutral-700 dark:hover:text-neutral-300">
@@ -191,12 +193,24 @@
                     <div wire:key="ticket-{{ $ticket->id }}" class="px-6 py-4 hover:bg-white/10 transition-colors duration-200">
                         <div class="grid grid-cols-12 gap-4 items-center">
                             {{-- Ticket Number --}}
-                            <div class="col-span-2">
+                            <div class="col-span-1">
                                 <a href="{{ route('tickets.show', $ticket) }}" 
                                    class="text-xs font-medium text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-200 hover:underline cursor-pointer transition-all duration-200"
                                    title="View Ticket Details">
                                     #{{ $ticket->ticket_number }}
                                 </a>
+                            </div>
+
+                            {{-- Icons --}}
+                            <div class="col-span-1">
+                                <div class="flex items-center gap-1">
+                                    @if($ticket->internal_note_count)
+                                        <x-heroicon-o-document-text class="h-4 w-4 text-neutral-500" title="This ticket has internal notes" />
+                                    @endif
+                                    @if($ticket->attachments_count)
+                                        <x-heroicon-o-paper-clip class="h-4 w-4 text-neutral-500" title="This ticket has attachments" />
+                                    @endif
+                                </div>
                             </div>
 
                             {{-- Subject --}}
@@ -207,12 +221,22 @@
                             </div>
 
                             {{-- Client --}}
-                            <div class="col-span-2">
-                                <div class="text-sm text-neutral-800 dark:text-neutral-200">
-                                    {{ Str::limit($ticket->client->name, 20) }}
+                            <div class="col-span-1">
+                                <div class="text-sm text-neutral-800 dark:text-neutral-200" title="{{ $ticket->client->name }}">
+                                    {{ Str::limit($ticket->client->name, 15) }}
                                 </div>
-                                <div class="text-xs text-neutral-500 dark:text-neutral-400">
-                                    {{ Str::limit($ticket->organization->name, 20) }}
+                                <div class="text-xs text-neutral-500 dark:text-neutral-400" title="{{ $ticket->organization->name }}">
+                                    {{ Str::limit($ticket->organization->name, 15) }}
+                                </div>
+                            </div>
+
+                            {{-- Department --}}
+                            <div class="col-span-1">
+                                <div class="text-sm text-neutral-800 dark:text-neutral-200" title="{{ $ticket->department?->departmentGroup?->name }}">
+                                    {{ Str::limit($ticket->department?->departmentGroup?->name ?? 'N/A', 12) }}
+                                </div>
+                                <div class="text-xs text-neutral-500 dark:text-neutral-400" title="{{ $ticket->department?->name }}">
+                                    {{ Str::limit($ticket->department?->name ?? 'N/A', 12) }}
                                 </div>
                             </div>
 
@@ -231,15 +255,15 @@
                                 </span>
                             </div>
 
-                            {{-- Assigned --}}
+                            {{-- Owner --}}
                             <div class="col-span-1">
-                                @if($ticket->assigned)
+                                @if($ticket->owner)
                                     <div class="flex items-center gap-2">
                                         <div class="w-6 h-6 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center">
-                                            <span class="text-white text-xs font-medium">{{ substr($ticket->assigned->name, 0, 1) }}</span>
+                                            <span class="text-white text-xs font-medium">{{ substr($ticket->owner->name, 0, 1) }}</span>
                                         </div>
                                         <div class="text-sm text-neutral-800 dark:text-neutral-200">
-                                            {{ Str::limit($ticket->assigned->name, 15) }}
+                                            {{ Str::limit($ticket->owner->name, 15) }}
                                         </div>
                                     </div>
                                 @else
@@ -271,54 +295,78 @@
 
                                     {{-- Quick Actions for Admin/Support --}}
                                     @if(auth()->user()->can('tickets.update'))
-                                        {{-- Assign to Me (only for unassigned tickets) --}}
-                                        @if(!$ticket->assigned_to && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
-                                            <button wire:click="assignToMe({{ $ticket->id }})" 
-                                                    class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
-                                                    title="Assign to Me">
-                                                <x-heroicon-o-user-plus class="h-3 w-3" />
-                                            </button>
-                                        @endif
-
-                                        {{-- Close Ticket (for resolved/open tickets) --}}
-                                        @if(in_array($ticket->status, ['solution_provided', 'in_progress']))
-                                            <button wire:click="closeTicket({{ $ticket->id }})" 
-                                                    class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200"
-                                                    title="Close Ticket">
-                                                <x-heroicon-o-x-circle class="h-3 w-3" />
-                                            </button>
-                                        @endif
-
-                                        {{-- Priority Dropdown --}}
-                                        @if(auth()->user()->hasRole('admin'))
-                                            <div class="relative" x-data="{ open: false }" @click.away="open = false">
-                                                <button @click="open = !open" 
-                                                        class="inline-flex items-center px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded transition-all duration-200"
-                                                        title="Change Priority">
-                                                    <x-heroicon-o-flag class="h-3 w-3" />
+                                        @if($ticket->status === 'closed')
+                                            {{-- Reopen Button (only if within reopen window or user is admin/support) --}}
+                                            @php
+                                                $canReopen = auth()->user()->hasRole(['admin', 'support']) || 
+                                                           (auth()->user()->hasRole('client') && 
+                                                            auth()->user()->organization_id === $ticket->organization_id &&
+                                                            $ticket->closed_at && 
+                                                            now()->diffInDays($ticket->closed_at) <= (\App\Models\Setting::get('tickets.reopen_window_days', 3)));
+                                            @endphp
+                                            @if($canReopen)
+                                                <button onclick="confirmReopenTicket({{ $ticket->id }}, '{{ $ticket->closed_at?->diffInDays(now()) ?? 0 }}', '{{ \App\Models\Setting::get('tickets.reopen_window_days', 3) }}')" 
+                                                        class="inline-flex items-center px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-all duration-200"
+                                                        title="Reopen Ticket">
+                                                    <x-heroicon-o-arrow-path class="h-3 w-3" />
                                                 </button>
-                                                
-                                                <div x-show="open" 
-                                                     x-transition:enter="transition ease-out duration-100"
-                                                     x-transition:enter-start="transform opacity-0 scale-95"
-                                                     x-transition:enter-end="transform opacity-100 scale-100"
-                                                     x-transition:leave="transition ease-in duration-75"
-                                                     x-transition:leave-start="transform opacity-100 scale-100"
-                                                     x-transition:leave-end="transform opacity-0 scale-95"
-                                                     class="absolute right-0 mt-1 w-24 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg z-10">
-                                                    <div class="py-1">
-                                                        @foreach(['low', 'normal', 'high', 'urgent', 'critical'] as $priority)
-                                                            @if($priority !== $ticket->priority)
-                                                                <button wire:click="changePriority({{ $ticket->id }}, '{{ $priority }}')" 
-                                                                        @click="open = false"
-                                                                        class="w-full text-left px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
-                                                                    {{ ucfirst($priority) }}
-                                                                </button>
-                                                            @endif
-                                                        @endforeach
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-1 text-xs text-neutral-400 cursor-not-allowed" title="Reopen window expired">
+                                                    <x-heroicon-o-lock-closed class="h-3 w-3" />
+                                                </span>
+                                            @endif
+                                        @else
+                                            {{-- Normal actions for non-closed tickets --}}
+                                            
+                                            {{-- Assign to Me (only for unassigned tickets) --}}
+                                            @if(!$ticket->owner_id && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
+                                                <button wire:click="assignToMe({{ $ticket->id }})" 
+                                                        class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
+                                                        title="Assign to Me">
+                                                    <x-heroicon-o-user-plus class="h-3 w-3" />
+                                                </button>
+                                            @endif
+
+                                            {{-- Close Ticket (for resolved/open tickets) --}}
+                                            @if(in_array($ticket->status, ['solution_provided', 'in_progress', 'open']))
+                                                <button wire:click="closeTicket({{ $ticket->id }})" 
+                                                        class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200"
+                                                        title="Close Ticket">
+                                                    <x-heroicon-o-x-circle class="h-3 w-3" />
+                                                </button>
+                                            @endif
+
+                                            {{-- Priority Dropdown --}}
+                                            @if(auth()->user()->hasRole('admin'))
+                                                <div class="relative" x-data="{ open: false }" @click.away="open = false">
+                                                    <button @click="open = !open" 
+                                                            class="inline-flex items-center px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded transition-all duration-200"
+                                                            title="Change Priority">
+                                                        <x-heroicon-o-flag class="h-3 w-3" />
+                                                    </button>
+                                                    
+                                                    <div x-show="open" 
+                                                         x-transition:enter="transition ease-out duration-100"
+                                                         x-transition:enter-start="transform opacity-0 scale-95"
+                                                         x-transition:enter-end="transform opacity-100 scale-100"
+                                                         x-transition:leave="transition ease-in duration-75"
+                                                         x-transition:leave-start="transform opacity-100 scale-100"
+                                                         x-transition:leave-end="transform opacity-0 scale-95"
+                                                         class="absolute right-0 mt-1 w-24 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg z-10">
+                                                        <div class="py-1">
+                                                            @foreach(['low', 'normal', 'high', 'urgent', 'critical'] as $priority)
+                                                                @if($priority !== $ticket->priority)
+                                                                    <button onclick="confirmPriorityChange({{ $ticket->id }}, '{{ $priority }}', '{{ $ticket->priority }}', '{{ ucfirst($priority) }}')" 
+                                                                            @click="open = false"
+                                                                            class="w-full text-left px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
+                                                                        {{ ucfirst($priority) }}
+                                                                    </button>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            @endif
                                         @endif
                                     @endif
                                 </div>
@@ -342,6 +390,12 @@
                                            title="View Ticket Details">
                                             #{{ $ticket->ticket_number }}
                                         </a>
+                                        @if($ticket->internal_note_count)
+                                            <x-heroicon-o-document-text class="h-4 w-4 text-neutral-500" title="This ticket has internal notes" />
+                                        @endif
+                                        @if($ticket->attachments_count)
+                                            <x-heroicon-o-paper-clip class="h-4 w-4 text-neutral-500" title="This ticket has attachments" />
+                                        @endif
                                     </div>
                                     <h3 class="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate" title="{{ $ticket->subject }}">
                                         {{ Str::limit($ticket->subject, 50) }}
@@ -351,22 +405,46 @@
 
                                     {{-- Quick Actions for Admin/Support --}}
                                     @if(auth()->user()->can('tickets.update'))
-                                        {{-- Assign to Me (only for unassigned tickets) --}}
-                                        @if(!$ticket->assigned_to && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
-                                            <button wire:click="assignToMe({{ $ticket->id }})" 
-                                                    class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
-                                                    title="Assign to Me">
-                                                <x-heroicon-o-user-plus class="h-4 w-4" />
-                                            </button>
-                                        @endif
+                                        @if($ticket->status === 'closed')
+                                            {{-- Reopen Button (only if within reopen window or user is admin/support) --}}
+                                            @php
+                                                $canReopen = auth()->user()->hasRole(['admin', 'support']) || 
+                                                           (auth()->user()->hasRole('client') && 
+                                                            auth()->user()->organization_id === $ticket->organization_id &&
+                                                            $ticket->closed_at && 
+                                                            now()->diffInDays($ticket->closed_at) <= (\App\Models\Setting::get('tickets.reopen_window_days', 3)));
+                                            @endphp
+                                            @if($canReopen)
+                                                <button onclick="confirmReopenTicket({{ $ticket->id }}, '{{ $ticket->closed_at?->diffInDays(now()) ?? 0 }}', '{{ \App\Models\Setting::get('tickets.reopen_window_days', 3) }}')" 
+                                                        class="inline-flex items-center px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-all duration-200"
+                                                        title="Reopen Ticket">
+                                                    <x-heroicon-o-arrow-path class="h-4 w-4" />
+                                                </button>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-1 text-xs text-neutral-400 cursor-not-allowed" title="Reopen window expired">
+                                                    <x-heroicon-o-lock-closed class="h-4 w-4" />
+                                                </span>
+                                            @endif
+                                        @else
+                                            {{-- Normal actions for non-closed tickets --}}
+                                            
+                                            {{-- Assign to Me (only for unassigned tickets) --}}
+                                            @if(!$ticket->owner_id && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
+                                                <button wire:click="assignToMe({{ $ticket->id }})" 
+                                                        class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
+                                                        title="Assign to Me">
+                                                    <x-heroicon-o-user-plus class="h-4 w-4" />
+                                                </button>
+                                            @endif
 
-                                        {{-- Close Ticket --}}
-                                        @if(in_array($ticket->status, ['solution_provided', 'in_progress']))
-                                            <button wire:click="closeTicket({{ $ticket->id }})" 
-                                                    class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200"
-                                                    title="Close Ticket">
-                                                <x-heroicon-o-x-circle class="h-4 w-4" />
-                                            </button>
+                                            {{-- Close Ticket --}}
+                                            @if(in_array($ticket->status, ['solution_provided', 'in_progress', 'open']))
+                                                <button wire:click="closeTicket({{ $ticket->id }})" 
+                                                        class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200"
+                                                        title="Close Ticket">
+                                                    <x-heroicon-o-x-circle class="h-4 w-4" />
+                                                </button>
+                                            @endif
                                         @endif
                                     @endif
                                 </div>
@@ -377,6 +455,13 @@
                                 <span class="font-medium">{{ $ticket->client->name }}</span>
                                 <span class="mx-1">•</span>
                                 <span>{{ $ticket->organization->name }}</span>
+                            </div>
+
+                            {{-- Department Information --}}
+                            <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                                <span>{{ $ticket->department?->departmentGroup?->name ?? 'N/A' }}</span>
+                                <span class="mx-1">•</span>
+                                <span>{{ $ticket->department?->name ?? 'N/A' }}</span>
                             </div>
 
                             {{-- Status and Priority Badges --}}
@@ -393,12 +478,12 @@
                             {{-- Assignment and Dates --}}
                             <div class="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
                                 <div>
-                                    @if($ticket->assigned)
+                                    @if($ticket->owner)
                                         <div class="flex items-center gap-1">
                                             <div class="w-4 h-4 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center">
-                                                <span class="text-white text-xs font-medium">{{ substr($ticket->assigned->name, 0, 1) }}</span>
+                                                <span class="text-white text-xs font-medium">{{ substr($ticket->owner->name, 0, 1) }}</span>
                                             </div>
-                                            <span>{{ $ticket->assigned->name }}</span>
+                                            <span>{{ $ticket->owner->name }}</span>
                                         </div>
                                     @else
                                         <span>Unassigned</span>
@@ -574,4 +659,60 @@
         </div>
     </div>
     @endif
+
+    {{-- Action Confirmation Scripts --}}
+    <script>
+        function confirmPriorityChange(ticketId, newPriority, currentPriority, priorityLabel) {
+            // Priority hierarchy for comparison
+            const priorityLevels = {
+                'low': 1,
+                'normal': 2,
+                'high': 3,
+                'urgent': 4,
+                'critical': 5
+            };
+            
+            const isEscalation = priorityLevels[newPriority] > priorityLevels[currentPriority];
+            
+            if (isEscalation) {
+                // Show confirmation for escalation
+                if (confirm(`Are you sure you want to escalate this ticket's priority to ${priorityLabel}?\n\nThis action will be logged for audit purposes.`)) {
+                    Livewire.dispatch('changePriority', [ticketId, newPriority]);
+                }
+            } else {
+                // No confirmation needed for de-escalation
+                Livewire.dispatch('changePriority', [ticketId, newPriority]);
+            }
+        }
+
+        function confirmReopenTicket(ticketId, daysClosed, reopenWindowDays) {
+            const daysClosedInt = parseInt(daysClosed);
+            const windowDaysInt = parseInt(reopenWindowDays);
+            
+            let confirmMessage = 'Are you sure you want to reopen this ticket?';
+            
+            if (daysClosedInt > 0) {
+                confirmMessage += `\n\nThis ticket was closed ${daysClosedInt} day${daysClosedInt === 1 ? '' : 's'} ago.`;
+                
+                if (daysClosedInt >= windowDaysInt) {
+                    confirmMessage += ` The standard reopen window is ${windowDaysInt} days.`;
+                }
+            }
+            
+            if (confirm(confirmMessage)) {
+                Livewire.dispatch('reopenTicket', [ticketId]);
+            }
+        }
+
+        // Listen for Livewire component calls
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('changePriority', (data) => {
+                @this.changePriority(data[0], data[1]);
+            });
+            
+            Livewire.on('reopenTicket', (data) => {
+                @this.reopenTicket(data[0]);
+            });
+        });
+    </script>
 </div>

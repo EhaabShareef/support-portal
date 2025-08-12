@@ -4,6 +4,8 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Ticket;
+use App\Models\Setting;
+use App\Enums\TicketPriority;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TicketPolicy
@@ -90,6 +92,17 @@ class TicketPolicy
             }
         }
 
+        // Clients can view tickets from their organization but with restrictions
+        if ($user->hasRole('client') && $user->organization_id === $ticket->organization_id) {
+            // Check reopen window for closed tickets
+            if ($ticket->status === 'closed') {
+                $reopenLimit = Setting::get('tickets.reopen_window_days', 3);
+                $isWithinWindow = $ticket->closed_at && now()->diffInDays($ticket->closed_at) <= $reopenLimit;
+                return $isWithinWindow;
+            }
+            return true;
+        }
+
         return false;
     }
 
@@ -127,6 +140,44 @@ class TicketPolicy
                 $user->department->department_group_id === $ticket->department?->department_group_id) {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can escalate the priority of a ticket.
+     */
+    public function escalatePriority(User $user, Ticket $ticket, string $newPriority): bool
+    {
+        // Clients cannot escalate priority above current level
+        if ($user->hasRole('client')) {
+            return TicketPriority::compare($newPriority, $ticket->priority) <= 0;
+        }
+
+        // Admin and support can escalate priorities
+        return $user->hasRole(['admin', 'support']) && $this->update($user, $ticket);
+    }
+
+    /**
+     * Determine whether the user can reopen a closed ticket.
+     */
+    public function reopen(User $user, Ticket $ticket): bool
+    {
+        // Only applies to closed tickets
+        if ($ticket->status !== 'closed') {
+            return false;
+        }
+
+        // Admin and support can always reopen
+        if ($user->hasRole(['admin', 'support'])) {
+            return $this->update($user, $ticket);
+        }
+
+        // Clients can only reopen within the window
+        if ($user->hasRole('client') && $user->organization_id === $ticket->organization_id) {
+            $reopenLimit = Setting::get('tickets.reopen_window_days', 3);
+            return $ticket->closed_at && now()->diffInDays($ticket->closed_at) <= $reopenLimit;
         }
 
         return false;
