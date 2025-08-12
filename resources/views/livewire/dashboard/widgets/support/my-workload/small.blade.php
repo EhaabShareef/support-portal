@@ -33,13 +33,13 @@
             <div class="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-1">
                 {{ number_format($workloadData['open_assigned']) }}
             </div>
-            <div class="text-xs text-neutral-500 dark:text-neutral-400">Open Assigned</div>
+            <div class="text-xs text-neutral-500 dark:text-neutral-400">Open Owned</div>
         </div>
         
         {{-- Quick Stats --}}
         <div class="space-y-2 text-xs">
             <div class="flex justify-between items-center">
-                <span class="text-neutral-600 dark:text-neutral-400">Total Assigned</span>
+                <span class="text-neutral-600 dark:text-neutral-400">Total Owned</span>
                 <span class="font-medium">{{ number_format($workloadData['total_assigned']) }}</span>
             </div>
             <div class="flex justify-between items-center">

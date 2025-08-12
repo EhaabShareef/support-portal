@@ -38,7 +38,7 @@ use App\Models\User;
  * @property-read \App\Models\Organization $organization
  * @property-read \App\Models\User $client
  * @property-read \App\Models\Department $department
- * @property-read \App\Models\User|null $assigned
+ * @property-read \App\Models\User|null $owner
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TicketMessage> $messages
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TicketNote> $notes
  */
@@ -120,7 +120,7 @@ class Ticket extends Model
         return $this->belongsTo(Department::class, 'department_id');
     }
 
-    // Assigned User
+    // Owner
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');

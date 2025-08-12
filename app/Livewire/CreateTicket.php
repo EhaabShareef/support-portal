@@ -34,7 +34,7 @@ class CreateTicket extends Component
         'department_id' => '',
         'status'    => 'in progress',
         'priority'  => 'normal',
-        'assigned_to' => '',
+        'owner_id' => '',
     ];
 
     public function rules(): array
@@ -49,7 +49,7 @@ class CreateTicket extends Component
             'form.client_id' => $user->hasRole('client') ? 'nullable' : 'required|exists:users,id',
             'form.department_id' => 'required|exists:departments,id',
             'form.priority'  => TicketPriority::validationRule(),
-            'form.assigned_to' => 'nullable|exists:users,id',
+            'form.owner_id' => 'nullable|exists:users,id',
         ];
     }
 
@@ -65,7 +65,7 @@ class CreateTicket extends Component
         'form.department_id.required' => 'Please select a department.',
         'form.department_id.exists' => 'The selected department is invalid.',
         'form.priority.required' => 'Please select a priority level.',
-        'form.assigned_to.exists' => 'The selected assignee is invalid.',
+        'form.owner_id.exists' => 'The selected owner is invalid.',
     ];
 
     public function submit()
@@ -95,8 +95,8 @@ class CreateTicket extends Component
                 return;
             }
 
-            if (empty($validated['assigned_to'])) {
-                $validated['assigned_to'] = null;
+            if (empty($validated['owner_id'])) {
+                $validated['owner_id'] = null;
             }
 
             $ticket = Ticket::create(collect($validated)->except('description')->toArray());

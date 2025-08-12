@@ -37,7 +37,7 @@ Existing widgets check permissions in `mount`, cache data in `loadData`, expose 
 - **Contribution definition**: one count per ticket per day when the agent:
   - creates a ticket (tickets.created_by == agent),
   - posts an update (ticket_messages.sender_id == agent), or
-  - closes/resolves a ticket they are assigned to (tickets.assigned_to == agent and closed_at/resolved_at on that day).
+  - closes/resolves a ticket they own (tickets.owner_id == agent and closed_at/resolved_at on that day).
 - **Aggregation**: group events by date and count distinct ticket IDs so multiple actions on the same ticket in a day count once.
 - **Query**: union subqueries for create/update/close events, then `groupBy(date)` in SQL; limit range based on widget size.
 - **Caching**: wrap the query in `Cache::remember("agent_contrib_{$userId}_{$range}", ttl, fn() => ...)` with a short TTL (e.g., 300s).
