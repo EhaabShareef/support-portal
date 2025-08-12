@@ -6,6 +6,7 @@ use App\Enums\TicketPriority;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Models\Ticket;
+use App\Models\TicketMessage;
 use App\Models\TicketNote;
 use App\Models\User;
 use App\Services\HotlineService;
@@ -98,7 +99,14 @@ class CreateTicket extends Component
                 $validated['assigned_to'] = null;
             }
 
-            $ticket = Ticket::create($validated);
+            $ticket = Ticket::create(collect($validated)->except('description')->toArray());
+            
+            // Create first message with the description
+            TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'sender_id' => $ticket->client_id,
+                'message' => $validated['description'],
+            ]);
 
             // Add hotline note only for critical and urgent tickets
             if (in_array($validated['priority'], ['critical', 'urgent'])) {

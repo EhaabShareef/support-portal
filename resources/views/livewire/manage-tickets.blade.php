@@ -201,8 +201,8 @@
 
                             {{-- Subject --}}
                             <div class="col-span-2">
-                                <div class="text-sm font-medium text-neutral-800 dark:text-neutral-200" title="{{ Str::limit(strip_tags($ticket->description), 100) }}">
-                                    {{ Str::limit($ticket->subject, 40) }}
+                                <div class="text-sm font-medium text-neutral-800 dark:text-neutral-200" title="{{ $ticket->subject }}">
+                                    {{ Str::limit($ticket->subject, 50) }}
                                 </div>
                             </div>
 
@@ -343,8 +343,8 @@
                                             #{{ $ticket->ticket_number }}
                                         </a>
                                     </div>
-                                    <h3 class="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate" title="{{ Str::limit(strip_tags($ticket->description), 100) }}">
-                                        {{ $ticket->subject }}
+                                    <h3 class="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate" title="{{ $ticket->subject }}">
+                                        {{ Str::limit($ticket->subject, 50) }}
                                     </h3>
                                 </div>
                                 <div class="flex items-center gap-1 ml-2">

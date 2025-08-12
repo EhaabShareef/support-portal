@@ -58,7 +58,7 @@ class ViewTicket extends Component
 
     public string $noteColor = 'sky';
 
-    public bool $noteInternal = false;
+    public bool $noteInternal = true;
 
     public function mount(Ticket $ticket)
     {
@@ -94,17 +94,29 @@ class ViewTicket extends Component
             'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image',
         ]);
 
-        $this->ticket->setRelation(
-            'messages',
-            $ticket->messages()
-                   ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
-                   ->with([
-                       'sender:id,name',
-                       'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
-                   ])
-                   ->latest('created_at')
-                   ->get()
-        );
+        // Create unified conversation combining messages and public notes
+        $messages = $ticket->messages()
+            ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
+            ->with([
+                'sender:id,name',
+                'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+            ])
+            ->selectRaw("'message' as type")
+            ->get();
+            
+        $publicNotes = $ticket->notes()
+            ->where('is_internal', false)
+            ->select(['id', 'user_id as sender_id', 'note as message', 'created_at'])
+            ->with('user:id,name')
+            ->selectRaw("'note' as type")
+            ->selectRaw("null as ticket_id")
+            ->selectRaw("false as is_system_message")
+            ->get();
+            
+        // Combine and sort by created_at descending
+        $conversation = $messages->concat($publicNotes)->sortByDesc('created_at')->values();
+        
+        $this->ticket->setRelation('conversation', $conversation);
 
         $this->form = [
             'subject' => $ticket->subject,
@@ -117,6 +129,33 @@ class ViewTicket extends Component
 
         $this->noteInputKey = uniqid();
         $this->replyStatus = $ticket->status;
+    }
+
+    private function refreshConversation(): void
+    {
+        // Create unified conversation combining messages and public notes
+        $messages = $this->ticket->messages()
+            ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
+            ->with([
+                'sender:id,name',
+                'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+            ])
+            ->selectRaw("'message' as type")
+            ->get();
+            
+        $publicNotes = $this->ticket->notes()
+            ->where('is_internal', false)
+            ->select(['id', 'user_id as sender_id', 'note as message', 'created_at'])
+            ->with('user:id,name')
+            ->selectRaw("'note' as type")
+            ->selectRaw("null as ticket_id")
+            ->selectRaw("false as is_system_message")
+            ->get();
+            
+        // Combine and sort by created_at descending
+        $conversation = $messages->concat($publicNotes)->sortByDesc('created_at')->values();
+        
+        $this->ticket->setRelation('conversation', $conversation);
     }
 
     private function canAccessTicket($user, $ticket): bool
@@ -232,6 +271,7 @@ class ViewTicket extends Component
             // Check if this is a ticket reopening (from closed to any other status)
             $wasTicketClosed = $this->ticket->status === 'closed';
             $isTicketBeingReopened = $wasTicketClosed && $this->form['status'] !== 'closed';
+            $previousStatus = $this->ticket->status;
 
             // Remove subject and description from update to prevent modification
             $updateData = $this->form;
@@ -239,13 +279,23 @@ class ViewTicket extends Component
             
             $this->ticket->update($updateData);
             
-            // If ticket is being reopened, create an automatic message
-            if ($isTicketBeingReopened) {
+            // Create system message for status changes
+            if ($previousStatus !== $this->form['status']) {
                 $user = auth()->user();
+                $status = $this->form['status'];
+                
+                $statusMessage = match($status) {
+                    'closed' => "Ticket closed by {$user->name} on " . now()->format('M d, Y \a\t H:i'),
+                    'solution_provided' => "Solution provided by {$user->name} on " . now()->format('M d, Y \a\t H:i'),
+                    default => $isTicketBeingReopened 
+                        ? "Ticket reopened by {$user->name} on " . now()->format('M d, Y \a\t H:i')
+                        : "Ticket status changed to '{$status}' by {$user->name} on " . now()->format('M d, Y \a\t H:i')
+                };
+
                 TicketMessage::create([
                     'ticket_id' => $this->ticket->id,
                     'sender_id' => $user->id,
-                    'message' => "Ticket has been reopened by {$user->name} on " . now()->format('M d, Y \a\t H:i'),
+                    'message' => $statusMessage,
                     'is_internal' => false,
                     'is_system_message' => true,
                 ]);
@@ -255,19 +305,8 @@ class ViewTicket extends Component
 
             session()->flash('message', 'Ticket updated successfully.');
 
-            // Refresh messages with optimized eager loading
-            $this->ticket->unsetRelation('messages');
-            $this->ticket->setRelation(
-                'messages',
-                $this->ticket->messages()
-                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
-                             ->with([
-                                 'sender:id,name',
-                                 'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
-                             ])
-                             ->latest('created_at')
-                             ->get()
-            );
+            // Refresh conversation
+            $this->refreshConversation();
             
         } catch (\Exception $e) {
             logger()->error('Failed to update ticket', [
@@ -336,14 +375,23 @@ class ViewTicket extends Component
                 $updateData['resolved_at'] = now();
             }
 
+            $previousStatus = $this->ticket->status;
             $this->ticket->update($updateData);
 
-            // If ticket is being reopened, create an automatic message
-            if ($isTicketBeingReopened) {
+            // Create system message for status changes
+            if ($previousStatus !== $status) {
+                $statusMessage = match($status) {
+                    'closed' => "Ticket closed by {$user->name} on " . now()->format('M d, Y \a\t H:i'),
+                    'solution_provided' => "Solution provided by {$user->name} on " . now()->format('M d, Y \a\t H:i'),
+                    default => $isTicketBeingReopened 
+                        ? "Ticket reopened by {$user->name} on " . now()->format('M d, Y \a\t H:i')
+                        : "Ticket status changed to '{$status}' by {$user->name} on " . now()->format('M d, Y \a\t H:i')
+                };
+
                 TicketMessage::create([
                     'ticket_id' => $this->ticket->id,
                     'sender_id' => $user->id,
-                    'message' => "Ticket has been reopened by {$user->name} on " . now()->format('M d, Y \a\t H:i'),
+                    'message' => $statusMessage,
                     'is_internal' => false,
                     'is_system_message' => true,
                 ]);
@@ -351,19 +399,8 @@ class ViewTicket extends Component
 
             $this->ticket->refresh();
             
-            // Refresh messages to show the new system message if ticket was reopened
-            $this->ticket->unsetRelation('messages');
-            $this->ticket->setRelation(
-                'messages',
-                $this->ticket->messages()
-                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
-                             ->with([
-                                 'sender:id,name',
-                                 'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
-                             ])
-                             ->latest('created_at')
-                             ->get()
-            );
+            // Refresh conversation to show the new system message if ticket was reopened
+            $this->refreshConversation();
             
             session()->flash('message', 'Ticket status updated successfully.');
         } catch (\Exception $e) {
@@ -416,19 +453,17 @@ class ViewTicket extends Component
                 'closed_at' => now(),
             ]);
 
+            // Create system message for closing
+            TicketMessage::create([
+                'ticket_id' => $this->ticket->id,
+                'sender_id' => Auth::id(),
+                'message' => "Ticket closed by " . auth()->user()->name . " on " . now()->format('M d, Y \a\t H:i'),
+                'is_internal' => false,
+                'is_system_message' => true,
+            ]);
+
             $this->ticket = $this->ticket->fresh();
-            $this->ticket->unsetRelation('messages');
-            $this->ticket->setRelation(
-                'messages',
-                $this->ticket->messages()
-                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
-                             ->with([
-                                 'sender:id,name',
-                                 'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
-                             ])
-                             ->latest('created_at')
-                             ->get()
-            );
+            $this->refreshConversation();
             $this->replyStatus = $this->ticket->status;
             $this->showCloseModal = false;
 
@@ -491,19 +526,8 @@ class ViewTicket extends Component
             $this->ticket->refresh(['status', 'updated_at']);
             $this->replyStatus = $this->ticket->status;
             
-            // Clear and reload messages with explicit ordering
-            $this->ticket->unsetRelation('messages');
-            $this->ticket->setRelation(
-                'messages',
-                $this->ticket->messages()
-                             ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
-                             ->with([
-                                 'sender:id,name',
-                                 'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
-                             ])
-                             ->latest('created_at')
-                             ->get()
-            );
+            // Clear and reload conversation
+            $this->refreshConversation();
 
             Ticket::logEmail("Reply added to ticket {$this->ticket->ticket_number} by " . auth()->user()->email);
             session()->flash('message', 'Message sent successfully.');
@@ -546,7 +570,7 @@ class ViewTicket extends Component
 
         $this->note = '';
         $this->noteColor = 'sky';
-        $this->noteInternal = false;
+        $this->noteInternal = true;
         $this->noteInputKey = uniqid();
         $this->activeInput = ''; // hide input after submit
 

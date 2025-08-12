@@ -241,23 +241,31 @@
                             <dd class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">{{ $ticket->created_at->format('M d, Y H:i') }}</dd>
                         </div>
                         
-                        @if($ticket->description)
-                        <div>
-                            <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Description</dt>
-                            <dd class="mt-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ $ticket->client->name }}</span>
-                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">opened this ticket</span>
-                                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $ticket->created_at?->diffForHumans() ?? 'Unknown time' }}</span>
-                                </div>
-                                <div class="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                                    {!! nl2br(e($ticket->description)) !!}
-                                </div>
-                            </dd>
-                        </div>
-                        @endif
                     </dl>
                 @endif
+            </div>
+
+            {{-- Organization Notes Section --}}
+            <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
+                <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">Organization Notes</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-sky-600 dark:text-sky-400">{{ $ticket->organization->users()->count() }}</div>
+                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Users</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $ticket->organization->contracts()->count() }}</div>
+                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Contracts</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $ticket->organization->hardware()->count() }}</div>
+                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Hardware</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ $ticket->organization->tickets()->count() }}</div>
+                        <div class="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Tickets</div>
+                    </div>
+                </div>
             </div>
 
             {{-- Internal Notes Section --}}
@@ -534,18 +542,22 @@
 
                     {{-- Messages --}}
                     <div id="messages-start"></div>
-                    @foreach($ticket->messages as $message)
+                    @foreach($ticket->conversation as $item)
                         @if(!$loop->first)
                             <hr class="border-neutral-200 dark:border-neutral-700">
                         @endif
                         
                         @php
-                            $isCurrentUser = $message->sender_id === auth()->id();
-                            $isSystemMessage = $message->is_system_message ?? false;
+                            $isCurrentUser = $item->sender_id === auth()->id();
+                            $isSystemMessage = $item->is_system_message ?? false;
+                            $isNote = $item->type === 'note';
                             
                             if ($isSystemMessage) {
                                 $avatarClass = 'bg-gradient-to-br from-blue-400 to-blue-600';
                                 $messageBackgroundClass = 'bg-blue-50/50 dark:bg-blue-900/20 border border-blue-200/50 dark:border-blue-800/30';
+                            } elseif ($isNote) {
+                                $avatarClass = 'bg-gradient-to-br from-purple-400 to-purple-600';
+                                $messageBackgroundClass = 'bg-purple-50/30 dark:bg-purple-900/20 border-l-4 border-l-purple-400 dark:border-l-purple-500 border border-purple-200/50 dark:border-purple-800/30';
                             } else {
                                 $avatarClass = $isCurrentUser 
                                     ? 'bg-gradient-to-br bg-green-400/60' 
@@ -554,7 +566,7 @@
                                 // Check if this is a closing message
                                 $isClosingMessage = $ticket->status === 'closed' && 
                                                   $ticket->closed_at && 
-                                                  $message->created_at->diffInMinutes($ticket->closed_at) <= 2;
+                                                  $item->created_at->diffInMinutes($ticket->closed_at) <= 2;
                                 
                                 $messageBackgroundClass = $isClosingMessage 
                                     ? 'bg-red-100/30 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30'
@@ -566,8 +578,10 @@
                             <div class="w-8 h-8 {{ $avatarClass }} rounded-full flex items-center justify-center">
                                 @if($isSystemMessage)
                                     <x-heroicon-o-cog-6-tooth class="h-4 w-4 text-white" />
+                                @elseif($isNote)
+                                    <x-heroicon-o-chat-bubble-left-ellipsis class="h-4 w-4 text-white" />
                                 @else
-                                    <span class="text-white text-xs font-medium">{{ substr($message->sender->name, 0, 1) }}</span>
+                                    <span class="text-white text-xs font-medium">{{ substr($item->sender->name ?? $item->user->name ?? 'Unknown', 0, 1) }}</span>
                                 @endif
                             </div>
                         <div class="flex-1 {{ $messageBackgroundClass }} rounded-lg p-4">
@@ -575,28 +589,35 @@
                                 <span class="font-medium text-neutral-800 dark:text-neutral-200">
                                     @if($isSystemMessage)
                                         System
+                                    @elseif($isNote)
+                                        {{ $item->user->name ?? 'Unknown' }}
                                     @else
-                                        {{ $message->sender->name }}
+                                        {{ $item->sender->name ?? 'Unknown' }}
                                     @endif
                                 </span>
-                                <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $message->created_at?->diffForHumans() ?? 'Unknown time' }}</span>
+                                <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $item->created_at?->diffForHumans() ?? 'Unknown time' }}</span>
                                 @if($isSystemMessage)
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
                                         <x-heroicon-o-information-circle class="h-3 w-3 mr-1" />
                                         System Message
                                     </span>
+                                @elseif($isNote)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+                                        <x-heroicon-o-chat-bubble-left-ellipsis class="h-3 w-3 mr-1" />
+                                        Note
+                                    </span>
                                 @endif
                             </div>
                             <div class="text-sm text-neutral-700 dark:text-neutral-300">
-                                {!! nl2br(e($message->message)) !!}
+                                {!! nl2br(e($item->message)) !!}
                             </div>
                             
-                            {{-- Message Attachments --}}
-                            @if($message->attachments->isNotEmpty())
+                            {{-- Message Attachments (only for messages, not notes) --}}
+                            @if(!$isNote && isset($item->attachments) && $item->attachments->isNotEmpty())
                                 <div class="mt-3 space-y-2">
                                     <div class="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Attachments:</div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        @foreach($message->attachments as $attachment)
+                                        @foreach($item->attachments as $attachment)
                                             <div class="flex items-center p-2 bg-neutral-100 dark:bg-neutral-700 rounded border">
                                                 <div class="flex items-center flex-1 min-w-0">
                                                     <x-dynamic-component :component="$attachment->icon" class="h-4 w-4 text-neutral-500 mr-2 flex-shrink-0" />
@@ -628,7 +649,7 @@
                     </div>
                     @endforeach
 
-                    @if($ticket->messages->isEmpty() && !$ticket->description)
+                    @if($ticket->conversation->isEmpty())
                     <div class="text-center py-8">
                         <x-heroicon-o-chat-bubble-left class="mx-auto h-12 w-12 text-neutral-400" />
                         <h3 class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">No messages yet</h3>
