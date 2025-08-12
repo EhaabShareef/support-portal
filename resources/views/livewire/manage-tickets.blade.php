@@ -192,9 +192,11 @@
                         <div class="grid grid-cols-12 gap-4 items-center">
                             {{-- Ticket Number --}}
                             <div class="col-span-2">
-                                <div class="text-xs font-medium text-sky-600 dark:text-sky-400">
+                                <a href="{{ route('tickets.show', $ticket) }}" 
+                                   class="text-xs font-medium text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-200 hover:underline cursor-pointer transition-all duration-200"
+                                   title="View Ticket Details">
                                     #{{ $ticket->ticket_number }}
-                                </div>
+                                </a>
                             </div>
 
                             {{-- Subject --}}
@@ -266,12 +268,6 @@
                             {{-- Actions --}}
                             <div class="col-span-1">
                                 <div class="flex items-center gap-1">
-                                    {{-- View Button --}}
-                                    <a href="{{ route('tickets.show', $ticket) }}" 
-                                       class="inline-flex items-center px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded transition-all duration-200"
-                                       title="View Ticket">
-                                        <x-heroicon-o-eye class="h-3 w-3" />
-                                    </a>
 
                                     {{-- Quick Actions for Admin/Support --}}
                                     @if(auth()->user()->can('tickets.update'))
@@ -341,21 +337,17 @@
                             <div class="flex items-start justify-between">
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2 mb-1">
-                                        <span class="text-sm font-medium text-sky-600 dark:text-sky-400">
+                                        <a href="{{ route('tickets.show', $ticket) }}" 
+                                           class="text-sm font-medium text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-200 hover:underline cursor-pointer transition-all duration-200"
+                                           title="View Ticket Details">
                                             #{{ $ticket->ticket_number }}
-                                        </span>
+                                        </a>
                                     </div>
                                     <h3 class="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate" title="{{ Str::limit(strip_tags($ticket->description), 100) }}">
                                         {{ $ticket->subject }}
                                     </h3>
                                 </div>
                                 <div class="flex items-center gap-1 ml-2">
-                                    {{-- View Button --}}
-                                    <a href="{{ route('tickets.show', $ticket) }}" 
-                                       class="inline-flex items-center px-2 py-1 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded transition-all duration-200"
-                                       title="View Ticket">
-                                        <x-heroicon-o-eye class="h-4 w-4" />
-                                    </a>
 
                                     {{-- Quick Actions for Admin/Support --}}
                                     @if(auth()->user()->can('tickets.update'))
