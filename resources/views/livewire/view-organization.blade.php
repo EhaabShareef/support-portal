@@ -10,21 +10,13 @@
                 <div class="hidden sm:block w-px h-6 bg-neutral-300 dark:bg-neutral-600"></div>
                 <div>
                     <h1 class="text-2xl sm:text-3xl font-bold text-neutral-800 dark:text-neutral-100">{{ $organization->name }}</h1>
-                    <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{{ $organization->company }}</p>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{{ $organization->company ?? 'Not provided' }}</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-2">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $organization->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' }}">
                     {{ $organization->status_label }}
-                </span>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                    @if($organization->subscription_status === 'active') bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300
-                    @elseif($organization->subscription_status === 'trial') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300
-                    @elseif($organization->subscription_status === 'suspended') bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300
-                    @else bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300
-                    @endif">
-                    {{ $organization->subscription_status_label }}
                 </span>
             </div>
         </div>
@@ -91,18 +83,24 @@
                         </div>
                     @endforeach
 
-                    {{-- Subscription Status --}}
+                    {{-- Subscription Status & Active Toggle --}}
                     <div wire:key="subscription-status-{{ $organization->id }}">
                         <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Subscription</dt>
                         <dd class="mt-1 text-sm">
                             @if ($editMode)
-                                <select wire:model.defer="form.subscription_status"
-                                    class="w-full px-3 py-2 rounded-md bg-white/60 dark:bg-neutral-900/50 text-sm border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
-                                    <option value="trial">Trial</option>
-                                    <option value="active">Active</option>
-                                    <option value="suspended">Suspended</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
+                                <div class="flex items-center gap-4">
+                                    <select wire:model.defer="form.subscription_status"
+                                        class="w-full px-3 py-2 rounded-md bg-white/60 dark:bg-neutral-900/50 text-sm border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
+                                        <option value="trial">Trial</option>
+                                        <option value="active">Active</option>
+                                        <option value="suspended">Suspended</option>
+                                        <option value="cancelled">Cancelled</option>
+                                    </select>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" wire:model.defer="form.is_active" class="h-5 w-5 text-sky-600 focus:ring-sky-500 border-neutral-300 rounded">
+                                        <span class="ml-2">Active</span>
+                                    </label>
+                                </div>
                             @else
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                     @if($organization->subscription_status === 'active') bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300

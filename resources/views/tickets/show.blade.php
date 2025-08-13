@@ -113,10 +113,6 @@
                                 <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ ucfirst($this->activeContract->type) }}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Value:</span>
-                                <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ $this->activeContract->currency }} {{ number_format($this->activeContract->contract_value, 2) }}</span>
-                            </div>
-                            <div class="flex justify-between">
                                 <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Period:</span>
                                 <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ $this->activeContract->start_date->format('M d, Y') }} - {{ $this->activeContract->end_date->format('M d, Y') }}</span>
                             </div>

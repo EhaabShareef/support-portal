@@ -130,9 +130,16 @@ class ManageOrganizations extends Component
 
         $this->validate($rules, $this->getOrganizationValidationMessages());
 
+        $data = $this->form;
+        foreach (['company', 'tin_no'] as $nullableField) {
+            if ($data[$nullableField] === '') {
+                $data[$nullableField] = null;
+            }
+        }
+
         $organization = Organization::updateOrCreate(
-            ['id' => $this->form['id']],
-            $this->form
+            ['id' => $data['id']],
+            $data
         );
 
         session()->flash('message', $this->form['id'] ? 'Organization updated successfully.' : 'Organization created successfully.');

@@ -278,9 +278,8 @@ class ClientSampleDataSeeder extends Seeder
                     'contract_number' => 'CNT-' . strtoupper(substr($organization->name, 0, 3)) . '-' . date('Y') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT),
                     'start_date' => $contractData['start_date'],
                     'end_date' => $contractData['end_date'],
-                    'contract_value' => $contractData['value'],
                     'status' => $contractData['status'],
-                    'terms_conditions' => $contractData['description']
+                    'notes' => $contractData['description']
                 ]);
                 
                 $this->command->info("✓ Created contract: {$contractData['service_type']} for {$organization->name}");

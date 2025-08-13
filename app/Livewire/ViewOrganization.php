@@ -113,7 +113,14 @@ class ViewOrganization extends Component
         $rules = $this->getOrganizationValidationRulesWithExclusion($this->organization->id);
         $validated = $this->validate($rules, $this->getOrganizationValidationMessages());
 
-        $this->organization->update($validated['form']);
+        $data = $validated['form'];
+        foreach (['company', 'tin_no'] as $nullableField) {
+            if ($data[$nullableField] === '') {
+                $data[$nullableField] = null;
+            }
+        }
+
+        $this->organization->update($data);
         $this->organization->refresh();
 
         $this->editMode = false;

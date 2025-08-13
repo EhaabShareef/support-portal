@@ -31,15 +31,15 @@ return new class extends Migration
                   ->index();
             
             $table->boolean('includes_hardware')->default(false);
-            $table->decimal('contract_value', 10, 2)->nullable(); // Contract monetary value
-            $table->string('currency', 3)->default('USD'); // Currency code
+            $table->boolean('is_oracle')->default(false); // Indicates Oracle contract
+            $table->string('csi_number')->nullable(); // Oracle CSI number
             
             $table->date('start_date');
             $table->date('end_date')->nullable();
             $table->integer('renewal_months')->nullable(); // Auto-renewal period
             
             $table->text('csi_remarks')->nullable(); // Customer Service Index remarks
-            $table->text('terms_conditions')->nullable(); // Contract terms
+            $table->text('notes')->nullable(); // Contract notes
             $table->json('service_levels')->nullable(); // SLA definitions
             
             $table->timestamps();

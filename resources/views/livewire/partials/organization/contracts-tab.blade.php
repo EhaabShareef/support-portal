@@ -41,12 +41,6 @@
                                         <x-heroicon-o-tag class="h-3 w-3" />
                                         {{ ucfirst($contract->type) }}
                                     </span>
-                                    @if($contract->contract_value)
-                                    <span class="flex items-center gap-1">
-                                        <x-heroicon-o-currency-dollar class="h-3 w-3" />
-                                        {{ $contract->currency }} {{ number_format($contract->contract_value, 0) }}
-                                    </span>
-                                    @endif
                                     @if($contract->end_date)
                                     <span class="flex items-center gap-1">
                                         <x-heroicon-o-calendar class="h-3 w-3" />

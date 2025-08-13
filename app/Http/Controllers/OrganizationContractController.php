@@ -31,10 +31,13 @@ class OrganizationContractController extends Controller
             'org_id'        => 'required|exists:organizations,id',
             'department_id' => 'required|exists:departments,id',
             'is_hardware'   => 'boolean',
+            'is_oracle'     => 'boolean',
+            'csi_number'    => 'required_if:is_oracle,true|nullable|string',
             'csi_remarks'   => 'nullable|string',
             'start_date'    => 'required|date',
             'end_date'      => 'nullable|date|after_or_equal:start_date',
             'status'        => 'required|string|in:active,expired,terminated,onhold',
+            'notes'         => 'nullable|string',
         ]);
 
 
@@ -68,10 +71,13 @@ class OrganizationContractController extends Controller
             'org_id'        => 'required|exists:organizations,id',
             'department_id' => 'required|exists:departments,id',
             'is_hardware'   => 'boolean',
+            'is_oracle'     => 'boolean',
+            'csi_number'    => 'required_if:is_oracle,true|nullable|string',
             'csi_remarks'   => 'nullable|string',
             'start_date'    => 'required|date',
             'end_date'      => 'nullable|date|after_or_equal:start_date',
             'status'        => 'required|string|in:active,expired,terminated,onhold',
+            'notes'         => 'nullable|string',
         ]);
 
         $contract->update($data);

@@ -19,13 +19,13 @@ class OrganizationContract extends Model
         'type',
         'status',
         'includes_hardware',
-        'contract_value',
-        'currency',
+        'is_oracle',
+        'csi_number',
         'start_date',
         'end_date',
         'renewal_months',
         'csi_remarks',
-        'terms_conditions',
+        'notes',
         'service_levels',
     ];
 
@@ -33,7 +33,7 @@ class OrganizationContract extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'includes_hardware' => 'boolean',
-        'contract_value' => 'decimal:2',
+        'is_oracle' => 'boolean',
         'service_levels' => 'array',
     ];
 

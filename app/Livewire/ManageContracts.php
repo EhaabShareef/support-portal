@@ -24,13 +24,13 @@ class ManageContracts extends Component
         'type' => 'support',
         'status' => 'active',
         'includes_hardware' => false,
-        'contract_value' => '',
-        'currency' => 'USD',
+        'is_oracle' => false,
+        'csi_number' => '',
         'start_date' => '',
         'end_date' => '',
         'renewal_months' => '',
         'csi_remarks' => '',
-        'terms_conditions' => '',
+        'notes' => '',
     ];
 
     protected $rules = [
@@ -39,13 +39,13 @@ class ManageContracts extends Component
         'form.type' => 'required|in:support,hardware,software,consulting,maintenance',
         'form.status' => 'required|in:draft,active,expired,terminated,renewed',
         'form.includes_hardware' => 'boolean',
-        'form.contract_value' => 'nullable|numeric|min:0',
-        'form.currency' => 'required|string|size:3',
+        'form.is_oracle' => 'boolean',
+        'form.csi_number' => 'required_if:form.is_oracle,true|nullable|string|max:255',
         'form.start_date' => 'required|date',
         'form.end_date' => 'nullable|date|after_or_equal:form.start_date',
         'form.renewal_months' => 'nullable|integer|min:1|max:120',
         'form.csi_remarks' => 'nullable|string',
-        'form.terms_conditions' => 'nullable|string',
+        'form.notes' => 'nullable|string',
     ];
 
     public function mount(Organization $organization)
@@ -78,13 +78,13 @@ class ManageContracts extends Component
             'type' => 'support',
             'status' => 'active',
             'includes_hardware' => false,
-            'contract_value' => null,
-            'currency' => 'USD',
+            'is_oracle' => false,
+            'csi_number' => null,
             'start_date' => now()->format('Y-m-d'),
             'end_date' => null,
             'renewal_months' => null,
             'csi_remarks' => null,
-            'terms_conditions' => null,
+            'notes' => null,
         ];
         
         $this->showForm = true;
@@ -100,13 +100,13 @@ class ManageContracts extends Component
             'type' => $this->editingContract->type,
             'status' => $this->editingContract->status,
             'includes_hardware' => $this->editingContract->includes_hardware,
-            'contract_value' => $this->editingContract->contract_value,
-            'currency' => $this->editingContract->currency,
+            'is_oracle' => $this->editingContract->is_oracle,
+            'csi_number' => $this->editingContract->csi_number,
             'start_date' => $this->editingContract->start_date?->format('Y-m-d') ?? '',
             'end_date' => $this->editingContract->end_date?->format('Y-m-d') ?? '',
             'renewal_months' => $this->editingContract->renewal_months,
             'csi_remarks' => $this->editingContract->csi_remarks,
-            'terms_conditions' => $this->editingContract->terms_conditions,
+            'notes' => $this->editingContract->notes,
         ];
 
         $this->showForm = true;
@@ -128,7 +128,7 @@ class ManageContracts extends Component
         $data['organization_id'] = $this->organization->id;
 
         // Convert empty strings to null for nullable numeric fields
-        $nullableFields = ['contract_value', 'renewal_months'];
+        $nullableFields = ['renewal_months'];
         foreach ($nullableFields as $field) {
             if (empty($data[$field]) || $data[$field] === '') {
                 $data[$field] = null;
@@ -136,7 +136,7 @@ class ManageContracts extends Component
         }
 
         // Convert empty strings to null for nullable text fields
-        $nullableTextFields = ['end_date', 'csi_remarks', 'terms_conditions'];
+        $nullableTextFields = ['end_date', 'csi_remarks', 'csi_number', 'notes'];
         foreach ($nullableTextFields as $field) {
             if (empty($data[$field]) || $data[$field] === '') {
                 $data[$field] = null;
