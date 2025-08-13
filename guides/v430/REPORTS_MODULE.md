@@ -19,31 +19,31 @@ Reports are grouped by domain. Each item lists its purpose, useful filters and e
 #### 1.1 Ticket Volume & Status Trends
 - **Description:** Shows ticket counts grouped by status over a selected period to track workload and backlog trends.
 - **Why:** Helps admins monitor operational load and spot spikes requiring additional resources.
-- **Filters:** Date range (created_at), organization, department, department group, assigned agent, ticket type, priority, status.
+- **Filters:** Date range (created_at), organization, department, department group, owner, ticket type, priority, status.
 - **Output:** Table and line/bar chart of ticket counts per status per period.
 
 #### 1.2 Response & Resolution Time Analysis
 - **Description:** Aggregates average `first_response_at` and `resolved_at` durations to evaluate SLA compliance.
 - **Why:** Highlights performance issues and areas needing process improvement.
-- **Filters:** Date range (created_at/resolved_at), organization, department, department group, assigned agent, status.
+- **Filters:** Date range (created_at/resolved_at), organization, department, department group, owner, status.
 - **Output:** Average and median response_time_minutes and resolution_time_minutes with breakdowns by department or agent.
 
 #### 1.3 Agent Workload Distribution
-- **Description:** Counts tickets assigned to each agent and their open/closed status.
+- **Description:** Counts tickets owned by each agent and their open/closed status.
 - **Why:** Ensures equitable workload and identifies capacity issues.
 - **Filters:** Date range, organization, department, department group, ticket status, priority.
-- **Output:** Table of agents with counts of assigned, resolved and remaining tickets.
+- **Output:** Table of agents with counts of owned, resolved and remaining tickets.
 
 #### 1.4 Ticket Type & Priority Breakdown
 - **Description:** Displays distribution of tickets by `type` and `priority` to identify common issue categories.
 - **Why:** Supports resource planning and trend analysis for recurring problems.
-- **Filters:** Date range, organization, department, department group, assigned agent.
+- **Filters:** Date range, organization, department, department group, owner.
 - **Output:** Pivot‑style table or stacked chart showing counts per type and priority.
 
 #### 1.5 Aging & Overdue Tickets
 - **Description:** Lists open tickets grouped by age buckets (e.g., 0‑7, 8‑14, 15+ days).
 - **Why:** Flags stalled requests requiring escalation.
-- **Filters:** Date range (created_at), organization, department, department group, assigned agent, priority.
+- **Filters:** Date range (created_at), organization, department, department group, owner, priority.
 - **Output:** Table of tickets with age bucket and days open; summary counts per bucket.
 
 ### 2. Organization & Contract Oversight
@@ -101,7 +101,7 @@ Reports are grouped by domain. Each item lists its purpose, useful filters and e
 - **Description:** For each agent, shows tickets created vs. resolved along with average resolution time.
 - **Why:** Enables performance reviews and recognition of top performers.
 - **Filters:** Date range, department, department group, organization.
-- **Output:** Table with counts of created/assigned/resolved tickets and average resolution_time_minutes.
+- **Output:** Table with counts of created/owned/resolved tickets and average resolution_time_minutes.
 
 ### 5. Schedule & Workforce Planning
 #### 5.1 Schedule Coverage

@@ -77,7 +77,7 @@ Add unit tests for unauthorized users attempting to access widgets to ensure the
 - Dashboard level caching caches the full data array per user/role for five minutes【F:app/Livewire/Dashboard.php†L85-L101】.
 - Admin metrics widget caches results separately per user for five minutes, mitigating repeated heavy counts【F:app/Livewire/Dashboard/Widgets/Admin/Metrics/Large.php†L24-L44】.
 - Agent and client data methods perform multiple independent queries (e.g., numerous `Ticket::where` calls). When many widgets are active this could multiply queries.
-- Some queries eager load related models (`getRecentActivity` uses `with(['client','assigned'])`), but others like `getDepartmentRanking` might still produce N+1 if the department has many users.
+- Some queries eager load related models (`getRecentActivity` uses `with(['client','owner'])`), but others like `getDepartmentRanking` might still produce N+1 if the department has many users.
 
 **Recommendation:**
 - Consolidate repeated ticket count queries with `withCount` or aggregate queries.

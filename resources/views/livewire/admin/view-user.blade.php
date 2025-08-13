@@ -305,8 +305,8 @@
                                 </h4>
                                 <p class="text-sm text-neutral-600 dark:text-neutral-400">
                                     Created {{ $ticket->created_at->diffForHumans() }}
-                                    @if($ticket->assigned)
-                                        • Assigned to {{ $ticket->assigned->name }}
+                                    @if($ticket->owner)
+                                        • Owner: {{ $ticket->owner->name }}
                                     @endif
                                 </p>
                             </div>

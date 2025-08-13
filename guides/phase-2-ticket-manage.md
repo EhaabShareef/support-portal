@@ -7,7 +7,7 @@
 - `resources/views/livewire/manage-tickets.blade.php`
   - Desktop table header and row layout: lines 180–333【F:resources/views/livewire/manage-tickets.blade.php†L180-L333】
 - `app/Models/Ticket.php`
-  - Current `assigned_to` relationship and scope: lines 52–57, 119–125, 191–196【F:app/Models/Ticket.php†L52-L57】【F:app/Models/Ticket.php†L119-L125】【F:app/Models/Ticket.php†L191-L196】
+  - Current `owner_id` relationship and scope: lines 60, 124–126, 242–244【F:app/Models/Ticket.php†L60】【F:app/Models/Ticket.php†L124-L126】【F:app/Models/Ticket.php†L242-L244】
 
 ## Required Changes
 1. **Presence icons**
@@ -45,35 +45,31 @@
    - Add matching mobile card lines.
    - `ManageTickets` query: already eager‑loads `department.departmentGroup`; extend sortable/filterable arrays and UI.
 3. **Rename “Assigned to” → “Owner”**
-   - Database: migration to rename `tickets.assigned_to` → `owner_id` and related indexes.
+   - Database: rename the tickets column to `owner_id` and update related indexes.
    - `app/Models/Ticket.php`
-     ```diff
-@@ line 52 @@
--        'assigned_to',
-+        'owner_id',
-@@ line 119 @@
--        'assigned_to' => 'datetime',
-+        'owner_id' => 'datetime', // retains null behaviour
-@@ line 191 @@
--    public function assigned(): BelongsTo
--    {
--        return $this->belongsTo(User::class, 'assigned_to');
--    }
-+    public function owner(): BelongsTo
-+    {
-+        return $this->belongsTo(User::class, 'owner_id');
-+    }
-@@ line 219 @@
--    public function scopeAssignedTo($query, $userId)
--    {
--        return $query->where('assigned_to', $userId);
--    }
-+    public function scopeOwnedBy($query, $userId)
-+    {
-+        return $query->where('owner_id', $userId);
-+    }
+     ```php
+     // ... inside the model
+     protected $fillable = [
+         // ...
+         'owner_id',
+     ];
+
+     protected $casts = [
+         // ...
+         'owner_id' => 'datetime', // retains null behaviour
+     ];
+
+     public function owner(): BelongsTo
+     {
+         return $this->belongsTo(User::class, 'owner_id');
+     }
+
+     public function scopeOwnedBy($query, $userId)
+     {
+         return $query->where('owner_id', $userId);
+     }
      ```
-   - Replace `assigned`/`assigned_to` references in `ManageTickets`, `ViewTicket`, tests, exports, and language strings with `owner`/`owner_id`.
+   - Replace any lingering `assigned` references in `ManageTickets`, `ViewTicket`, tests, exports, and language strings with `owner`/`owner_id`.
 
 ## UX Rationale
 - Icons quickly communicate hidden metadata without bloating the table.
@@ -97,4 +93,4 @@
 - Feature: listing displays icons only when internal notes or attachments exist.
 - Feature: table shows Department Group and Department columns with sortable headers.
 - Policy: ensure owner scope respects role‑based filtering.
-- Regression: migrate data from `assigned_to` to `owner_id` without loss; rollback verifies reverse migration.
+- Regression: migrate data to `owner_id` without loss; rollback verifies reverse migration.
