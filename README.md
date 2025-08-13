@@ -6,17 +6,20 @@ The application features a comprehensive **Role-Based Access Control (RBAC)** sy
 
 ## Key Features
 
-- 🎫 **Ticket Management** - Create, track, and manage support tickets
-- 🏢 **Organization Management** - Multi-tenant organization support
-- 📋 **Contract Tracking** - View and manage client contracts
-- 🛠️ **Hardware Management** - Track hardware assets and support
-- 👥 **User Management** - Comprehensive user administration
-- 📅 **Schedule Management** - Team schedule calendar with event tracking
+- 🎫 **Advanced Ticket Management** - Complete ticket lifecycle with unified conversation system, priority controls, and audit logging
+- 🔒 **Ticket Rules & Controls** - One-way priority escalation, reopen windows, and comprehensive authorization
+- 💬 **Unified Conversation Stream** - Messages and notes in chronological timeline with system notifications
+- 🏢 **Organization Management** - Multi-tenant organization support with contract and hardware tracking
+- 📋 **Contract Tracking** - View and manage client contracts with automated alerts
+- 🛠️ **Hardware Management** - Track hardware assets, warranties, and support assignments
+- 👥 **User Management** - Comprehensive user administration with role-based access control
+- 📅 **Schedule Management** - Team schedule calendar with event tracking and department filtering
 - 📊 **Reports & Analytics** - Comprehensive admin-only reporting system with real-time insights
 - 🎛️ **Dashboard Widgets** - Role-based customizable dashboard with smart widget system
-- 🔐 **Role-Based Permissions** - Granular permission system with role management
-- 📱 **Mobile Responsive** - Fully responsive design for all devices
-- 🌙 **Dark Mode** - Toggle between light and dark themes
+- 🔐 **Role-Based Permissions** - Granular permission system with 50+ permissions across 14 modules
+- 📱 **Mobile Responsive** - Fully responsive design optimized for all devices
+- 🌙 **Dark Mode** - Toggle between light and dark themes with consistent styling
+- 🔍 **Audit Logging** - Complete activity tracking for compliance and security requirements
 
 ## Requirements
 
@@ -310,7 +313,103 @@ The Support Portal features a powerful admin-only reporting system that provides
 
 ## Recent Updates
 
-### 🚀 **v4.3.1 - Ticket Close Modal Enhancement** (Latest)
+### 🚀 **v5.0.0 - Advanced Ticket System with Rules & Controls** (Latest)
+
+#### 🎫 **Phase 3: Ticket Rules and Settings Implementation**
+
+- ✅ **One-Way Priority Escalation Control**: Clients blocked from escalating ticket priorities with comprehensive validation
+  - **Server-Side Enforcement**: `TicketPolicy::escalatePriority()` method prevents unauthorized escalations
+  - **Role-Based Guards**: Client escalation prevention in both ManageTickets and ViewTicket components
+  - **Priority Comparison Logic**: `TicketPriority::compare()` method for hierarchy validation
+  - **UI Confirmations**: JavaScript confirmation dialogs for all priority escalations
+
+- ✅ **Reopen Window Setting System**: Configurable time limits for client ticket reopening
+  - **Setting-Based Control**: `tickets.reopen_window_days` setting with 3-day default
+  - **Policy Integration**: Uses existing `TicketPolicy::reopen()` for authorization
+  - **Role Differentiation**: Admin/support can always reopen, clients have time restrictions
+  - **Graceful Fallback**: System defaults to 3 days if setting is unavailable
+
+- ✅ **Comprehensive Audit Logging**: Complete audit trail for ticket operations
+  - **Priority Escalations**: All priority increases logged with ActivityLog
+  - **Enhanced ActivityLog**: New `record()` helper method for streamlined logging
+  - **Detailed Context**: Logs include old/new values and descriptive messages
+  - **Compliance Ready**: Full audit trail for security and compliance requirements
+
+- ✅ **Closed Ticket Management**: Smart action controls for closed tickets
+  - **Actions Disabled**: All normal actions (assign, close, priority change) disabled for closed tickets
+  - **Reopen Button Logic**: Smart visibility based on reopen window and user roles
+  - **Visual Indicators**: Lock icons for expired reopen windows, clear status communication
+  - **Confirmation Dialogs**: Context-aware confirmations with closure time information
+
+#### 🎫 **Phase 2: Ticket Management Enhancements**
+
+- ✅ **Presence Icons System**: Visual indicators for ticket content and attachments
+  - **Notes Indicator**: Shows when tickets have internal notes with document icon
+  - **Attachments Indicator**: Paper clip icon for tickets with file attachments
+  - **Count-Based Display**: Icons appear next to ticket numbers in listing views
+  - **Responsive Design**: Icons work across desktop and mobile layouts
+
+- ✅ **Department Column Restructuring**: Improved organization display
+  - **Combined Department Display**: Department Group and Department shown together
+  - **Multi-Line Format**: Group name on first line, department on second line
+  - **Consistent with Client Column**: Matches existing client/organization pattern
+  - **Space Optimization**: Better use of available column space
+
+- ✅ **Terminology Updates**: Professional language improvements
+  - **"Assigned to" → "Owner"**: More professional terminology throughout system
+  - **Database Migration**: `assigned_to` column renamed to `owner_id` with data preservation
+  - **Model Updates**: Relationship methods updated to use "owner" terminology
+  - **UI Consistency**: All templates updated with new terminology
+
+#### 🎫 **Phase 1: Conversation System Overhaul**
+
+- ✅ **Unified Conversation Stream**: Revolutionary ticket communication system
+  - **Combined Display**: Messages and public notes in single chronological timeline
+  - **Type Differentiation**: Visual styling distinguishes messages, notes, and system messages
+  - **System Messages**: Automatic status change notifications with timestamps
+  - **Conversation Refresh**: Real-time updates when new content is added
+
+- ✅ **Advanced Note Editing**: Comprehensive note management system
+  - **In-Line Editing**: Edit notes directly within the conversation stream
+  - **Color-Coded Notes**: Support for multiple note colors (blue, green, yellow, red, purple)
+  - **Internal/Public Toggle**: Notes can be internal-only or visible to clients
+  - **Permission-Based**: Only note authors and admins can edit/delete notes
+
+- ✅ **Description Migration**: Clean data restructuring
+  - **Database Migration**: Moved ticket descriptions to `ticket_messages` table
+  - **System Message Creation**: Descriptions converted to initial system messages
+  - **Data Preservation**: No data loss during migration process
+  - **Backward Compatibility**: Original description field marked as deprecated
+
+#### 🔧 **Technical Implementation Highlights**
+
+- ✅ **Enhanced Models & Policies**: 
+  - **TicketPriority Enum**: Added `compare()` method and `getValue()` for hierarchy
+  - **TicketPolicy**: New `escalatePriority()` and `reopen()` methods
+  - **ActivityLog Model**: Enhanced with `record()` helper for streamlined logging
+  - **Setting Model Integration**: Reopen window configuration with fallback defaults
+
+- ✅ **Frontend Enhancements**:
+  - **JavaScript Confirmations**: Context-aware dialogs for escalations and reopening
+  - **Visual State Management**: Proper disabled states and loading indicators
+  - **Responsive Design**: All improvements work across desktop and mobile
+  - **Accessibility**: Proper ARIA labels and keyboard navigation support
+
+- ✅ **Security & Performance**:
+  - **Multi-Layer Authorization**: Server-side validation with frontend confirmations
+  - **Query Optimization**: Efficient database queries with proper eager loading
+  - **Error Handling**: Comprehensive error handling with user-friendly messages
+  - **Audit Compliance**: Complete logging for all sensitive operations
+
+#### 🎯 **Business Value**
+
+- ✅ **Improved Security**: Prevents unauthorized priority escalations and ticket manipulation
+- ✅ **Better Communication**: Unified conversation stream improves client-support interaction
+- ✅ **Compliance Ready**: Complete audit trail for regulatory and security requirements
+- ✅ **Professional Appearance**: Enhanced terminology and visual indicators improve brand image
+- ✅ **Operational Efficiency**: Smart reopen controls reduce unnecessary ticket creation
+
+### 🚀 **v4.3.1 - Ticket Close Modal Enhancement** (Previous)
 
 #### 🎫 **Improved Ticket Closing Experience**
 
