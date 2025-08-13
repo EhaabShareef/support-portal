@@ -13,12 +13,9 @@ class OrganizationHardware extends Model
     protected $table = 'organization_hardware';
 
     protected $fillable = [
+        // Legacy fields (deprecated in UI)
         'asset_tag',
-        'organization_id',
-        'contract_id',
         'hardware_type',
-        'brand',
-        'model',
         'serial_number',
         'specifications',
         'purchase_date',
@@ -27,9 +24,18 @@ class OrganizationHardware extends Model
         'warranty_expiration',
         'status',
         'location',
-        'remarks',
         'last_maintenance',
         'next_maintenance',
+
+        // New simplified contract-first fields
+        'organization_id',
+        'contract_id',
+        'hardware_type_id',
+        'brand',
+        'model',
+        'quantity',
+        'serial_required',
+        'remarks',
     ];
 
     protected $casts = [
@@ -40,6 +46,7 @@ class OrganizationHardware extends Model
         'custom_fields' => 'array',
         'last_maintenance' => 'datetime',
         'next_maintenance' => 'datetime',
+        'serial_required' => 'boolean',
     ];
 
     public function organization()
@@ -50,5 +57,15 @@ class OrganizationHardware extends Model
     public function contract()
     {
         return $this->belongsTo(OrganizationContract::class, 'contract_id');
+    }
+
+    public function type()
+    {
+        return $this->belongsTo(HardwareType::class, 'hardware_type_id');
+    }
+
+    public function serials()
+    {
+        return $this->hasMany(HardwareSerial::class, 'organization_hardware_id');
     }
 }
