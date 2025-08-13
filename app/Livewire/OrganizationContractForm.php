@@ -5,7 +5,10 @@ namespace App\Livewire;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Models\OrganizationContract;
+use App\Models\ContractType;
+use App\Models\ContractStatus;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class OrganizationContractForm extends Component
@@ -17,8 +20,8 @@ class OrganizationContractForm extends Component
     public array $form = [
         'contract_number' => '',
         'department_id' => '',
-        'type' => 'support',
-        'status' => 'active',
+        'type' => '',
+        'status' => '',
         'includes_hardware' => false,
         'is_oracle' => false,
         'csi_number' => '',
@@ -32,8 +35,8 @@ class OrganizationContractForm extends Component
     protected $rules = [
         'form.contract_number' => 'required|string|max:255',
         'form.department_id' => 'required|exists:departments,id',
-        'form.type' => 'required|in:support,hardware,software,consulting,maintenance',
-        'form.status' => 'required|in:draft,active,expired,terminated,renewed',
+        'form.type' => 'required|string|exists:contract_types,slug',
+        'form.status' => 'required|string|exists:contract_statuses,slug',
         'form.includes_hardware' => 'boolean',
         'form.is_oracle' => 'boolean',
         'form.csi_number' => 'required_if:form.is_oracle,true|nullable|string|max:255',
@@ -63,11 +66,16 @@ class OrganizationContractForm extends Component
     {
         $this->isEditing = false;
         $this->contract = null;
+        
+        // Get default values from first available options
+        $defaultType = ContractType::active()->ordered()->first()?->slug ?? '';
+        $defaultStatus = ContractStatus::active()->ordered()->first()?->slug ?? '';
+        
         $this->form = [
             'contract_number' => 'CON-' . strtoupper(uniqid()),
             'department_id' => '',
-            'type' => 'support',
-            'status' => 'active',
+            'type' => $defaultType,
+            'status' => $defaultStatus,
             'includes_hardware' => false,
             'is_oracle' => false,
             'csi_number' => null,
@@ -164,6 +172,30 @@ class OrganizationContractForm extends Component
     {
         $this->reset(['form', 'isEditing', 'contract']);
         $this->dispatch('contractCancelled');
+    }
+
+    #[Computed]
+    public function contractTypes()
+    {
+        return ContractType::active()->ordered()->get();
+    }
+
+    #[Computed]
+    public function contractStatuses()
+    {
+        return ContractStatus::active()->ordered()->get();
+    }
+
+    #[Computed]
+    public function contractTypeOptions()
+    {
+        return $this->contractTypes->pluck('name', 'slug')->toArray();
+    }
+
+    #[Computed]
+    public function contractStatusOptions()
+    {
+        return $this->contractStatuses->pluck('name', 'slug')->toArray();
     }
 
     public function render()

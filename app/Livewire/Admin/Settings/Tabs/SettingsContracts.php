@@ -3,24 +3,23 @@
 namespace App\Livewire\Admin\Settings\Tabs;
 
 use Livewire\Component;
+use App\Models\ContractType;
+use App\Models\ContractStatus;
+use Livewire\Attributes\Computed;
 
 class SettingsContracts extends Component
 {
-    // Contract Types Management
-    public array $contractTypes = [
-        ['id' => 1, 'name' => 'Annual Support', 'slug' => 'annual_support', 'sort_order' => 1, 'is_protected' => true],
-        ['id' => 2, 'name' => 'Monthly Support', 'slug' => 'monthly_support', 'sort_order' => 2, 'is_protected' => true],
-        ['id' => 3, 'name' => 'Project-Based', 'slug' => 'project_based', 'sort_order' => 3, 'is_protected' => false],
-        ['id' => 4, 'name' => 'Maintenance', 'slug' => 'maintenance', 'sort_order' => 4, 'is_protected' => false],
-    ];
+    #[Computed]
+    public function contractTypes()
+    {
+        return ContractType::ordered()->get();
+    }
 
-    // Contract Statuses Management  
-    public array $contractStatuses = [
-        ['id' => 1, 'name' => 'Active', 'slug' => 'active', 'sort_order' => 1, 'is_protected' => true],
-        ['id' => 2, 'name' => 'Expired', 'slug' => 'expired', 'sort_order' => 2, 'is_protected' => true],
-        ['id' => 3, 'name' => 'Suspended', 'slug' => 'suspended', 'sort_order' => 3, 'is_protected' => false],
-        ['id' => 4, 'name' => 'Cancelled', 'slug' => 'cancelled', 'sort_order' => 4, 'is_protected' => false],
-    ];
+    #[Computed]
+    public function contractStatuses()
+    {
+        return ContractStatus::ordered()->get();
+    }
 
     public bool $showTypeModal = false;
     public bool $showStatusModal = false;
@@ -56,12 +55,8 @@ class SettingsContracts extends Component
 
     public function loadData()
     {
-        // In future implementation, these would load from database lookup tables
-        // For now, using hardcoded data as placeholder
-        
-        // TODO: Load from ContractType and ContractStatus models when migrations are created
-        // $this->contractTypes = ContractType::orderBy('sort_order')->get()->toArray();
-        // $this->contractStatuses = ContractStatus::orderBy('sort_order')->get()->toArray();
+        // Data is now loaded via computed properties
+        // This method kept for compatibility with listeners
     }
 
     public function refreshData()
@@ -81,19 +76,24 @@ class SettingsContracts extends Component
     public function editType($id)
     {
         $this->checkPermission('settings.update');
-        $type = collect($this->contractTypes)->firstWhere('id', $id);
+        $type = ContractType::find($id);
         
         if (!$type) {
             $this->dispatch('error', 'Contract type not found.');
             return;
         }
 
+        if ($type->is_protected) {
+            $this->dispatch('error', 'Cannot edit protected contract type.');
+            return;
+        }
+
         $this->selectedTypeId = $id;
         $this->typeForm = [
-            'name' => $type['name'],
-            'slug' => $type['slug'],
-            'sort_order' => $type['sort_order'],
-            'is_protected' => $type['is_protected'],
+            'name' => $type->name,
+            'slug' => $type->slug,
+            'sort_order' => $type->sort_order,
+            'is_protected' => $type->is_protected,
         ];
         $this->typeEditMode = true;
         $this->showTypeModal = true;
