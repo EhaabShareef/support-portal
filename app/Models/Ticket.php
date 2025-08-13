@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Models\TicketStatus as TicketStatusModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -124,6 +125,12 @@ class Ticket extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    // Status
+    public function ticketStatus(): BelongsTo
+    {
+        return $this->belongsTo(TicketStatusModel::class, 'status', 'key');
     }
 
     // Messages
@@ -286,9 +293,7 @@ class Ticket extends Model
 
     public function getStatusLabelAttribute(): string
     {
-        $status = TicketStatus::tryFrom($this->status);
-
-        return $status ? $status->label() : ucfirst(str_replace('_', ' ', $this->status));
+        return TicketStatus::getNameForKey($this->status);
     }
 
     public function getPriorityLabelAttribute(): string

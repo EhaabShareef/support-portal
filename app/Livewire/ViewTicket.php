@@ -11,12 +11,15 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketNote;
 use App\Models\User;
+use App\Models\TicketStatus as TicketStatusModel;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class ViewTicket extends Component
 {
+    protected $listeners = ['refresh-notes' => 'refreshNotes'];
+    
     public Ticket $ticket;
     public bool $editMode = false;
     public bool $showCloseModal = false;
@@ -158,6 +161,34 @@ class ViewTicket extends Component
     }
 
     #[Computed]
+    public function canReply()
+    {
+        $user = auth()->user();
+
+        // Clients can only reply to their own organization's tickets
+        if ($user->hasRole('client')) {
+            return $this->ticket->organization_id === $user->organization_id;
+        }
+
+        // Support can reply to tickets in their department or department group
+        if ($user->hasRole('support')) {
+            // Check same department first
+            if ($this->ticket->department_id === $user->department_id) {
+                return true;
+            }
+            // Check same department group
+            if ($user->department?->department_group_id && 
+                $user->department->department_group_id === $this->ticket->department?->department_group_id) {
+                return true;
+            }
+            return false;
+        }
+
+        // Admins can reply to any ticket
+        return $user->hasRole('admin');
+    }
+
+    #[Computed]
     public function activeContract()
     {
         return $this->ticket->organization->contracts->first();
@@ -200,6 +231,12 @@ class ViewTicket extends Component
                 'form.owner_id' => 'nullable|exists:users,id',
                 'form.department_id' => 'required|exists:departments,id',
             ]);
+
+            // Check if status is allowed using the policy
+            if (!$user->can('setStatus', [$this->ticket, $this->form['status']])) {
+                session()->flash('error', 'This ticket status is not available for your department group.');
+                return;
+            }
 
             // Check priority escalation for clients
             $user = auth()->user();
@@ -458,10 +495,8 @@ class ViewTicket extends Component
     {
         $note = TicketNote::find($noteId);
         if ($note && ($note->user_id === auth()->id() || auth()->user()->hasRole('admin'))) {
-            $this->editingNoteId = $noteId;
-            $this->note = $note->note;
-            $this->noteColor = $note->color;
-            $this->noteInternal = $note->is_internal;
+            // Dispatch event to the TicketConversation component to open the edit modal
+            $this->dispatch('edit-note', ['noteId' => $noteId, 'note' => $note->note, 'color' => $note->color, 'isInternal' => $note->is_internal])->to('tickets.ticket-conversation');
         }
     }
 
@@ -503,6 +538,25 @@ class ViewTicket extends Component
         }
     }
 
+    public function refreshNotes()
+    {
+        $this->ticket->refresh()->load(['notes' => function($query) {
+            $query->select(['id', 'ticket_id', 'user_id', 'note', 'color', 'is_internal', 'created_at'])
+                  ->with('user:id,name')
+                  ->latest();
+        }]);
+    }
+
+    public function openReplyModal()
+    {
+        $this->dispatch('open-reply-modal')->to('tickets.ticket-conversation');
+    }
+
+    public function openNoteModal()
+    {
+        $this->dispatch('open-note-modal')->to('tickets.ticket-conversation');
+    }
+
     public function render()
     {
         $user = auth()->user();
@@ -536,10 +590,20 @@ class ViewTicket extends Component
             }
         }
 
+        // Get status options based on user's department group
+        $statusOptions = [];
+        if ($user->hasRole('admin')) {
+            $statusOptions = TicketStatus::options();
+        } elseif ($user->hasRole('support') && $user->department?->department_group_id) {
+            $statusOptions = TicketStatus::optionsForDepartmentGroup($user->department->department_group_id);
+        } else {
+            $statusOptions = TicketStatus::options(); // Fallback to default options
+        }
+
         return view('tickets.show', [
             'departments' => $departments,
             'users' => $users,
-            'statusOptions' => TicketStatus::options(),
+            'statusOptions' => $statusOptions,
             'priorityOptions' => TicketPriority::options(),
         ]);
     }

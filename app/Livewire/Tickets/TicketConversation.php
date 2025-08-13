@@ -11,6 +11,8 @@ use Livewire\Component;
 
 class TicketConversation extends Component
 {
+    protected $listeners = ['edit-note' => 'handleEditNote', 'open-reply-modal' => 'openReplyModal', 'open-note-modal' => 'openNoteModal'];
+    
     public Ticket $ticket;
     public string $activeInput = ''; // values: 'reply', 'note'
     public string $replyMessage = '';
@@ -48,6 +50,8 @@ class TicketConversation extends Component
         $this->replyMessage = '';
         $this->attachments = [];
         $this->showReplyModal = false;
+        // Ensure conversation is preserved when modal is closed
+        $this->refreshConversation();
     }
 
     public function openNoteModal()
@@ -66,6 +70,8 @@ class TicketConversation extends Component
         $this->noteInternal = true;
         $this->editingNoteId = null;
         $this->showNoteModal = false;
+        // Ensure conversation is preserved when modal is closed
+        $this->refreshConversation();
     }
 
     public function refreshConversation(): void
@@ -219,6 +225,11 @@ class TicketConversation extends Component
             'noteColor' => 'required',
         ]);
 
+        // If editingNoteId is set, this is an update, not a new note
+        if ($this->editingNoteId) {
+            return $this->updateNote();
+        }
+
         TicketNote::create([
             'ticket_id' => $this->ticket->id,
             'user_id' => Auth::id(),
@@ -307,8 +318,12 @@ class TicketConversation extends Component
         // Refresh conversation to show updated public notes
         $this->refreshConversation();
         
+        $this->closeNoteModal();
         session()->flash('message', 'Note updated successfully.');
         $this->dispatch('noteUpdated', ['ticket' => $this->ticket]);
+        
+        // Refresh the parent ViewTicket component's notes
+        $this->dispatch('refresh-notes');
     }
 
     public function cancelEditNote()
@@ -397,6 +412,15 @@ class TicketConversation extends Component
             $attachment->uuid = \Illuminate\Support\Str::uuid();
             $attachment->save();
         }
+    }
+
+    public function handleEditNote($data)
+    {
+        $this->editingNoteId = $data['noteId'];
+        $this->note = $data['note'];
+        $this->noteColor = $data['color'];
+        $this->noteInternal = $data['isInternal'];
+        $this->showNoteModal = true;
     }
 
     public function render()

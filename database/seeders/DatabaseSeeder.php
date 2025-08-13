@@ -22,6 +22,11 @@ class DatabaseSeeder extends Seeder
             BasicDataSeeder::class,          // Creates organization, department groups, and departments
             UserSeeder::class,              // Creates users with proper assignments
             ScheduleEventTypeSeeder::class,  // Creates schedule event types
+            ContractTypeSeeder::class,       // Creates contract types lookup data
+            ContractStatusSeeder::class,     // Creates contract statuses lookup data
+            HardwareTypeSeeder::class,       // Creates hardware types lookup data
+            HardwareStatusSeeder::class,     // Creates hardware statuses lookup data
+            TicketStatusSeeder::class,       // Creates ticket statuses and department group associations
             DashboardWidgetSeeder::class,    // Creates widget catalog
             UserWidgetSettingsSeeder::class, // Creates default user widget settings
             ApplicationSettingsSeeder::class, // Creates application settings

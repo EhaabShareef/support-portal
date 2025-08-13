@@ -24,10 +24,45 @@ class SettingsRepository implements SettingsRepositoryInterface
         return $this->all()->where('group', $group);
     }
 
+    public function forGroup(string $group): Collection
+    {
+        return $this->group($group);
+    }
+
     public function get(string $key, $default = null)
     {
         $setting = $this->all()->firstWhere('key', $key);
         return $setting ? $setting->value : $default;
+    }
+
+    public function set(string $key, $value, string $type = 'string'): void
+    {
+        $setting = Setting::where('key', $key)->first();
+        
+        if ($setting) {
+            $setting->update(['value' => $value, 'type' => $type]);
+        } else {
+            Setting::create([
+                'key' => $key,
+                'value' => $value,
+                'type' => $type,
+                'group' => 'general',
+                'label' => ucfirst(str_replace(['_', '.'], ' ', $key)),
+            ]);
+        }
+        
+        $this->clearCache();
+    }
+
+    public function reset(string $key): void
+    {
+        $setting = Setting::where('key', $key)->first();
+        
+        if ($setting) {
+            // For now, just delete the setting - in future this could restore seeded defaults
+            $setting->delete();
+            $this->clearCache();
+        }
     }
 
     public function create(array $data): Setting

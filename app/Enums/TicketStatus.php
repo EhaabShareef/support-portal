@@ -3,31 +3,28 @@
 namespace App\Enums;
 
 use App\Services\TicketColorService;
+use App\Models\TicketStatus as TicketStatusModel;
 
 enum TicketStatus: string
 {
+    // Core protected statuses that always exist
     case OPEN = 'open';
     case IN_PROGRESS = 'in_progress';
-    case AWAITING_CUSTOMER_RESPONSE = 'awaiting_customer_response';
-    case AWAITING_CASE_CLOSURE = 'awaiting_case_closure';
-    case SALES_ENGAGEMENT = 'sales_engagement';
-    case MONITORING = 'monitoring';
-    case SOLUTION_PROVIDED = 'solution_provided';
     case CLOSED = 'closed';
-    case ON_HOLD = 'on_hold';
 
     public function label(): string
     {
+        // Try to get dynamic label from database first
+        $statusModel = TicketStatusModel::where('key', $this->value)->first();
+        if ($statusModel) {
+            return $statusModel->name;
+        }
+
+        // Fallback to static labels
         return match ($this) {
             self::OPEN => 'Open',
-            self::IN_PROGRESS => 'In Progress',
-            self::AWAITING_CUSTOMER_RESPONSE => 'Awaiting Customer Response',
-            self::AWAITING_CASE_CLOSURE => 'Awaiting Case Closure',
-            self::SALES_ENGAGEMENT => 'Sales Engagement',
-            self::MONITORING => 'Monitoring',
-            self::SOLUTION_PROVIDED => 'Solution Provided',
+            self::IN_PROGRESS => 'In Progress', 
             self::CLOSED => 'Closed',
-            self::ON_HOLD => 'On Hold',
         };
     }
 
@@ -37,21 +34,89 @@ enum TicketStatus: string
         return $colorService->getStatusClasses($this->value);
     }
 
+    /**
+     * Get all available statuses (dynamic from database)
+     */
     public static function values(): array
     {
-        return array_column(self::cases(), 'value');
+        return TicketStatusModel::active()->pluck('key')->toArray();
     }
 
+    /**
+     * Get all available status options (dynamic from database)
+     */
     public static function options(): array
     {
-        return array_combine(
-            array_column(self::cases(), 'value'),
-            array_map(fn ($case) => $case->label(), self::cases())
-        );
+        return TicketStatusModel::active()
+            ->ordered()
+            ->pluck('name', 'key')
+            ->toArray();
     }
 
-    public static function validationRule(): string
+    /**
+     * Get status options for a specific department group
+     */
+    public static function optionsForDepartmentGroup(?int $departmentGroupId): array
     {
-        return 'required|in:' . implode(',', self::values());
+        if (!$departmentGroupId) {
+            return self::options();
+        }
+
+        return TicketStatusModel::active()
+            ->forDepartmentGroup($departmentGroupId)
+            ->ordered()
+            ->pluck('name', 'key')
+            ->toArray();
+    }
+
+    /**
+     * Get validation rule for status
+     */
+    public static function validationRule(?int $departmentGroupId = null): string
+    {
+        $validStatuses = $departmentGroupId 
+            ? array_keys(self::optionsForDepartmentGroup($departmentGroupId))
+            : self::values();
+            
+        return 'required|in:' . implode(',', $validStatuses);
+    }
+
+    /**
+     * Create enum instance from string (with fallback)
+     */
+    public static function tryFrom(string $value): ?self
+    {
+        // Try to match against core enum cases first
+        foreach (self::cases() as $case) {
+            if ($case->value === $value) {
+                return $case;
+            }
+        }
+
+        // If not a core case, check if it exists in database
+        if (TicketStatusModel::where('key', $value)->exists()) {
+            // For dynamic statuses, we'll handle them as strings in the application
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get color for a status key (works with both enum and dynamic statuses)
+     */
+    public static function getColorForKey(string $key): string
+    {
+        $statusModel = TicketStatusModel::where('key', $key)->first();
+        return $statusModel ? $statusModel->color : '#6b7280';
+    }
+
+    /**
+     * Get name for a status key (works with both enum and dynamic statuses)
+     */
+    public static function getNameForKey(string $key): string
+    {
+        $statusModel = TicketStatusModel::where('key', $key)->first();
+        return $statusModel ? $statusModel->name : ucfirst(str_replace('_', ' ', $key));
     }
 }

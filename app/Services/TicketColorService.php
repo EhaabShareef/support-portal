@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Setting;
 use App\Contracts\SettingsRepositoryInterface;
+use App\Models\TicketStatus as TicketStatusModel;
 use Illuminate\Support\Facades\Cache;
 
 class TicketColorService
@@ -75,20 +76,31 @@ class TicketColorService
     }
 
     /**
-     * Get all status color mappings from settings
+     * Get all status color mappings from settings (legacy) and database
      */
     public function getStatusColors(): array
     {
         return Cache::remember('ticket_status_colors', 3600, function () {
-            $value = app(SettingsRepositoryInterface::class)->get('ticket_status_colors', self::DEFAULT_STATUS_COLORS);
+            // First get dynamic statuses from database
+            $dynamicStatusColors = [];
+            $ticketStatuses = TicketStatusModel::active()->get();
+            foreach ($ticketStatuses as $status) {
+                $dynamicStatusColors[$status->key] = $status->color;
+            }
+
+            // Then get legacy settings-based colors
+            $settingsValue = app(SettingsRepositoryInterface::class)->get('ticket_status_colors', self::DEFAULT_STATUS_COLORS);
             
             // Ensure we always return an array
-            if (is_string($value)) {
-                $decoded = json_decode($value, true);
-                return is_array($decoded) ? $decoded : self::DEFAULT_STATUS_COLORS;
+            if (is_string($settingsValue)) {
+                $decoded = json_decode($settingsValue, true);
+                $settingsColors = is_array($decoded) ? $decoded : self::DEFAULT_STATUS_COLORS;
+            } else {
+                $settingsColors = is_array($settingsValue) ? $settingsValue : self::DEFAULT_STATUS_COLORS;
             }
-            
-            return is_array($value) ? $value : self::DEFAULT_STATUS_COLORS;
+
+            // Merge dynamic colors (priority) with settings colors (fallback)
+            return array_merge($settingsColors, $dynamicStatusColors);
         });
     }
 
@@ -111,12 +123,40 @@ class TicketColorService
     }
 
     /**
-     * Update status colors setting
+     * Update status colors setting (legacy method)
      */
     public function updateStatusColors(array $colors): void
     {
         Setting::set('ticket_status_colors', $colors, 'json', 'ticket');
         Cache::forget('ticket_status_colors');
+    }
+
+    /**
+     * Set color for a specific status
+     */
+    public function setStatusColor(string $statusKey, string $color): void
+    {
+        // Update the ticket status model if it exists
+        $ticketStatus = TicketStatusModel::where('key', $statusKey)->first();
+        if ($ticketStatus) {
+            $ticketStatus->update(['color' => $color]);
+        }
+        
+        // Also update the legacy settings for backward compatibility
+        $statusColors = $this->getStatusColors();
+        $statusColors[$statusKey] = $color;
+        $this->updateStatusColors($statusColors);
+        
+        Cache::forget('ticket_status_colors');
+    }
+
+    /**
+     * Get color for a specific status
+     */
+    public function getStatusColor(string $statusKey): string
+    {
+        $colors = $this->getStatusColors();
+        return $colors[$statusKey] ?? $this->getDefaultStatusColor($statusKey);
     }
 
     /**
@@ -201,7 +241,22 @@ class TicketColorService
      */
     public function resetStatusColorsToDefaults(): void
     {
+        // Reset both database ticket statuses and settings
+        $ticketStatuses = TicketStatusModel::all();
+        foreach ($ticketStatuses as $status) {
+            $defaultColor = self::DEFAULT_STATUS_COLORS[$status->key] ?? '#6b7280';
+            $status->update(['color' => $defaultColor]);
+        }
+        
         $this->updateStatusColors(self::DEFAULT_STATUS_COLORS);
+    }
+
+    /**
+     * Clear the ticket status colors cache
+     */
+    public function clearStatusColorsCache(): void
+    {
+        Cache::forget('ticket_status_colors');
     }
 
     /**

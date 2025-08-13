@@ -96,10 +96,15 @@
                                         <option value="suspended">Suspended</option>
                                         <option value="cancelled">Cancelled</option>
                                     </select>
-                                    <label class="inline-flex items-center">
-                                        <input type="checkbox" wire:model.defer="form.is_active" class="h-5 w-5 text-sky-600 focus:ring-sky-500 border-neutral-300 rounded">
-                                        <span class="ml-2">Active</span>
-                                    </label>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Active</span>
+                                        <button type="button" wire:click="$toggle('form.is_active')" 
+                                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 {{ $form['is_active'] ? 'bg-neutral-600' : 'bg-neutral-200 dark:bg-neutral-700' }}">
+                                            <span class="sr-only">Toggle active status</span>
+                                            <span aria-hidden="true" 
+                                                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $form['is_active'] ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                                        </button>
+                                    </div>
                                 </div>
                             @else
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
