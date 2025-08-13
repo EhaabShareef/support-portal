@@ -57,7 +57,7 @@ class ViewTicket extends Component
         $this->ticket = $ticket->load([
             'organization:id,name,notes',
             'organization.contracts' => function($query) use ($ticket) {
-                $query->select(['id', 'organization_id', 'department_id', 'contract_number', 'type', 'status', 'start_date', 'end_date', 'contract_value', 'currency'])
+                $query->select(['id', 'organization_id', 'department_id', 'contract_number', 'type', 'status', 'start_date', 'end_date'])
                       ->where('department_id', $ticket->department_id)
                       ->where('status', 'active')
                       ->orderBy('start_date', 'desc')

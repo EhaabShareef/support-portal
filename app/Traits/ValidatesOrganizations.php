@@ -13,9 +13,9 @@ trait ValidatesOrganizations
     {
         return [
             'form.name' => 'required|string|max:255',
-            'form.company' => 'required|string|max:255',
+            'form.company' => 'nullable|string|max:255',
             'form.company_contact' => 'required|string|max:255',
-            'form.tin_no' => 'required|string|max:255|unique:organizations,tin_no',
+            'form.tin_no' => 'nullable|string|max:255|unique:organizations,tin_no',
             'form.email' => 'required|email|unique:organizations,email',
             'form.phone' => 'nullable|string|max:20',
             'form.is_active' => 'boolean',
@@ -35,7 +35,7 @@ trait ValidatesOrganizations
         $rules = $this->getOrganizationValidationRules();
         
         if ($excludeId) {
-            $rules['form.tin_no'] = 'required|string|max:255|unique:organizations,tin_no,' . $excludeId;
+            $rules['form.tin_no'] = 'nullable|string|max:255|unique:organizations,tin_no,' . $excludeId;
             $rules['form.email'] = 'required|email|unique:organizations,email,' . $excludeId;
         }
         
@@ -51,9 +51,7 @@ trait ValidatesOrganizations
     {
         return [
             'form.name.required' => 'Organization name is required',
-            'form.company.required' => 'Company name is required',
             'form.company_contact.required' => 'Company contact is required',
-            'form.tin_no.required' => 'TIN number is required',
             'form.tin_no.unique' => 'This TIN number is already in use',
             'form.email.required' => 'Email is required',
             'form.email.email' => 'Please enter a valid email address',

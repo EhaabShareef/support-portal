@@ -137,7 +137,7 @@
                                 <div class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
                                     <div>{{ $this->activeContract->contract_number }}</div>
                                     <div class="text-neutral-600 dark:text-neutral-400">
-                                        {{ $this->activeContract->type }} - {{ $this->activeContract->currency }} {{ number_format($this->activeContract->contract_value) }}
+                                        {{ $this->activeContract->type }}
                                     </div>
                                 </div>
                             </div>

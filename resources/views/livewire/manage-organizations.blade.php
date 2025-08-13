@@ -61,27 +61,24 @@
                     @endforeach
 
                     <div class="form-field-stagger">
-                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Subscription Status</label>
-                        <select wire:model.defer="form.subscription_status"
-                            class="w-full px-4 py-2 mt-1 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 
-                                   rounded-md text-sm text-neutral-800 dark:text-neutral-100 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none transition-all duration-200">
-                            <option value="trial">Trial</option>
-                            <option value="active">Active</option>
-                            <option value="suspended">Suspended</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
+                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Subscription & Status</label>
+                        <div class="flex items-center gap-4">
+                            <select wire:model.defer="form.subscription_status"
+                                class="w-full px-4 py-2 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 rounded-md text-sm text-neutral-800 dark:text-neutral-100 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none transition-all duration-200">
+                                <option value="trial">Trial</option>
+                                <option value="active">Active</option>
+                                <option value="suspended">Suspended</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" wire:model.defer="form.is_active"
+                                    class="h-5 w-5 text-sky-600 focus:ring-sky-500 border-neutral-300 rounded">
+                                <span class="ml-2 text-sm text-neutral-800 dark:text-neutral-200">Active</span>
+                            </label>
+                        </div>
                         @error("form.subscription_status")
                             <p class="text-sm text-red-600 mt-1 animate-pulse">{{ $message }}</p>
                         @enderror
-                    </div>
-
-                    <div class="form-field-stagger">
-                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Active</label>
-                        <label class="inline-flex items-center">
-                            <input type="checkbox" wire:model.defer="form.is_active"
-                                class="rounded border-neutral-300 text-sky-600 shadow-sm focus:ring-sky-500 transition-all duration-200">
-                            <span class="ml-2 text-sm text-neutral-800 dark:text-neutral-200">Yes</span>
-                        </label>
                     </div>
                 </div>
 

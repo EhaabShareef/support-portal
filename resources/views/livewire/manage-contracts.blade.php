@@ -120,41 +120,6 @@
                             </div>
                         </div>
 
-                        {{-- Contract Value & Currency --}}
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="md:col-span-2">
-                                <label for="contract_value" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                                    Contract Value
-                                </label>
-                                <input type="number" 
-                                       wire:model="form.contract_value" 
-                                       id="contract_value"
-                                       step="0.01"
-                                       min="0"
-                                       placeholder="0.00"
-                                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                                @error('form.contract_value') 
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label for="currency" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                                    Currency
-                                </label>
-                                <select wire:model="form.currency" 
-                                        id="currency"
-                                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                                    <option value="USD">USD</option>
-                                    <option value="EUR">EUR</option>
-                                    <option value="MVR">MVR</option>
-                                </select>
-                                @error('form.currency') 
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                                @enderror
-                            </div>
-                        </div>
-
                         {{-- Dates --}}
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
@@ -202,8 +167,8 @@
 
                         {{-- Hardware Inclusion --}}
                         <div class="flex items-center">
-                            <input type="checkbox" 
-                                   wire:model="form.includes_hardware" 
+                            <input type="checkbox"
+                                   wire:model="form.includes_hardware"
                                    id="includes_hardware"
                                    class="h-4 w-4 text-sky-600 focus:ring-sky-500 border-neutral-300 rounded">
                             <label for="includes_hardware" class="ml-2 block text-sm text-neutral-700 dark:text-neutral-300">
@@ -211,12 +176,39 @@
                             </label>
                         </div>
 
+                        {{-- Oracle Details --}}
+                        <div class="mt-4">
+                            <div class="flex items-center">
+                                <input type="checkbox"
+                                       wire:model="form.is_oracle"
+                                       id="is_oracle"
+                                       class="h-4 w-4 text-sky-600 focus:ring-sky-500 border-neutral-300 rounded">
+                                <label for="is_oracle" class="ml-2 block text-sm text-neutral-700 dark:text-neutral-300">
+                                    Oracle Contract
+                                </label>
+                            </div>
+                            @if($form['is_oracle'])
+                                <div class="mt-2">
+                                    <label for="csi_number" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                                        CSI Number *
+                                    </label>
+                                    <input type="text"
+                                           wire:model="form.csi_number"
+                                           id="csi_number"
+                                           class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+                                    @error('form.csi_number')
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            @endif
+                        </div>
+
                         {{-- CSI Remarks --}}
                         <div>
                             <label for="csi_remarks" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                                 CSI Remarks
                             </label>
-                            <textarea wire:model="form.csi_remarks" 
+                            <textarea wire:model="form.csi_remarks"
                                       id="csi_remarks"
                                       rows="3"
                                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
@@ -226,18 +218,18 @@
                             @enderror
                         </div>
 
-                        {{-- Terms & Conditions --}}
+                        {{-- Notes --}}
                         <div>
-                            <label for="terms_conditions" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                                Terms & Conditions
+                            <label for="notes" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                                Notes
                             </label>
-                            <textarea wire:model="form.terms_conditions" 
-                                      id="terms_conditions"
+                            <textarea wire:model="form.notes"
+                                      id="notes"
                                       rows="4"
                                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
-                                      placeholder="Contract terms and conditions..."></textarea>
-                            @error('form.terms_conditions') 
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                                      placeholder="Additional notes..."></textarea>
+                            @error('form.notes')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
 
@@ -288,13 +280,6 @@
                                     <x-heroicon-o-tag class="h-4 w-4" />
                                     <span>{{ ucfirst($contract->type) }}</span>
                                 </div>
-                                
-                                @if($contract->contract_value)
-                                <div class="flex items-center gap-2">
-                                    <x-heroicon-o-currency-dollar class="h-4 w-4" />
-                                    <span>{{ $contract->currency }} {{ number_format($contract->contract_value, 0) }}</span>
-                                </div>
-                                @endif
                                 
                                 <div class="flex items-center gap-2">
                                     <x-heroicon-o-calendar class="h-4 w-4" />

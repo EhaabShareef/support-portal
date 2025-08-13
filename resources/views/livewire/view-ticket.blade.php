@@ -205,11 +205,6 @@
                                             {{ $this->activeContract->start_date->format('M d, Y') }} - 
                                             {{ $this->activeContract->end_date ? $this->activeContract->end_date->format('M d, Y') : 'Ongoing' }}
                                         </div>
-                                        @if($this->activeContract->contract_value)
-                                        <div class="text-xs text-neutral-600 dark:text-neutral-400">
-                                            Value: {{ $this->activeContract->currency }} {{ number_format($this->activeContract->contract_value, 2) }}
-                                        </div>
-                                        @endif
                                     </div>
                                 @else
                                     <div class="flex items-center gap-2">
