@@ -292,83 +292,7 @@
                             {{-- Actions --}}
                             <div class="col-span-1">
                                 <div class="flex items-center gap-1">
-
-                                    {{-- Quick Actions for Admin/Support --}}
-                                    @if(auth()->user()->can('tickets.update'))
-                                        @if($ticket->status === 'closed')
-                                            {{-- Reopen Button (only if within reopen window or user is admin/support) --}}
-                                            @php
-                                                $canReopen = auth()->user()->hasRole(['admin', 'support']) || 
-                                                           (auth()->user()->hasRole('client') && 
-                                                            auth()->user()->organization_id === $ticket->organization_id &&
-                                                            $ticket->closed_at && 
-                                                            floor(now()->diffInDays($ticket->closed_at)) <= (\App\Models\Setting::get('tickets.reopen_window_days', 3)));
-                                            @endphp
-                                            @if($canReopen)
-                                                <button wire:click="openReopenModal({{ $ticket->id }})" 
-                                                        class="inline-flex items-center px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-all duration-200"
-                                                        title="Reopen Ticket">
-                                                    <x-heroicon-o-arrow-path class="h-3 w-3" />
-                                                </button>
-                                            @else
-                                                <span class="inline-flex items-center px-2 py-1 text-xs text-neutral-400 cursor-not-allowed" title="Reopen window expired">
-                                                    <x-heroicon-o-lock-closed class="h-3 w-3" />
-                                                </span>
-                                            @endif
-                                        @else
-                                            {{-- Normal actions for non-closed tickets --}}
-                                            
-                                            {{-- Assign to Me (only for unassigned tickets) --}}
-                                            @if(!$ticket->owner_id && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
-                                                <button wire:click="assignToMe({{ $ticket->id }})" 
-                                                        class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
-                                                        title="Assign to Me">
-                                                    <x-heroicon-o-user-plus class="h-3 w-3" />
-                                                </button>
-                                            @endif
-
-                                            {{-- Close Ticket (for resolved/open tickets) --}}
-                                            @if(in_array($ticket->status, ['solution_provided', 'in_progress', 'open']))
-                                                <button wire:click="closeTicket({{ $ticket->id }})" 
-                                                        class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200"
-                                                        title="Close Ticket">
-                                                    <x-heroicon-o-x-circle class="h-3 w-3" />
-                                                </button>
-                                            @endif
-
-                                            {{-- Priority Dropdown --}}
-                                            @if(auth()->user()->hasRole('admin'))
-                                                <div class="relative" x-data="{ open: false }" @click.away="open = false">
-                                                    <button @click="open = !open" 
-                                                            class="inline-flex items-center px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded transition-all duration-200"
-                                                            title="Change Priority">
-                                                        <x-heroicon-o-flag class="h-3 w-3" />
-                                                    </button>
-                                                    
-                                                    <div x-show="open" 
-                                                         x-transition:enter="transition ease-out duration-100"
-                                                         x-transition:enter-start="transform opacity-0 scale-95"
-                                                         x-transition:enter-end="transform opacity-100 scale-100"
-                                                         x-transition:leave="transition ease-in duration-75"
-                                                         x-transition:leave-start="transform opacity-100 scale-100"
-                                                         x-transition:leave-end="transform opacity-0 scale-95"
-                                                         class="absolute right-0 mt-1 w-24 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg z-10">
-                                                        <div class="py-1">
-                                                            @foreach(['low', 'normal', 'high', 'urgent', 'critical'] as $priority)
-                                                                @if($priority !== $ticket->priority)
-                                                                    <button onclick="confirmPriorityChange({{ $ticket->id }}, '{{ $priority }}', '{{ $ticket->priority }}', '{{ ucfirst($priority) }}')" 
-                                                                            @click="open = false"
-                                                                            class="w-full text-left px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
-                                                                        {{ ucfirst($priority) }}
-                                                                    </button>
-                                                                @endif
-                                                            @endforeach
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endif
-                                        @endif
-                                    @endif
+                                    <x-tickets.quick-actions :ticket="$ticket" />
                                 </div>
                             </div>
                         </div>
@@ -402,51 +326,7 @@
                                     </h3>
                                 </div>
                                 <div class="flex items-center gap-1 ml-2">
-
-                                    {{-- Quick Actions for Admin/Support --}}
-                                    @if(auth()->user()->can('tickets.update'))
-                                        @if($ticket->status === 'closed')
-                                            {{-- Reopen Button (only if within reopen window or user is admin/support) --}}
-                                            @php
-                                                $canReopen = auth()->user()->hasRole(['admin', 'support']) || 
-                                                           (auth()->user()->hasRole('client') && 
-                                                            auth()->user()->organization_id === $ticket->organization_id &&
-                                                            $ticket->closed_at && 
-                                                            floor(now()->diffInDays($ticket->closed_at)) <= (\App\Models\Setting::get('tickets.reopen_window_days', 3)));
-                                            @endphp
-                                            @if($canReopen)
-                                                <button wire:click="openReopenModal({{ $ticket->id }})" 
-                                                        class="inline-flex items-center px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-all duration-200"
-                                                        title="Reopen Ticket">
-                                                    <x-heroicon-o-arrow-path class="h-4 w-4" />
-                                                </button>
-                                            @else
-                                                <span class="inline-flex items-center px-2 py-1 text-xs text-neutral-400 cursor-not-allowed" title="Reopen window expired">
-                                                    <x-heroicon-o-lock-closed class="h-4 w-4" />
-                                                </span>
-                                            @endif
-                                        @else
-                                            {{-- Normal actions for non-closed tickets --}}
-                                            
-                                            {{-- Assign to Me (only for unassigned tickets) --}}
-                                            @if(!$ticket->owner_id && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
-                                                <button wire:click="assignToMe({{ $ticket->id }})" 
-                                                        class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
-                                                        title="Assign to Me">
-                                                    <x-heroicon-o-user-plus class="h-4 w-4" />
-                                                </button>
-                                            @endif
-
-                                            {{-- Close Ticket --}}
-                                            @if(in_array($ticket->status, ['solution_provided', 'in_progress', 'open']))
-                                                <button wire:click="closeTicket({{ $ticket->id }})" 
-                                                        class="inline-flex items-center px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-all duration-200"
-                                                        title="Close Ticket">
-                                                    <x-heroicon-o-x-circle class="h-4 w-4" />
-                                                </button>
-                                            @endif
-                                        @endif
-                                    @endif
+                                    <x-tickets.quick-actions :ticket="$ticket" :isMobile="true" />
                                 </div>
                             </div>
 
@@ -741,6 +621,19 @@
                                     </div>
                                 </div>
                                 @endif
+                                
+                                {{-- Optional Reason Field --}}
+                                @if(auth()->user()->hasRole(['admin', 'support']))
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                        Reopening Reason (Optional)
+                                    </label>
+                                    <textarea wire:model="reopenReason" 
+                                              rows="3"
+                                              placeholder="Provide a reason for reopening this ticket (optional)..."
+                                              class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"></textarea>
+                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -753,6 +646,86 @@
                         Reopen Ticket
                     </button>
                     <button wire:click="closeReopenModal"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-neutral-600 shadow-sm px-4 py-2 bg-white dark:bg-neutral-800 text-base font-medium text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Close Confirmation Modal --}}
+    @if($showCloseConfirmModal)
+    <div class="fixed inset-0 z-50 overflow-y-auto" x-data="{ show: @entangle('showCloseConfirmModal') }" x-show="show" x-cloak>
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" x-show="show" 
+                 x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" 
+                 x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" 
+                 x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                 wire:click="closeCloseConfirmModal"></div>
+
+            <div class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+                 x-show="show" x-transition:enter="ease-out duration-300" 
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave="ease-in duration-200" 
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                
+                <div class="bg-white dark:bg-neutral-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/40 sm:mx-0 sm:h-10 sm:w-10">
+                            <x-heroicon-o-x-circle class="h-6 w-6 text-red-600 dark:text-red-400" />
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-neutral-900 dark:text-neutral-100">
+                                Close Ticket
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                                    To close this ticket with detailed remarks or solution summary, please use the ticket detail view.
+                                </p>
+                                
+                                @if(!empty($closeTicketInfo))
+                                <div class="mt-4 bg-neutral-50 dark:bg-neutral-700/50 rounded-lg p-4">
+                                    <div class="space-y-2 text-sm">
+                                        <div>
+                                            <span class="font-medium text-neutral-700 dark:text-neutral-300">Ticket:</span>
+                                            <span class="text-neutral-600 dark:text-neutral-400">#{{ $closeTicketInfo['ticket_number'] ?? 'N/A' }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="font-medium text-neutral-700 dark:text-neutral-300">Subject:</span>
+                                            <span class="text-neutral-600 dark:text-neutral-400">{{ Str::limit($closeTicketInfo['subject'] ?? 'N/A', 50) }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="font-medium text-neutral-700 dark:text-neutral-300">Client:</span>
+                                            <span class="text-neutral-600 dark:text-neutral-400">{{ $closeTicketInfo['client_name'] ?? 'N/A' }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="font-medium text-neutral-700 dark:text-neutral-300">Organization:</span>
+                                            <span class="text-neutral-600 dark:text-neutral-400">{{ $closeTicketInfo['organization_name'] ?? 'N/A' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 dark:bg-neutral-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button wire:click="redirectToTicketView" 
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        <x-heroicon-o-eye class="h-4 w-4 mr-2" />
+                        Go to Ticket Details
+                    </button>
+                    <button wire:click="quickCloseTicket" 
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-red-300 dark:border-red-600 shadow-sm px-4 py-2 bg-white dark:bg-neutral-800 text-base font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <x-heroicon-o-x-circle class="h-4 w-4 mr-2" />
+                        Quick Close
+                    </button>
+                    <button wire:click="closeCloseConfirmModal"
                             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-neutral-600 shadow-sm px-4 py-2 bg-white dark:bg-neutral-800 text-base font-medium text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm">
                         Cancel
                     </button>

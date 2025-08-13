@@ -55,6 +55,12 @@ class ManageTickets extends Component
     public bool $showReopenModal = false;
     public ?int $reopenTicketId = null;
     public array $reopenTicketInfo = [];
+    public string $reopenReason = '';
+    
+    // Close confirmation modal properties
+    public bool $showCloseConfirmModal = false;
+    public ?int $closeTicketId = null;
+    public array $closeTicketInfo = [];
 
     public array $form = [
         'subject' => '',
@@ -256,7 +262,7 @@ class ManageTickets extends Component
         }
     }
 
-    public function closeTicket($ticketId)
+    public function openCloseConfirmModal($ticketId)
     {
         try {
             $user = auth()->user();
@@ -274,15 +280,75 @@ class ManageTickets extends Component
                 return;
             }
             
+            // Prepare ticket info for modal
+            $this->closeTicketId = $ticketId;
+            $this->closeTicketInfo = [
+                'ticket_number' => $ticket->ticket_number,
+                'subject' => $ticket->subject,
+                'client_name' => $ticket->client->name,
+                'organization_name' => $ticket->organization->name,
+            ];
+            
+            $this->showCloseConfirmModal = true;
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to prepare close confirmation modal', [
+                'ticket_id' => $ticketId,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to load ticket information.');
+        }
+    }
+
+    public function closeCloseConfirmModal()
+    {
+        $this->showCloseConfirmModal = false;
+        $this->closeTicketId = null;
+        $this->closeTicketInfo = [];
+    }
+
+    public function redirectToTicketView()
+    {
+        if (!$this->closeTicketId) {
+            session()->flash('error', 'No ticket selected.');
+            return;
+        }
+
+        return redirect()->route('tickets.show', $this->closeTicketId);
+    }
+
+    public function quickCloseTicket()
+    {
+        if (!$this->closeTicketId) {
+            session()->flash('error', 'No ticket selected for closing.');
+            return;
+        }
+
+        try {
+            $user = auth()->user();
+            $ticket = Ticket::findOrFail($this->closeTicketId);
+            
+            // Create system-only closing message
+            \App\Models\TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'sender_id' => $user->id,
+                'message' => "Ticket closed by {$user->name} on " . now()->format('M d, Y \\a\\t H:i'),
+                'is_internal' => false,
+                'is_system_message' => true,
+            ]);
+            
             $ticket->update([
                 'status' => 'closed',
                 'closed_at' => now()
             ]);
+            
+            $this->closeCloseConfirmModal();
             session()->flash('message', 'Ticket closed successfully.');
             
         } catch (\Exception $e) {
             logger()->error('Failed to close ticket', [
-                'ticket_id' => $ticketId,
+                'ticket_id' => $this->closeTicketId,
                 'user_id' => auth()->id(),
                 'error' => $e->getMessage()
             ]);
@@ -641,6 +707,7 @@ class ManageTickets extends Component
         $this->showReopenModal = false;
         $this->reopenTicketId = null;
         $this->reopenTicketInfo = [];
+        $this->reopenReason = '';
     }
 
     public function confirmReopenTicket()
@@ -660,11 +727,15 @@ class ManageTickets extends Component
                 'closed_at' => null
             ]);
             
-            // Create system message for reopening
+            // Create system message for reopening with optional reason
+            $reopenMessage = !empty($this->reopenReason) 
+                ? "Ticket reopened by {$user->name} on " . now()->format('M d, Y \\a\\t H:i') . ". Reason: {$this->reopenReason}"
+                : "Ticket reopened by {$user->name} on " . now()->format('M d, Y \\a\\t H:i');
+                
             \App\Models\TicketMessage::create([
                 'ticket_id' => $ticket->id,
                 'sender_id' => $user->id,
-                'message' => "Ticket reopened by {$user->name} on " . now()->format('M d, Y \\a\\t H:i'),
+                'message' => $reopenMessage,
                 'is_internal' => false,
                 'is_system_message' => true,
             ]);
