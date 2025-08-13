@@ -65,7 +65,7 @@
                                    (auth()->user()->hasRole('client') && 
                                     auth()->user()->organization_id === $ticket->organization_id &&
                                     $ticket->closed_at && 
-                                    floor(now()->diffInDays($ticket->closed_at)) <= (\App\Models\Setting::get('tickets.reopen_window_days', 3)));
+                                    floor(now()->diffInDays($ticket->closed_at)) <= (app(\App\Contracts\SettingsRepositoryInterface::class)->get('tickets.reopen_window_days', 3)));
                     @endphp
                     @if($canReopen)
                         <button wire:click="changeStatus('open')" 

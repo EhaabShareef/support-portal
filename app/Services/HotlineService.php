@@ -81,7 +81,7 @@ class HotlineService
                     'type' => 'json',
                     'label' => 'Support Hotline Numbers',
                     'description' => 'Technical support hotline numbers for different systems',
-                    'group' => 'support',
+                    'group' => 'general',
                     'validation_rules' => ['required', 'json'],
                     'is_public' => true,
                     'is_encrypted' => false,

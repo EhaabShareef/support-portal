@@ -6,7 +6,7 @@ use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Models\ActivityLog;
 use App\Models\Department;
-use App\Models\Setting;
+use App\Contracts\SettingsRepositoryInterface;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketNote;
@@ -217,7 +217,7 @@ class ViewTicket extends Component
 
             // Check if this is a ticket reopening (from closed to any other status)
             $wasTicketClosed = $this->ticket->status === 'closed';
-            $reopenLimit = Setting::get('tickets.reopen_window_days', 3);
+            $reopenLimit = app(SettingsRepositoryInterface::class)->get('tickets.reopen_window_days', 3);
             $isWithinWindow = $this->ticket->closed_at && now()->diffInDays($this->ticket->closed_at) <= $reopenLimit;
             $isTicketBeingReopened = $wasTicketClosed && $this->form['status'] !== 'closed' && $isWithinWindow;
             
@@ -328,7 +328,7 @@ class ViewTicket extends Component
 
             // Check if this is a ticket reopening (from closed to any other status)
             $wasTicketClosed = $this->ticket->status === 'closed';
-            $reopenLimit = Setting::get('tickets.reopen_window_days', 3);
+            $reopenLimit = app(SettingsRepositoryInterface::class)->get('tickets.reopen_window_days', 3);
             $isWithinWindow = $this->ticket->closed_at && now()->diffInDays($this->ticket->closed_at) <= $reopenLimit;
             $isTicketBeingReopened = $wasTicketClosed && $status !== 'closed' && $isWithinWindow;
             
