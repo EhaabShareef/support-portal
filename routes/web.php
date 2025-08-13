@@ -12,6 +12,7 @@ use App\Livewire\ViewOrganization;
 use App\Livewire\ManageContracts;
 use App\Livewire\ManageHardware;
 use App\Livewire\ManageUsers;
+use App\Livewire\OrganizationHardwareWizard;
 use App\Livewire\CreateTicket;
 use App\Livewire\ManageTickets;
 use App\Livewire\ViewTicket;
@@ -78,6 +79,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/hardware', function() { return redirect()->route('organizations.index'); });
     Route::get('/hardware/{hardware}', function() { return redirect()->route('organizations.index'); })->name('hardware.show');
     Route::get('/hardware/manage/{organization}', ManageHardware::class)->name('hardware.manage');
+    Route::get('/organizations/{organization}/hardware/create', OrganizationHardwareWizard::class)->name('organizations.hardware.create');
 
     // User Routes (Organization-specific)
     Route::get('/users', function() { return redirect()->route('organizations.index'); });

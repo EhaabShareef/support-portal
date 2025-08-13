@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Database\Seeders\HardwareTypesSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -20,6 +21,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,     // Clears all data, creates permissions and roles
             BasicDataSeeder::class,          // Creates organization, department groups, and departments
+            HardwareTypesSeeder::class,      // Seeds baseline hardware types
             UserSeeder::class,              // Creates users with proper assignments
             ScheduleEventTypeSeeder::class,  // Creates schedule event types
             ContractTypeSeeder::class,       // Creates contract types lookup data
