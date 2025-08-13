@@ -15,11 +15,15 @@ Follow the steps in order; each item notes the affected file, the problem, and t
   - `database/migrations/2025_01_01_000005_create_tickets_table.php`
   - `database/migrations/2025_08_11_131605_add_latest_message_at_to_tickets_table.php`
   - `database/migrations/2025_08_12_120741_move_ticket_descriptions_to_messages.php`
+  - `database/migrations/2025_08_13_175511_convert_tickets_status_enum_to_string.php`
   - `database/migrations/2025_01_01_000021_add_performance_indexes_to_tickets_table.php`
 - **Issue:** Multiple incremental patches add columns and indexes for the same table.
 - **Fix:** Merge the columns and indexes into a single `create_tickets_table` migration.
+- **Issue:** Multiple patches modify columns, indexes, and status handling for the same table.
+- **Fix:** Merge these changes into a single `create_tickets_table` migration.
   - Drop the deprecated `description` column and create an initial ticket message instead.
   - Include the `latest_message_at` timestamp and required indexes directly in the base migration.
+  - Include the `latest_message_at` timestamp, string-based `status` field with index, and required performance indexes directly in the base migration.
   - Remove the subsequent patch migrations.
 - **Before:**
   ```php
@@ -34,6 +38,35 @@ Follow the steps in order; each item notes the affected file, the problem, and t
   ```
 
 ### 1.3 Merge User Avatar Column
+### 1.3 Integrate Related Table Indexes
+ **Files:**
+ - `database/migrations/2025_01_01_000006_create_ticket_messages_table.php`
+ - `database/migrations/2025_01_01_000007_create_ticket_notes_table.php`
+ - `database/migrations/2025_01_01_000004_create_users_table.php`
+ - `database/migrations/2025_01_01_000003_create_departments_table.php`
+ - `database/migrations/2025_01_01_000021_add_performance_indexes_to_tickets_table.php`
+ **Issue:** Indexes for these tables were added in a separate patch migration.
+ **Fix:** Add the necessary indexes directly to each table's creation migration and remove `add_performance_indexes_to_tickets_table.php`.
+ **Before:**
+ ```php
+ // create_ticket_messages_table
+ Schema::create('ticket_messages', function (Blueprint $table) {
+     $table->id();
+     $table->foreignId('ticket_id');
+     $table->timestamps();
+ });
+ ```
+ **After:**
+ ```php
+ // create_ticket_messages_table
+ Schema::create('ticket_messages', function (Blueprint $table) {
+     $table->id();
+     $table->foreignId('ticket_id');
+     $table->timestamps();
+     $table->index(['ticket_id', 'created_at']);
+ });
+ ```
+### 1.4 Merge User Avatar Column
 - **Files:**
   - `database/migrations/2025_01_01_000004_create_users_table.php`
   - `database/migrations/2025_01_01_000023_add_avatar_to_users_table.php`
@@ -52,6 +85,7 @@ Follow the steps in order; each item notes the affected file, the problem, and t
   ```
 
 ### 1.4 Standardize Schedule Event Types
+### 1.5 Standardize Schedule Event Types
 - **Files:**
   - `database/migrations/2025_01_01_000015_create_schedule_event_types_table.php`
   - `database/migrations/2025_01_01_000026_standardize_schedule_event_types_structure.php`
@@ -70,6 +104,7 @@ Follow the steps in order; each item notes the affected file, the problem, and t
   ```
 
 ### 1.5 Settings Table Data Migrations
+### 1.6 Settings Table Data Migrations
 - **Files:**
   - `database/migrations/2025_01_01_000011_update_setting_groups.php`
   - `database/migrations/2025_08_12_124426_add_ticket_reopen_window_setting.php`
@@ -77,6 +112,7 @@ Follow the steps in order; each item notes the affected file, the problem, and t
 - **Fix:** Remove these migrations and ensure `ApplicationSettingsSeeder` seeds the required values.
 
 ### 1.6 Dashboard Widget Key
+### 1.7 Dashboard Widget Key
 - **Files:**
   - `database/migrations/2025_01_01_000024_create_dashboard_widgets_table.php`
   - `database/seeders/DashboardWidgetSeeder.php`
@@ -96,6 +132,34 @@ Follow the steps in order; each item notes the affected file, the problem, and t
   // create_dashboard_widgets_table
   $table->string('key', 100)->unique();
   $table->string('name', 100);
+  ```
+
+### 1.8 Unify Hardware Types Table
+- **Files:**
+  - `database/migrations/2025_01_01_000011_create_hardware_types_table.php`
+  - `database/migrations/2025_08_13_174623_create_hardware_types_table.php`
+- **Issue:** Two separate "create" migrations exist for the same table.
+- **Fix:** Keep a single `create_hardware_types_table` migration with slug, description, ordering, flags, and indexes; remove the earlier minimal version.
+- **Before:**
+  ```php
+  // create_hardware_types_table (old)
+  $table->id();
+  $table->string('name');
+  $table->timestamps();
+  ```
+- **After:**
+  ```php
+  // create_hardware_types_table (final)
+  $table->id();
+  $table->string('name');
+  $table->string('slug')->unique();
+  $table->text('description')->nullable();
+  $table->integer('sort_order')->default(0);
+  $table->boolean('is_protected')->default(false);
+  $table->boolean('is_active')->default(true);
+  $table->timestamps();
+  $table->index(['is_active', 'sort_order']);
+  $table->index('slug');
   ```
 
 ## 2. Seeder Review and Updates
@@ -134,6 +198,13 @@ Follow the steps in order; each item notes the affected file, the problem, and t
 - **File:** `database/seeders/ApplicationSettingsSeeder.php`
 - **Issue:** Already seeds `tickets.reopen_window_days`; migration duplicate must be removed.
 - **Fix:** No changes needed other than removing the overlapping migration.
+
+### 2.4 Hardware Type Seeders
+- **Files:**
+  - `database/seeders/HardwareTypesSeeder.php`
+  - `database/seeders/HardwareTypeSeeder.php`
+- **Issue:** Two seeders populate `hardware_types` with overlapping data.
+- **Fix:** Consolidate into `HardwareTypeSeeder.php` which matches the final schema. Remove `HardwareTypesSeeder.php` and its reference in `DatabaseSeeder`.
 
 ## 3. Final Cleanup Steps
 
