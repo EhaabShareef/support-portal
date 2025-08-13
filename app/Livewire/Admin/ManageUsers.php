@@ -4,7 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Department;
 use App\Models\Organization;
-use App\Models\Setting;
+use App\Contracts\SettingsRepositoryInterface;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -219,14 +219,14 @@ class ManageUsers extends Component
         // Set department/organization based on role
         if ($this->form['role'] === 'support') {
             $userData['department_id'] = $this->form['department_id'];
-            $userData['organization_id'] = Setting::get('default_organization', 1);
+            $userData['organization_id'] = app(SettingsRepositoryInterface::class)->get('default_organization', 1);
         } elseif ($this->form['role'] === 'admin') {
             // Admin users get assigned to admin department or user-selected department
             $userData['department_id'] = $this->form['department_id'] ?: $this->getDefaultAdminDepartmentId();
-            $userData['organization_id'] = Setting::get('default_organization', 1);
+            $userData['organization_id'] = app(SettingsRepositoryInterface::class)->get('default_organization', 1);
         } else {
             $userData['department_id'] = null;
-            $userData['organization_id'] = Setting::get('default_organization', 1);
+            $userData['organization_id'] = app(SettingsRepositoryInterface::class)->get('default_organization', 1);
         }
 
         $user = User::create($userData);

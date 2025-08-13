@@ -5,7 +5,7 @@ namespace App\Livewire;
 use App\Models\DepartmentGroup;
 use App\Models\Schedule;
 use App\Models\ScheduleEventType;
-use App\Models\Setting;
+use App\Contracts\SettingsRepositoryInterface;
 use App\Models\User;
 use Carbon\Carbon;
 use Livewire\Attributes\Computed;
@@ -187,7 +187,7 @@ class ScheduleCalendar extends Component
     #[Computed]
     public function weekendDays()
     {
-        $setting = Setting::get('weekend_days', ['Saturday', 'Sunday']);
+        $setting = app(SettingsRepositoryInterface::class)->get('weekend_days', ['Saturday', 'Sunday']);
         
         // If it's already an array, return it
         if (is_array($setting)) {

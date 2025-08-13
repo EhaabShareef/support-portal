@@ -7,7 +7,7 @@ use App\Enums\TicketStatus;
 use App\Models\ActivityLog;
 use App\Models\Department;
 use App\Models\Organization;
-use App\Models\Setting;
+use App\Contracts\SettingsRepositoryInterface;
 use App\Models\Ticket;
 use App\Models\User;
 use Livewire\Attributes\Computed;
@@ -668,7 +668,7 @@ class ManageTickets extends Component
 
             // Check reopen authorization based on policy
             if (!$user->can('reopen', $ticket)) {
-                $reopenLimit = Setting::get('tickets.reopen_window_days', 3);
+                $reopenLimit = app(SettingsRepositoryInterface::class)->get('tickets.reopen_window_days', 3);
                 session()->flash('error', 'Ticket closed more than ' . $reopenLimit . ' days ago. Please create a new ticket.');
                 return;
             }
@@ -685,7 +685,7 @@ class ManageTickets extends Component
                 'closed_at' => $ticket->closed_at,
                 'days_closed' => floor($daysClosed),
                 'hours_closed' => floor($hoursClosed),
-                'reopen_window_days' => Setting::get('tickets.reopen_window_days', 3),
+                'reopen_window_days' => app(SettingsRepositoryInterface::class)->get('tickets.reopen_window_days', 3),
                 'client_name' => $ticket->client->name,
                 'organization_name' => $ticket->organization->name,
             ];

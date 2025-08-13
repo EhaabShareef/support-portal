@@ -224,7 +224,7 @@ class BasicDataSeeder extends Seeder
                 'type' => 'integer',
                 'label' => 'Default Organization',
                 'description' => 'Default organization assigned to new users created in admin panel',
-                'group' => 'user_management',
+                'group' => 'users',
                 'validation_rules' => ['required', 'integer', 'exists:organizations,id'],
                 'is_public' => false,
                 'is_encrypted' => false,

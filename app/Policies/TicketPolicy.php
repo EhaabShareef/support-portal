@@ -4,7 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Ticket;
-use App\Models\Setting;
+use App\Contracts\SettingsRepositoryInterface;
 use App\Enums\TicketPriority;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
@@ -96,7 +96,7 @@ class TicketPolicy
         if ($user->hasRole('client') && $user->organization_id === $ticket->organization_id) {
             // Check reopen window for closed tickets
             if ($ticket->status === 'closed') {
-                $reopenLimit = Setting::get('tickets.reopen_window_days', 3);
+                $reopenLimit = app(SettingsRepositoryInterface::class)->get('tickets.reopen_window_days', 3);
                 $isWithinWindow = $ticket->closed_at && now()->diffInDays($ticket->closed_at) <= $reopenLimit;
                 return $isWithinWindow;
             }
@@ -176,7 +176,7 @@ class TicketPolicy
 
         // Clients can only reopen within the window
         if ($user->hasRole('client') && $user->organization_id === $ticket->organization_id) {
-            $reopenLimit = Setting::get('tickets.reopen_window_days', 3);
+            $reopenLimit = app(SettingsRepositoryInterface::class)->get('tickets.reopen_window_days', 3);
             return $ticket->closed_at && now()->diffInDays($ticket->closed_at) <= $reopenLimit;
         }
 

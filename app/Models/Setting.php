@@ -92,7 +92,7 @@ class Setting extends Model
     /**
      * Set a setting value
      */
-    public static function set(string $key, $value, string $type = 'string'): void
+    public static function set(string $key, $value, string $type = 'string', string $group = 'general'): void
     {
         static::updateOrCreate(
             ['key' => $key],
@@ -100,7 +100,7 @@ class Setting extends Model
                 'value' => $value,
                 'type' => $type,
                 'label' => ucwords(str_replace(['_', '-'], ' ', $key)),
-                'group' => 'general',
+                'group' => $group,
             ]
         );
     }
