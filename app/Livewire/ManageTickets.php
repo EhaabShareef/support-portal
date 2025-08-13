@@ -51,6 +51,11 @@ class ManageTickets extends Component
     // Form properties for creating tickets
     public bool $showCreateModal = false;
 
+    // Reopen modal properties
+    public bool $showReopenModal = false;
+    public ?int $reopenTicketId = null;
+    public array $reopenTicketInfo = [];
+
     public array $form = [
         'subject' => '',
         'priority' => 'normal',
@@ -571,7 +576,7 @@ class ManageTickets extends Component
         ]);
     }
 
-    public function reopenTicket($ticketId)
+    public function openReopenModal($ticketId)
     {
         try {
             $user = auth()->user();
@@ -601,6 +606,53 @@ class ManageTickets extends Component
                 session()->flash('error', 'Ticket closed more than ' . $reopenLimit . ' days ago. Please create a new ticket.');
                 return;
             }
+
+            // Calculate time closed with better formatting
+            $daysClosed = $ticket->closed_at ? $ticket->closed_at->diffInDays(now()) : 0;
+            $hoursClosed = $ticket->closed_at ? $ticket->closed_at->diffInHours(now()) : 0;
+            
+            // Prepare ticket info for modal
+            $this->reopenTicketId = $ticketId;
+            $this->reopenTicketInfo = [
+                'ticket_number' => $ticket->ticket_number,
+                'subject' => $ticket->subject,
+                'closed_at' => $ticket->closed_at,
+                'days_closed' => floor($daysClosed),
+                'hours_closed' => floor($hoursClosed),
+                'reopen_window_days' => Setting::get('tickets.reopen_window_days', 3),
+                'client_name' => $ticket->client->name,
+                'organization_name' => $ticket->organization->name,
+            ];
+            
+            $this->showReopenModal = true;
+            
+        } catch (\Exception $e) {
+            logger()->error('Failed to prepare reopen modal', [
+                'ticket_id' => $ticketId,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to load ticket information.');
+        }
+    }
+
+    public function closeReopenModal()
+    {
+        $this->showReopenModal = false;
+        $this->reopenTicketId = null;
+        $this->reopenTicketInfo = [];
+    }
+
+    public function confirmReopenTicket()
+    {
+        if (!$this->reopenTicketId) {
+            session()->flash('error', 'No ticket selected for reopening.');
+            return;
+        }
+
+        try {
+            $user = auth()->user();
+            $ticket = Ticket::findOrFail($this->reopenTicketId);
             
             // Reopen the ticket
             $ticket->update([
@@ -617,11 +669,12 @@ class ManageTickets extends Component
                 'is_system_message' => true,
             ]);
             
+            $this->closeReopenModal();
             session()->flash('message', 'Ticket reopened successfully.');
             
         } catch (\Exception $e) {
             logger()->error('Failed to reopen ticket', [
-                'ticket_id' => $ticketId,
+                'ticket_id' => $this->reopenTicketId,
                 'user_id' => auth()->id(),
                 'error' => $e->getMessage()
             ]);
