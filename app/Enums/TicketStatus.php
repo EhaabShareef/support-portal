@@ -82,24 +82,19 @@ enum TicketStatus: string
     }
 
     /**
-     * Create enum instance from string (with fallback)
+     * Check if a status key is valid (either core enum or in database)
      */
-    public static function tryFrom(string $value): ?self
+    public static function isValidKey(string $value): bool
     {
-        // Try to match against core enum cases first
+        // Check if it's a core enum case
         foreach (self::cases() as $case) {
             if ($case->value === $value) {
-                return $case;
+                return true;
             }
         }
 
-        // If not a core case, check if it exists in database
-        if (TicketStatusModel::where('key', $value)->exists()) {
-            // For dynamic statuses, we'll handle them as strings in the application
-            return null;
-        }
-
-        return null;
+        // Check if it exists in database
+        return TicketStatusModel::where('key', $value)->active()->exists();
     }
 
     /**

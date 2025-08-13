@@ -61,24 +61,15 @@
                     @endforeach
 
                     <div class="form-field-stagger">
-                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Subscription & Status</label>
-                        <div class="flex items-center gap-4">
-                            <select wire:model.defer="form.subscription_status"
-                                class="w-full px-4 py-2 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 rounded-md text-sm text-neutral-800 dark:text-neutral-100 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none transition-all duration-200">
-                                <option value="trial">Trial</option>
-                                <option value="active">Active</option>
-                                <option value="suspended">Suspended</option>
-                                <option value="cancelled">Cancelled</option>
-                            </select>
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" wire:model.defer="form.is_active"
-                                    class="h-5 w-5 text-sky-600 focus:ring-sky-500 border-neutral-300 rounded">
-                                <span class="ml-2 text-sm text-neutral-800 dark:text-neutral-200">Active</span>
-                            </label>
+                        <div class="flex items-center justify-between">
+                            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Active Status</label>
+                            <button type="button" wire:click="$toggle('form.is_active')" 
+                                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 {{ $form['is_active'] ? 'bg-neutral-600' : 'bg-neutral-200 dark:bg-neutral-700' }}">
+                                <span class="sr-only">Toggle active status</span>
+                                <span aria-hidden="true" 
+                                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $form['is_active'] ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                            </button>
                         </div>
-                        @error("form.subscription_status")
-                            <p class="text-sm text-red-600 mt-1 animate-pulse">{{ $message }}</p>
-                        @enderror
                     </div>
                 </div>
 
@@ -151,7 +142,7 @@
         @endif
 
         {{-- Search and Filters --}}
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="md:col-span-2">
                 <input wire:model.live.debounce.300ms="search" type="text"
                     placeholder="Search by name, company, or email..."
@@ -164,17 +155,6 @@
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
-                </select>
-            </div>
-
-            <div>
-                <select wire:model.live="subscriptionFilter"
-                    class="w-full px-4 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 text-neutral-800 dark:text-neutral-200 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none text-sm transition-all duration-200">
-                    <option value="all">All Subscriptions</option>
-                    <option value="trial">Trial</option>
-                    <option value="active">Active</option>
-                    <option value="suspended">Suspended</option>
-                    <option value="cancelled">Cancelled</option>
                 </select>
             </div>
         </div>
@@ -190,27 +170,16 @@
                     <div class="flex-1 space-y-3">
                         <div class="flex items-start justify-between">
                             <div>
-                                <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
-                                    {{ $org->name }}
-                                </h3>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
+                                        {{ $org->name }}
+                                    </h3>
+                                    {{-- Status Badge --}}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $org->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' }}">
+                                        {{ $org->status_label }}
+                                    </span>
+                                </div>
                                 <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ $org->company }}</p>
-                            </div>
-                            
-                            <div class="flex items-center gap-2">
-                                {{-- Status Badge --}}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $org->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' }}">
-                                    {{ $org->status_label }}
-                                </span>
-                                
-                                {{-- Subscription Badge --}}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                    @if($org->subscription_status === 'active') bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300
-                                    @elseif($org->subscription_status === 'trial') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300
-                                    @elseif($org->subscription_status === 'suspended') bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300
-                                    @else bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300
-                                    @endif">
-                                    {{ $org->subscription_status_label }}
-                                </span>
                             </div>
                         </div>
 
