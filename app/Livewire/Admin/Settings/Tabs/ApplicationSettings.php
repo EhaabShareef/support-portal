@@ -3,7 +3,7 @@
 namespace App\Livewire\Admin\Settings\Tabs;
 
 use App\Models\Setting;
-use App\Services\SettingsRepository;
+use App\Contracts\SettingsRepositoryInterface;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -32,8 +32,8 @@ class ApplicationSettings extends Component
     #[Computed]
     public function applicationSettings()
     {
-        $repository = app(SettingsRepository::class);
-        return $repository->getAllSettings()->groupBy('group');
+        $repository = app(SettingsRepositoryInterface::class);
+        return $repository->all()->groupBy('group');
     }
 
     public function createSetting()
@@ -86,13 +86,13 @@ class ApplicationSettings extends Component
         }
 
         try {
-            $repository = app(SettingsRepository::class);
-            
+            $repository = app(SettingsRepositoryInterface::class);
+
             if ($this->settingEditMode) {
-                $repository->updateSetting($this->selectedSettingId, $validated['settingForm']);
+                $repository->update($this->selectedSettingId, $validated['settingForm']);
                 $message = 'Setting updated successfully.';
             } else {
-                $repository->createSetting($validated['settingForm']);
+                $repository->create($validated['settingForm']);
                 $message = 'Setting created successfully.';
             }
 
@@ -114,8 +114,8 @@ class ApplicationSettings extends Component
         $this->checkPermission('settings.update');
         
         try {
-            $repository = app(SettingsRepository::class);
-            $repository->deleteSetting($this->confirmingSettingDelete);
+            $repository = app(SettingsRepositoryInterface::class);
+            $repository->delete($this->confirmingSettingDelete);
             $this->confirmingSettingDelete = null;
             $this->dispatch('flash', 'Setting deleted successfully.', 'success');
         } catch (\Exception $e) {

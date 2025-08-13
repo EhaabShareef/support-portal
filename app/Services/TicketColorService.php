@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Setting;
+use App\Contracts\SettingsRepositoryInterface;
 use Illuminate\Support\Facades\Cache;
 
 class TicketColorService
@@ -79,7 +80,7 @@ class TicketColorService
     public function getStatusColors(): array
     {
         return Cache::remember('ticket_status_colors', 3600, function () {
-            $value = Setting::get('ticket_status_colors', self::DEFAULT_STATUS_COLORS);
+            $value = app(SettingsRepositoryInterface::class)->get('ticket_status_colors', self::DEFAULT_STATUS_COLORS);
             
             // Ensure we always return an array
             if (is_string($value)) {
@@ -97,7 +98,7 @@ class TicketColorService
     public function getPriorityColors(): array
     {
         return Cache::remember('ticket_priority_colors', 3600, function () {
-            $value = Setting::get('ticket_priority_colors', self::DEFAULT_PRIORITY_COLORS);
+            $value = app(SettingsRepositoryInterface::class)->get('ticket_priority_colors', self::DEFAULT_PRIORITY_COLORS);
             
             // Ensure we always return an array
             if (is_string($value)) {
@@ -114,7 +115,7 @@ class TicketColorService
      */
     public function updateStatusColors(array $colors): void
     {
-        Setting::set('ticket_status_colors', $colors, 'json');
+        Setting::set('ticket_status_colors', $colors, 'json', 'ticket');
         Cache::forget('ticket_status_colors');
     }
 
@@ -123,7 +124,7 @@ class TicketColorService
      */
     public function updatePriorityColors(array $colors): void
     {
-        Setting::set('ticket_priority_colors', $colors, 'json');
+        Setting::set('ticket_priority_colors', $colors, 'json', 'ticket');
         Cache::forget('ticket_priority_colors');
     }
 
@@ -223,7 +224,7 @@ class TicketColorService
                 'type' => 'json',
                 'label' => 'Ticket Status Colors',
                 'description' => 'Color configuration for ticket status badges',
-                'group' => 'ticket_colors',
+                'group' => 'ticket',
                 'validation_rules' => json_encode(['required', 'json']),
                 'is_public' => false,
                 'is_encrypted' => false,
@@ -234,7 +235,7 @@ class TicketColorService
                 'type' => 'json',
                 'label' => 'Ticket Priority Colors',
                 'description' => 'Color configuration for ticket priority badges',
-                'group' => 'ticket_colors',
+                'group' => 'ticket',
                 'validation_rules' => json_encode(['required', 'json']),
                 'is_public' => false,
                 'is_encrypted' => false,
