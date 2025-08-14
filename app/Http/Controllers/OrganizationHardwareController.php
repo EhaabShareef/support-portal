@@ -21,10 +21,10 @@ class OrganizationHardwareController extends Controller
     public function create()
     {
         $organizations = Organization::whereHas('contracts', function ($query) {
-            $query->where('is_hardware', true);
+            $query->where('includes_hardware', true);
         })->orderBy('name')->get();
 
-        $contracts = OrganizationContract::where('is_hardware', true)
+        $contracts = OrganizationContract::where('includes_hardware', true)
             ->orderBy('start_date', 'desc')
             ->with(['organization', 'department'])
             ->get();
@@ -37,16 +37,18 @@ class OrganizationHardwareController extends Controller
         $data = $request->validate([
             'contract_id'         => 'required|exists:organization_contracts,id',
             'hardware_type'       => 'required|string|max:255',
-            'hardware_model'      => 'required|string|max:255',
-            'serial_number'       => 'required|string|max:255|unique:organization_hardware,serial_number',
-            'purchase_date'       => 'required|date',
-            'warranty_expiration' => 'required|date|after_or_equal:purchase_date',
+            'brand'              => 'nullable|string|max:255',
+            'model'              => 'nullable|string|max:255',
+            'serial_number'       => 'nullable|string|max:255|unique:organization_hardware,serial_number',
+            'purchase_date'       => 'nullable|date',
+            'location'            => 'nullable|string|max:255',
             'remarks'             => 'nullable|string',
-            'is_active'           => 'boolean',
+            'last_maintenance'    => 'nullable|date',
+            'next_maintenance'    => 'nullable|date',
         ]);
 
         $contract = OrganizationContract::findOrFail($data['contract_id']);
-        $data['org_id'] = $contract->org_id;
+        $data['organization_id'] = $contract->organization_id;
 
         OrganizationHardware::create($data);
 
@@ -75,15 +77,17 @@ class OrganizationHardwareController extends Controller
     public function update(Request $request, OrganizationHardware $hardware)
     {
         $data = $request->validate([
-            'org_id'              => 'required|exists:organizations,id',
-            'contract_id'         => 'required|exists:organization_contracts,id',
+            'organization_id'     => 'required|exists:organizations,id',
+            'contract_id'         => 'nullable|exists:organization_contracts,id',
             'hardware_type'       => 'required|string|max:255',
-            'hardware_model'      => 'required|string|max:255',
-            'serial_number'       => "required|string|max:255|unique:organization_hardware,serial_number,{$hardware->id}",
-            'purchase_date'       => 'required|date',
-            'warranty_expiration' => 'required|date|after_or_equal:purchase_date',
+            'brand'              => 'nullable|string|max:255',
+            'model'              => 'nullable|string|max:255',
+            'serial_number'       => "nullable|string|max:255|unique:organization_hardware,serial_number,{$hardware->id}",
+            'purchase_date'       => 'nullable|date',
+            'location'            => 'nullable|string|max:255',
             'remarks'             => 'nullable|string',
-            'is_active'           => 'boolean',
+            'last_maintenance'    => 'nullable|date',
+            'next_maintenance'    => 'nullable|date',
         ]);
 
         $hardware->update($data);

@@ -51,7 +51,7 @@
                                 @if(in_array($day, $weekendDays))
                                     <x-heroicon-o-check-circle class="h-6 w-6 text-sky-600 dark:text-sky-400" />
                                 @else
-                                    <x-heroicon-o-circle class="h-6 w-6 text-neutral-400" />
+                                    <x-heroicon-o-minus-circle class="h-6 w-6 text-neutral-400" />
                                 @endif
                             </div>
                         </div>

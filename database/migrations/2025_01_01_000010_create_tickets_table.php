@@ -17,17 +17,7 @@ return new class extends Migration
             $table->string('ticket_number')->unique(); // Human-readable ticket number
             $table->string('subject')->index(); // Indexed for search
             
-            $table->enum('status', [
-                'open',
-                'in_progress',
-                'awaiting_customer_response',
-                'awaiting_case_closure',
-                'sales_engagement',
-                'monitoring',
-                'solution_provided', 
-                'closed',
-                'on_hold'
-            ])->default('open')->index(); // Indexed for filtering
+            $table->string('status', 50)->default('open')->index(); // Indexed for filtering
             
             $table->enum('priority', [
                 'low',
@@ -37,7 +27,7 @@ return new class extends Migration
                 'critical'
             ])->default('normal')->index(); // Indexed for filtering
             
-            $table->text('description')->nullable(); // Initial ticket description
+            $table->text('description')->nullable()->comment('DEPRECATED: Use ticket_messages table instead'); // Initial ticket description
             
             // Foreign keys with proper naming and constraints
             $table->foreignId('organization_id')
@@ -61,6 +51,7 @@ return new class extends Migration
             $table->timestamp('first_response_at')->nullable();
             $table->timestamp('resolved_at')->nullable();
             $table->timestamp('closed_at')->nullable();
+            $table->timestamp('latest_message_at')->nullable(); // For sorting tickets by latest activity
             $table->integer('response_time_minutes')->nullable(); // For SLA tracking
             $table->integer('resolution_time_minutes')->nullable(); // For SLA tracking
             

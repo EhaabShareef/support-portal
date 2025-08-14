@@ -18,7 +18,7 @@ class SettingsSchedule extends Component
     public bool $eventTypeEditMode = false;
     public ?int $selectedEventTypeId = null;
     public array $eventTypeForm = [
-        'name' => '',
+        'label' => '',
         'description' => '',
         'color' => '#3b82f6',
         'is_active' => true,
@@ -57,7 +57,7 @@ class SettingsSchedule extends Component
     #[Computed]
     public function scheduleEventTypes()
     {
-        return ScheduleEventType::orderBy('sort_order')->orderBy('name')->get();
+        return ScheduleEventType::orderBy('sort_order')->orderBy('label')->get();
     }
 
     public function getDaysOfWeekProperty()
@@ -132,7 +132,7 @@ class SettingsSchedule extends Component
         $eventType = ScheduleEventType::findOrFail($id);
         $this->selectedEventTypeId = $id;
         $this->eventTypeForm = [
-            'name' => $eventType->name,
+            'label' => $eventType->label,
             'description' => $eventType->description,
             'color' => $eventType->color,
             'is_active' => $eventType->is_active,
@@ -147,7 +147,7 @@ class SettingsSchedule extends Component
         $this->checkPermission($this->eventTypeEditMode ? 'schedule-event-types.update' : 'schedule-event-types.create');
 
         $this->validate([
-            'eventTypeForm.name' => 'required|string|max:255',
+            'eventTypeForm.label' => 'required|string|max:255',
             'eventTypeForm.description' => 'nullable|string',
             'eventTypeForm.color' => 'required|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
             'eventTypeForm.is_active' => 'boolean',
@@ -158,7 +158,7 @@ class SettingsSchedule extends Component
             if ($this->eventTypeEditMode) {
                 $eventType = ScheduleEventType::findOrFail($this->selectedEventTypeId);
                 $eventType->update([
-                    'name' => $this->eventTypeForm['name'],
+                    'label' => $this->eventTypeForm['label'],
                     'description' => $this->eventTypeForm['description'],
                     'color' => $this->eventTypeForm['color'],
                     'is_active' => $this->eventTypeForm['is_active'],
@@ -167,7 +167,7 @@ class SettingsSchedule extends Component
                 $message = 'Event type updated successfully.';
             } else {
                 ScheduleEventType::create([
-                    'name' => $this->eventTypeForm['name'],
+                    'label' => $this->eventTypeForm['label'],
                     'description' => $this->eventTypeForm['description'],
                     'color' => $this->eventTypeForm['color'],
                     'is_active' => $this->eventTypeForm['is_active'],
@@ -244,7 +244,7 @@ class SettingsSchedule extends Component
     private function resetEventTypeForm()
     {
         $this->eventTypeForm = [
-            'name' => '',
+            'label' => '',
             'description' => '',
             'color' => '#3b82f6',
             'is_active' => true,

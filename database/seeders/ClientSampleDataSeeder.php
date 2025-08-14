@@ -296,33 +296,33 @@ class ClientSampleDataSeeder extends Seeder
             [
                 'org_index' => 0,
                 'hardware' => [
-                    ['type' => 'Server', 'model' => 'Dell PowerEdge R740', 'serial' => 'PBR-SRV-001', 'location' => 'Main Server Room', 'status' => 'active'],
-                    ['type' => 'Workstation', 'model' => 'HP EliteDesk 800 G6', 'serial' => 'PBR-WS-FO1', 'location' => 'Front Office', 'status' => 'active'],
-                    ['type' => 'Workstation', 'model' => 'HP EliteDesk 800 G6', 'serial' => 'PBR-WS-FO2', 'location' => 'Front Office', 'status' => 'active'],
-                    ['type' => 'POS Terminal', 'model' => 'Micros WS5A', 'serial' => 'PBR-POS-R01', 'location' => 'Main Restaurant', 'status' => 'active'],
-                    ['type' => 'POS Terminal', 'model' => 'Micros WS5A', 'serial' => 'PBR-POS-B01', 'location' => 'Pool Bar', 'status' => 'active'],
-                    ['type' => 'Printer', 'model' => 'HP LaserJet Pro 404dn', 'serial' => 'PBR-PRT-001', 'location' => 'Reception', 'status' => 'active']
+                    ['type' => 'Server', 'model' => 'Dell PowerEdge R740', 'serial' => 'PBR-SRV-001', 'location' => 'Main Server Room'],
+                    ['type' => 'Workstation', 'model' => 'HP EliteDesk 800 G6', 'serial' => 'PBR-WS-FO1', 'location' => 'Front Office'],
+                    ['type' => 'Workstation', 'model' => 'HP EliteDesk 800 G6', 'serial' => 'PBR-WS-FO2', 'location' => 'Front Office'],
+                    ['type' => 'POS Terminal', 'model' => 'Micros WS5A', 'serial' => 'PBR-POS-R01', 'location' => 'Main Restaurant'],
+                    ['type' => 'POS Terminal', 'model' => 'Micros WS5A', 'serial' => 'PBR-POS-B01', 'location' => 'Pool Bar'],
+                    ['type' => 'Printer', 'model' => 'HP LaserJet Pro 404dn', 'serial' => 'PBR-PRT-001', 'location' => 'Reception']
                 ]
             ],
             // Crystal Waters Hotel hardware
             [
                 'org_index' => 1,
                 'hardware' => [
-                    ['type' => 'Server', 'model' => 'HPE ProLiant DL380 Gen10', 'serial' => 'CWH-SRV-001', 'location' => 'IT Room', 'status' => 'active'],
-                    ['type' => 'Workstation', 'model' => 'Lenovo ThinkCentre M720q', 'serial' => 'CWH-WS-001', 'location' => 'Front Desk', 'status' => 'active'],
-                    ['type' => 'POS Terminal', 'model' => 'NCR RealPOS 82XRT', 'serial' => 'CWH-POS-001', 'location' => 'Restaurant', 'status' => 'active'],
-                    ['type' => 'Network Switch', 'model' => 'Cisco Catalyst 2960-X', 'serial' => 'CWH-SW-001', 'location' => 'Network Cabinet', 'status' => 'active']
+                    ['type' => 'Server', 'model' => 'HPE ProLiant DL380 Gen10', 'serial' => 'CWH-SRV-001', 'location' => 'IT Room'],
+                    ['type' => 'Workstation', 'model' => 'Lenovo ThinkCentre M720q', 'serial' => 'CWH-WS-001', 'location' => 'Front Desk'],
+                    ['type' => 'POS Terminal', 'model' => 'NCR RealPOS 82XRT', 'serial' => 'CWH-POS-001', 'location' => 'Restaurant'],
+                    ['type' => 'Network Switch', 'model' => 'Cisco Catalyst 2960-X', 'serial' => 'CWH-SW-001', 'location' => 'Network Cabinet']
                 ]
             ],
             // Sunset Villas Resort hardware
             [
                 'org_index' => 2,
                 'hardware' => [
-                    ['type' => 'Server', 'model' => 'Dell PowerEdge R540', 'serial' => 'SVR-SRV-001', 'location' => 'Admin Building', 'status' => 'active'],
-                    ['type' => 'Workstation', 'model' => 'ASUS ExpertCenter D300TA', 'serial' => 'SVR-WS-001', 'location' => 'Reception', 'status' => 'active'],
-                    ['type' => 'Tablet', 'model' => 'iPad Pro 12.9"', 'serial' => 'SVR-TAB-001', 'location' => 'Guest Services', 'status' => 'active'],
-                    ['type' => 'POS Terminal', 'model' => 'Square Terminal', 'serial' => 'SVR-POS-001', 'location' => 'Spa Reception', 'status' => 'active'],
-                    ['type' => 'Wireless Access Point', 'model' => 'Ubiquiti UniFi AP AC Pro', 'serial' => 'SVR-AP-001', 'location' => 'Villa Area', 'status' => 'maintenance']
+                    ['type' => 'Server', 'model' => 'Dell PowerEdge R540', 'serial' => 'SVR-SRV-001', 'location' => 'Admin Building'],
+                    ['type' => 'Workstation', 'model' => 'ASUS ExpertCenter D300TA', 'serial' => 'SVR-WS-001', 'location' => 'Reception'],
+                    ['type' => 'Tablet', 'model' => 'iPad Pro 12.9"', 'serial' => 'SVR-TAB-001', 'location' => 'Guest Services'],
+                    ['type' => 'POS Terminal', 'model' => 'Square Terminal', 'serial' => 'SVR-POS-001', 'location' => 'Spa Reception'],
+                    ['type' => 'Wireless Access Point', 'model' => 'Ubiquiti UniFi AP AC Pro', 'serial' => 'SVR-AP-001', 'location' => 'Villa Area']
                 ]
             ]
         ];
@@ -340,10 +340,12 @@ class ClientSampleDataSeeder extends Seeder
                     'brand' => explode(' ', $hardware['model'])[0] ?? 'Generic',
                     'model' => $hardware['model'],
                     'location' => $hardware['location'],
-                    'status' => $hardware['status'],
+                    'quantity' => 1,
+                    'serial_required' => false,
                     'purchase_date' => Carbon::now()->subMonths(rand(3, 18)),
-                    'warranty_start' => Carbon::now()->subMonths(rand(3, 18)),
-                    'warranty_expiration' => Carbon::now()->addMonths(rand(12, 36))
+                    'last_maintenance' => Carbon::now()->subMonths(rand(1, 6)),
+                    'next_maintenance' => Carbon::now()->addMonths(rand(1, 12)),
+                    'remarks' => "Sample hardware for {$organization->name}"
                 ]);
                 
                 $this->command->info("✓ Created hardware: {$hardware['type']} for {$organization->name}");

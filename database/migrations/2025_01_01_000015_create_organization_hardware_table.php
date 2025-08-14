@@ -24,24 +24,21 @@ return new class extends Migration
                   ->constrained('organization_contracts')
                   ->onDelete('set null'); // Hardware can exist without contract
             
-            $table->string('hardware_type')->index(); // Server, Desktop, Laptop, etc.
+            $table->foreignId('hardware_type_id')
+                  ->nullable()
+                  ->constrained('hardware_types')
+                  ->onDelete('set null'); // Modern relational approach
+            
+            $table->string('hardware_type')->nullable()->index(); // Fallback for legacy data
             $table->string('brand')->nullable();
             $table->string('model')->nullable();
+            $table->integer('quantity')->default(1);
+            $table->boolean('serial_required')->default(false);
             $table->string('serial_number')->unique()->nullable();
-            $table->string('specifications')->nullable(); // CPU, RAM, Storage, etc.
             
             $table->date('purchase_date')->nullable();
-            $table->decimal('purchase_price', 10, 2)->nullable();
-            $table->date('warranty_start')->nullable();
-            $table->date('warranty_expiration')->nullable(); // For warranty tracking
-            
-            $table->enum('status', ['active', 'maintenance', 'retired', 'disposed', 'lost'])
-                  ->default('active')
-                  ->index();
-                  
             $table->string('location')->nullable(); // Physical location
             $table->text('remarks')->nullable();
-            $table->json('custom_fields')->nullable(); // Flexible additional data
             
             $table->timestamp('last_maintenance')->nullable();
             $table->timestamp('next_maintenance')->nullable();
@@ -50,9 +47,7 @@ return new class extends Migration
             $table->softDeletes();
             
             // Indexes for common queries
-            $table->index(['organization_id', 'status']);
-            $table->index(['hardware_type', 'status']);
-            $table->index(['warranty_expiration']);
+            $table->index(['organization_id', 'hardware_type']);
             $table->index('next_maintenance');
         });
     }

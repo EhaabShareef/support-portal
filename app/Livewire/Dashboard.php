@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 class Dashboard extends Component
 {
     public $refreshInterval = 30000; // 30 seconds
+    public $showNewFeaturesBanner = true;
     
     public function mount()
     {
@@ -35,6 +36,9 @@ class Dashboard extends Component
         if (!$user->can('dashboard.access') || !$user->can($requiredPermission)) {
             abort(403, 'Insufficient permissions to access dashboard.');
         }
+        
+        // Check if user has dismissed the new features banner
+        $this->showNewFeaturesBanner = !session('new_features_banner_dismissed', false);
     }
 
     /**
@@ -261,8 +265,7 @@ class Dashboard extends Component
 
     private function getHardwareAlerts()
     {
-        return OrganizationHardware::where('warranty_expiration', '<=', now()->addDays(30))
-            ->orWhere('next_maintenance', '<=', now()->addDays(30))
+        return OrganizationHardware::where('next_maintenance', '<=', now()->addDays(30))
             ->with(['organization'])
             ->get();
     }
@@ -363,6 +366,15 @@ class Dashboard extends Component
         ];
 
         return $sizeClasses[$size] ?? $sizeClasses['1x1'];
+    }
+
+    /**
+     * Dismiss the new features banner
+     */
+    public function dismissNewFeaturesBanner()
+    {
+        session(['new_features_banner_dismissed' => true]);
+        $this->showNewFeaturesBanner = false;
     }
 
     /**

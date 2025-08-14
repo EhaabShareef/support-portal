@@ -28,6 +28,32 @@
         </div>
     </div>
 
+    {{-- New Features Banner --}}
+    @if($showNewFeaturesBanner)
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 shadow-sm">
+            <div class="flex items-start justify-between">
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <x-heroicon-s-sparkles class="h-6 w-6 text-blue-500" />
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                            🎉 New Features Available!
+                        </h3>
+                        <p class="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                            <strong>Enhanced Hardware Management:</strong> Create multiple hardware items with improved serial tracking • <strong>Contract-based Organization:</strong> Hardware is now grouped by contracts for better management • <strong>Streamlined Forms:</strong> Simplified hardware forms with better validation • <strong>Improved Dashboard:</strong> Updated widgets and better performance
+                        </p>
+                    </div>
+                </div>
+                <button wire:click="dismissNewFeaturesBanner" 
+                        class="flex-shrink-0 ml-4 p-1 rounded-md text-blue-400 hover:text-blue-600 dark:text-blue-300 dark:hover:text-blue-100 transition-colors duration-200"
+                        title="Dismiss">
+                    <x-heroicon-s-x-mark class="h-5 w-5" />
+                </button>
+            </div>
+        </div>
+    @endif
+
     {{-- Widget-Based Dashboard --}}
     @if ($userWidgets->isNotEmpty())
         <div class="dashboard-grid grid gap-6 auto-rows-min grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

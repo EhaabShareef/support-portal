@@ -38,9 +38,7 @@ return new class extends Migration
             $table->date('end_date')->nullable();
             $table->integer('renewal_months')->nullable(); // Auto-renewal period
             
-            $table->text('csi_remarks')->nullable(); // Customer Service Index remarks
             $table->text('notes')->nullable(); // Contract notes
-            $table->json('service_levels')->nullable(); // SLA definitions
             
             $table->timestamps();
             $table->softDeletes();

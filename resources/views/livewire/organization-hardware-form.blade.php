@@ -70,36 +70,18 @@
             </div>
         </div>
 
-        {{-- Serial Number & Status --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="serial_number" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Serial Number
-                </label>
-                <input type="text" 
-                       wire:model="form.serial_number" 
-                       id="serial_number"
-                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                @error('form.serial_number') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                @enderror
-            </div>
-
-            <div>
-                <label for="status" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Status *
-                </label>
-                <select wire:model="form.status" 
-                        id="status"
-                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                    @foreach(\App\Enums\HardwareStatus::options() as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-                @error('form.status') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                @enderror
-            </div>
+        {{-- Serial Number --}}
+        <div>
+            <label for="serial_number" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Serial Number
+            </label>
+            <input type="text" 
+                   wire:model="form.serial_number" 
+                   id="serial_number"
+                   class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+            @error('form.serial_number') 
+                <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+            @enderror
         </div>
 
         {{-- Contract & Location --}}
@@ -140,64 +122,17 @@
         </div>
 
         {{-- Purchase Information --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="purchase_date" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Purchase Date
-                </label>
-                <input type="date" 
-                       wire:model="form.purchase_date" 
-                       id="purchase_date"
-                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                @error('form.purchase_date') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                @enderror
-            </div>
-
-            <div>
-                <label for="purchase_price" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Purchase Price (USD)
-                </label>
-                <input type="number" 
-                       wire:model="form.purchase_price" 
-                       id="purchase_price"
-                       step="0.01"
-                       min="0"
-                       placeholder="0.00"
-                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                @error('form.purchase_price') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                @enderror
-            </div>
-        </div>
-
-        {{-- Warranty Information --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="warranty_start" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Warranty Start
-                </label>
-                <input type="date" 
-                       wire:model="form.warranty_start" 
-                       id="warranty_start"
-                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                @error('form.warranty_start') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                @enderror
-            </div>
-
-            <div>
-                <label for="warranty_expiration" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Warranty Expiration
-                </label>
-                <input type="date" 
-                       wire:model="form.warranty_expiration" 
-                       id="warranty_expiration"
-                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                @error('form.warranty_expiration') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                @enderror
-            </div>
+        <div>
+            <label for="purchase_date" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Purchase Date
+            </label>
+            <input type="date" 
+                   wire:model="form.purchase_date" 
+                   id="purchase_date"
+                   class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+            @error('form.purchase_date') 
+                <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+            @enderror
         </div>
 
         {{-- Maintenance Information --}}
@@ -229,20 +164,6 @@
             </div>
         </div>
 
-        {{-- Specifications --}}
-        <div>
-            <label for="specifications" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Specifications
-            </label>
-            <textarea wire:model="form.specifications" 
-                      id="specifications"
-                      rows="3"
-                      class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
-                      placeholder="CPU, RAM, Storage, etc..."></textarea>
-            @error('form.specifications') 
-                <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-            @enderror
-        </div>
 
         {{-- Remarks --}}
         <div>

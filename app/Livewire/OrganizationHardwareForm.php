@@ -22,12 +22,7 @@ class OrganizationHardwareForm extends Component
         'brand' => '',
         'model' => '',
         'serial_number' => '',
-        'specifications' => '',
         'purchase_date' => '',
-        'purchase_price' => '',
-        'warranty_start' => '',
-        'warranty_expiration' => '',
-        'status' => 'active',
         'location' => '',
         'remarks' => '',
         'last_maintenance' => '',
@@ -41,12 +36,7 @@ class OrganizationHardwareForm extends Component
         'form.brand' => 'nullable|string|max:255',
         'form.model' => 'nullable|string|max:255',
         'form.serial_number' => 'nullable|string|max:255',
-        'form.specifications' => 'nullable|string',
         'form.purchase_date' => 'nullable|date',
-        'form.purchase_price' => 'nullable|numeric|min:0',
-        'form.warranty_start' => 'nullable|date',
-        'form.warranty_expiration' => 'nullable|date|after_or_equal:form.warranty_start',
-        'form.status' => 'required|in:active,maintenance,retired,disposed,lost',
         'form.location' => 'nullable|string|max:255',
         'form.remarks' => 'nullable|string',
         'form.last_maintenance' => 'nullable|date',
@@ -56,7 +46,6 @@ class OrganizationHardwareForm extends Component
     protected $messages = [
         'form.hardware_type.required' => 'Hardware type is required',
         'form.contract_id.exists' => 'Selected contract does not exist',
-        'form.warranty_expiration.after_or_equal' => 'Warranty expiration must be after or equal to warranty start date',
         'form.serial_number.unique' => 'This serial number already exists',
         'form.asset_tag.unique' => 'This asset tag already exists',
     ];
@@ -78,12 +67,7 @@ class OrganizationHardwareForm extends Component
             'brand' => null,
             'model' => null,
             'serial_number' => null,
-            'specifications' => null,
             'purchase_date' => null,
-            'purchase_price' => null,
-            'warranty_start' => null,
-            'warranty_expiration' => null,
-            'status' => 'active',
             'location' => null,
             'remarks' => null,
             'last_maintenance' => null,
@@ -116,12 +100,7 @@ class OrganizationHardwareForm extends Component
             'brand' => $this->hardware->brand,
             'model' => $this->hardware->model,
             'serial_number' => $this->hardware->serial_number,
-            'specifications' => $this->hardware->specifications,
             'purchase_date' => $this->hardware->purchase_date?->format('Y-m-d') ?? '',
-            'purchase_price' => $this->hardware->purchase_price,
-            'warranty_start' => $this->hardware->warranty_start?->format('Y-m-d') ?? '',
-            'warranty_expiration' => $this->hardware->warranty_expiration?->format('Y-m-d') ?? '',
-            'status' => $this->hardware->status,
             'location' => $this->hardware->location,
             'remarks' => $this->hardware->remarks,
             'last_maintenance' => $this->hardware->last_maintenance?->format('Y-m-d') ?? '',
@@ -156,7 +135,7 @@ class OrganizationHardwareForm extends Component
         $data['organization_id'] = $this->organization->id;
 
         // Convert empty strings to null for date fields
-        $dateFields = ['purchase_date', 'warranty_start', 'warranty_expiration', 'last_maintenance', 'next_maintenance'];
+        $dateFields = ['purchase_date', 'last_maintenance', 'next_maintenance'];
         foreach ($dateFields as $field) {
             if (empty($data[$field]) || $data[$field] === '') {
                 $data[$field] = null;
@@ -164,7 +143,7 @@ class OrganizationHardwareForm extends Component
         }
 
         // Convert empty strings to null for nullable numeric fields
-        $nullableFields = ['purchase_price', 'contract_id'];
+        $nullableFields = ['contract_id'];
         foreach ($nullableFields as $field) {
             if (empty($data[$field]) || $data[$field] === '') {
                 $data[$field] = null;
@@ -172,7 +151,7 @@ class OrganizationHardwareForm extends Component
         }
 
         // Convert empty strings to null for nullable text fields
-        $nullableTextFields = ['asset_tag', 'brand', 'model', 'serial_number', 'specifications', 'location', 'remarks'];
+        $nullableTextFields = ['asset_tag', 'brand', 'model', 'serial_number', 'location', 'remarks'];
         foreach ($nullableTextFields as $field) {
             if (empty($data[$field]) || $data[$field] === '') {
                 $data[$field] = null;

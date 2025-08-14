@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('organizations', function (Blueprint $table) {
             $table->id();
             $table->string('name')->index(); // Indexed for search
-            $table->string('company');
+            $table->string('company')->nullable();
             $table->string('company_contact');
-            $table->string('tin_no')->unique(); // Tax identification should be unique
+            $table->string('tin_no')->nullable()->unique(); // Tax identification should be unique
             $table->string('email')->unique(); // Email should be unique
             $table->string('phone')->nullable();
             $table->boolean('is_active')->default(true); // Standardized boolean naming
