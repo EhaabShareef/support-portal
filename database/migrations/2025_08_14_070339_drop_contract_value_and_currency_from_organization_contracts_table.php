@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('organization_contracts', function (Blueprint $table) {
-            $table->renameColumn('terms_conditions', 'notes');
+            $table->dropColumn(['contract_value', 'currency']);
         });
     }
 
@@ -22,7 +22,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('organization_contracts', function (Blueprint $table) {
-            $table->renameColumn('notes', 'terms_conditions');
+            $table->decimal('contract_value', 15, 2)->nullable()->after('csi_number');
+            $table->string('currency', 3)->default('USD')->after('contract_value');
         });
     }
 };

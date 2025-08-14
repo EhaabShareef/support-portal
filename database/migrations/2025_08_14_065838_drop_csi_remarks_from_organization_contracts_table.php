@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('organization_contracts', function (Blueprint $table) {
-            $table->renameColumn('terms_conditions', 'notes');
+            $table->dropColumn('csi_remarks');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('organization_contracts', function (Blueprint $table) {
-            $table->renameColumn('notes', 'terms_conditions');
+            $table->text('csi_remarks')->nullable()->after('renewal_months');
         });
     }
 };

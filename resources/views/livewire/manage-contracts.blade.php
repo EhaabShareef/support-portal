@@ -203,20 +203,6 @@
                             @endif
                         </div>
 
-                        {{-- CSI Remarks --}}
-                        <div>
-                            <label for="csi_remarks" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                                CSI Remarks
-                            </label>
-                            <textarea wire:model="form.csi_remarks"
-                                      id="csi_remarks"
-                                      rows="3"
-                                      class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
-                                      placeholder="Customer Service Index remarks..."></textarea>
-                            @error('form.csi_remarks') 
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                            @enderror
-                        </div>
 
                         {{-- Notes --}}
                         <div>
@@ -294,11 +280,6 @@
                                 </div>
                             @endif
                             
-                            @if($contract->csi_remarks)
-                                <div class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                    <span class="font-medium">CSI:</span> {{ $contract->csi_remarks }}
-                                </div>
-                            @endif
                         </div>
                         
                         <div class="flex items-center gap-2 ml-4">

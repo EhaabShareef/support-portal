@@ -29,7 +29,6 @@ class ManageContracts extends Component
         'start_date' => '',
         'end_date' => '',
         'renewal_months' => '',
-        'csi_remarks' => '',
         'notes' => '',
     ];
 
@@ -44,7 +43,6 @@ class ManageContracts extends Component
         'form.start_date' => 'required|date',
         'form.end_date' => 'nullable|date|after_or_equal:form.start_date',
         'form.renewal_months' => 'nullable|integer|min:1|max:120',
-        'form.csi_remarks' => 'nullable|string',
         'form.notes' => 'nullable|string',
     ];
 
@@ -83,7 +81,6 @@ class ManageContracts extends Component
             'start_date' => now()->format('Y-m-d'),
             'end_date' => null,
             'renewal_months' => null,
-            'csi_remarks' => null,
             'notes' => null,
         ];
         
@@ -105,7 +102,6 @@ class ManageContracts extends Component
             'start_date' => $this->editingContract->start_date?->format('Y-m-d') ?? '',
             'end_date' => $this->editingContract->end_date?->format('Y-m-d') ?? '',
             'renewal_months' => $this->editingContract->renewal_months,
-            'csi_remarks' => $this->editingContract->csi_remarks,
             'notes' => $this->editingContract->notes,
         ];
 
@@ -136,7 +132,7 @@ class ManageContracts extends Component
         }
 
         // Convert empty strings to null for nullable text fields
-        $nullableTextFields = ['end_date', 'csi_remarks', 'csi_number', 'notes'];
+        $nullableTextFields = ['end_date', 'csi_number', 'notes'];
         foreach ($nullableTextFields as $field) {
             if (empty($data[$field]) || $data[$field] === '') {
                 $data[$field] = null;
