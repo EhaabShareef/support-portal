@@ -25,7 +25,7 @@
     {{-- Hardware List --}}
     @if($organization->hardware->count() > 0)
         <div class="space-y-2">
-            @foreach($organization->hardware->take(3) as $hardware)
+            @foreach($organization->hardware()->with(['type', 'contract', 'serials'])->latest('purchase_date')->take(5)->get() as $hardware)
                 <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-3 hover:bg-white/10 transition-all duration-200">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -34,32 +34,55 @@
                                     <h4 class="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
                                         {{ $hardware->asset_tag ?: ($hardware->brand . ' ' . $hardware->model) }}
                                     </h4>
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0
-                                        @if($hardware->status === 'active') bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300
-                                        @elseif($hardware->status === 'maintenance') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300
-                                        @elseif($hardware->status === 'retired') bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300
-                                        @else bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300
-                                        @endif">
-                                        {{ ucfirst($hardware->status) }}
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 flex-shrink-0">
+                                        Active
                                     </span>
                                 </div>
                                 <div class="flex items-center gap-4 text-xs text-neutral-600 dark:text-neutral-400">
                                     <span class="flex items-center gap-1">
                                         <x-heroicon-o-cpu-chip class="h-3 w-3" />
-                                        {{ ucfirst($hardware->hardware_type) }}
+                                        {{ $hardware->type?->name ?? ucfirst($hardware->hardware_type) }}
                                     </span>
-                                    @if($hardware->serial_number)
+                                    
+                                    @if($hardware->brand && $hardware->model)
                                     <span class="flex items-center gap-1">
+                                        <x-heroicon-o-tag class="h-3 w-3" />
+                                        {{ $hardware->brand }} {{ $hardware->model }}
+                                    </span>
+                                    @endif
+                                    
+                                    @if($hardware->quantity)
+                                    <span class="flex items-center gap-1">
+                                        <x-heroicon-o-numbered-list class="h-3 w-3" />
+                                        Qty: {{ $hardware->quantity }}
+                                    </span>
+                                    @endif
+                                    
+                                    {{-- Serial Status --}}
+                                    @if($hardware->serial_number)
+                                    <span class="flex items-center gap-1 text-green-600 dark:text-green-400">
                                         <x-heroicon-o-hashtag class="h-3 w-3" />
                                         {{ $hardware->serial_number }}
                                     </span>
-                                    @endif
-                                    @if($hardware->location)
-                                    <span class="flex items-center gap-1">
-                                        <x-heroicon-o-map-pin class="h-3 w-3" />
-                                        {{ $hardware->location }}
+                                    @elseif($hardware->serial_required && $hardware->serials && $hardware->serials->count() > 0)
+                                    <span class="flex items-center gap-1 {{ $hardware->serials->count() == $hardware->quantity ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400' }}">
+                                        <x-heroicon-o-hashtag class="h-3 w-3" />
+                                        Serials: {{ $hardware->serials->count() }}/{{ $hardware->quantity }}
+                                    </span>
+                                    @elseif($hardware->serial_required)
+                                    <span class="flex items-center gap-1 text-red-600 dark:text-red-400">
+                                        <x-heroicon-o-exclamation-triangle class="h-3 w-3" />
+                                        Serials Missing
                                     </span>
                                     @endif
+                                    
+                                    @if($hardware->contract)
+                                    <span class="flex items-center gap-1">
+                                        <x-heroicon-o-document-text class="h-3 w-3" />
+                                        {{ $hardware->contract->contract_number }}
+                                    </span>
+                                    @endif
+                                    
                                     @if($hardware->purchase_date)
                                     <span class="flex items-center gap-1">
                                         <x-heroicon-o-calendar class="h-3 w-3" />
@@ -68,14 +91,6 @@
                                     @endif
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="flex items-center gap-1 ml-3 flex-shrink-0">
-                            @can('hardware.read')
-                            <button class="inline-flex items-center p-1.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded transition-colors duration-200">
-                                <x-heroicon-o-eye class="h-3 w-3" />
-                            </button>
-                            @endcan
                         </div>
                     </div>
                 </div>

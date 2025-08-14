@@ -23,6 +23,20 @@ class ManageHardware extends Component
     public $showSerialModal = false;
     public $editingHardwareForSerial = null;
     
+    // Contract Assignment Modal
+    public $showContractAssignmentModal = false;
+    public $selectedHardwareIds = [];
+    
+    // Hardware Edit Modal
+    public $showEditModal = false;
+    public $editingHardware = null;
+    public $editForm = [
+        'brand' => '',
+        'model' => '',
+        'quantity' => 1,
+        'serial_required' => false,
+    ];
+    
     // Filters
     public $filterContract = '';
     public $filterIsOracle = null;
@@ -135,6 +149,111 @@ class ManageHardware extends Component
                 'organization' => $this->organization->id,
                 'contract' => $this->selectedContractId
             ]);
+        }
+    }
+    
+    public function openContractAssignmentModal()
+    {
+        // Pre-select all unassigned hardware
+        $this->selectedHardwareIds = OrganizationHardware::where('organization_id', $this->organization->id)
+            ->whereNull('contract_id')
+            ->pluck('id')
+            ->toArray();
+        
+        $this->showContractAssignmentModal = true;
+    }
+    
+    public function closeContractAssignmentModal()
+    {
+        $this->reset(['showContractAssignmentModal', 'selectedHardwareIds']);
+    }
+    
+    public function toggleHardwareSelection($hardwareId)
+    {
+        if (in_array($hardwareId, $this->selectedHardwareIds)) {
+            $this->selectedHardwareIds = array_diff($this->selectedHardwareIds, [$hardwareId]);
+        } else {
+            $this->selectedHardwareIds[] = $hardwareId;
+        }
+    }
+    
+    public function selectAllUnassigned()
+    {
+        $this->selectedHardwareIds = OrganizationHardware::where('organization_id', $this->organization->id)
+            ->whereNull('contract_id')
+            ->pluck('id')
+            ->toArray();
+    }
+    
+    public function deselectAll()
+    {
+        $this->selectedHardwareIds = [];
+    }
+    
+    public function assignToContract($contractId)
+    {
+        if (empty($this->selectedHardwareIds)) {
+            session()->flash('error', 'Please select at least one hardware item to assign.');
+            return;
+        }
+
+        // Assign selected hardware to the contract
+        OrganizationHardware::whereIn('id', $this->selectedHardwareIds)
+            ->where('organization_id', $this->organization->id)
+            ->whereNull('contract_id')
+            ->update(['contract_id' => $contractId]);
+        
+        $assignedCount = count($this->selectedHardwareIds);
+        $this->closeContractAssignmentModal();
+        session()->flash('message', "{$assignedCount} hardware item(s) successfully assigned to contract.");
+    }
+    
+    public function openEditModal($hardwareId)
+    {
+        $this->editingHardware = OrganizationHardware::find($hardwareId);
+        
+        if ($this->editingHardware) {
+            $this->editForm = [
+                'brand' => $this->editingHardware->brand ?? '',
+                'model' => $this->editingHardware->model ?? '',
+                'quantity' => $this->editingHardware->quantity ?? 1,
+                'serial_required' => $this->editingHardware->serial_required ?? false,
+            ];
+            $this->showEditModal = true;
+        }
+    }
+    
+    public function closeEditModal()
+    {
+        $this->reset(['showEditModal', 'editingHardware', 'editForm']);
+        $this->editForm = [
+            'brand' => '',
+            'model' => '',
+            'quantity' => 1,
+            'serial_required' => false,
+        ];
+    }
+    
+    public function updateHardware()
+    {
+        $this->validate([
+            'editForm.brand' => 'nullable|string|max:255',
+            'editForm.model' => 'nullable|string|max:255',
+            'editForm.quantity' => 'required|integer|min:1|max:1000',
+            'editForm.serial_required' => 'boolean',
+        ]);
+        
+        if ($this->editingHardware) {
+            $this->editingHardware->update([
+                'brand' => $this->editForm['brand'],
+                'model' => $this->editForm['model'],
+                'quantity' => $this->editForm['quantity'],
+                'serial_required' => $this->editForm['serial_required'],
+            ]);
+            
+            $this->closeEditModal();
+            $this->loadContractHardware(); // Refresh contract hardware list if modal is open
+            session()->flash('message', 'Hardware updated successfully.');
         }
     }
 }

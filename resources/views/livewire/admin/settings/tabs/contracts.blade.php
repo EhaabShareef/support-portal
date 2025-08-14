@@ -25,7 +25,7 @@
         
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                @foreach($contractTypes as $type)
+                @foreach($this->contractTypes as $type)
                     <div class="bg-white dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-600 rounded-lg p-4 hover:shadow-md transition-all duration-200">
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex-1">
@@ -100,7 +100,7 @@
         
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                @foreach($contractStatuses as $status)
+                @foreach($this->contractStatuses as $status)
                     <div class="bg-white dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-600 rounded-lg p-4 hover:shadow-md transition-all duration-200">
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex-1">

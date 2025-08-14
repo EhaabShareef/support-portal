@@ -65,10 +65,25 @@
     {{-- Step Content --}}
     <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md">
         @if($step === 'contract')
+            <div class="p-4 border-b border-neutral-200 dark:border-neutral-700">
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                    Choose which contract this hardware will be associated with. Only contracts that include hardware are shown.
+                </p>
+            </div>
             <livewire:hardware-contract-selector :organization-id="$organization->id" />
         @elseif($step === 'hardware' && $contractId)
+            <div class="p-4 border-b border-neutral-200 dark:border-neutral-700">
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                    Add as many hardware items as needed. You can specify quantities and details for each. Click "Add More Hardware" to add additional items, or "Continue" when finished.
+                </p>
+            </div>
             <livewire:hardware-multi-form :organization-id="$organization->id" :contract-id="$contractId" />
         @elseif($step === 'serials' && !empty($hardwareItems))
+            <div class="p-4 border-b border-neutral-200 dark:border-neutral-700">
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                    Add serial numbers for hardware that requires them. Each hardware item that needs serials is shown below with a progress indicator. You can skip this step if needed.
+                </p>
+            </div>
             <livewire:hardware-multi-serial-manager :hardware-items="$hardwareItems" />
         @elseif($step === 'done')
             <div class="p-8 text-center">

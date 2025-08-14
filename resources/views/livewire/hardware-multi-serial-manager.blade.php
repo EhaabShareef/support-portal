@@ -41,7 +41,7 @@
                                     <h4 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                                         {{ $hardware['type_name'] }}
                                     </h4>
-                                    @if($isHardwareComplete($index))
+                                    @if($this->isHardwareComplete($index))
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
                                             <x-heroicon-o-check class="h-3 w-3 mr-1" />
                                             Complete
@@ -82,14 +82,14 @@
                                 <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 48 48">
                                     <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="4" fill="none" class="text-neutral-300 dark:text-neutral-600" />
                                     <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="4" fill="none" 
-                                            class="{{ $isHardwareComplete($index) ? 'text-green-500' : 'text-sky-500' }}"
+                                            class="{{ $this->isHardwareComplete($index) ? 'text-green-500' : 'text-sky-500' }}"
                                             stroke-linecap="round"
                                             stroke-dasharray="{{ $circumference }}"
                                             stroke-dashoffset="{{ $strokeDashoffset }}"
                                             style="transition: stroke-dashoffset 0.5s ease;" />
                                 </svg>
                                 <div class="absolute inset-0 flex items-center justify-center">
-                                    <span class="text-sm font-semibold {{ $isHardwareComplete($index) ? 'text-green-600 dark:text-green-400' : 'text-sky-600 dark:text-sky-400' }}">
+                                    <span class="text-sm font-semibold {{ $this->isHardwareComplete($index) ? 'text-green-600 dark:text-green-400' : 'text-sky-600 dark:text-sky-400' }}">
                                         {{ $progress }}/{{ $total }}
                                     </span>
                                 </div>
@@ -131,7 +131,7 @@
                         @endif
 
                         {{-- Add New Serial Form --}}
-                        @if(!$isHardwareComplete($index))
+                        @if(!$this->isHardwareComplete($index))
                             <form wire:submit.prevent="addSerial({{ $index }})" class="flex gap-3">
                                 <div class="flex-1">
                                     <input type="text" 
@@ -157,14 +157,14 @@
         {{-- Continue Button --}}
         <div class="flex items-center justify-between pt-6 border-t border-neutral-200 dark:border-neutral-700">
             <div class="text-sm text-neutral-600 dark:text-neutral-400">
-                @if($allHardwareComplete())
+                @if($this->allHardwareComplete())
                     All hardware serial numbers have been added.
                 @else
                     @php
                         $totalComplete = 0;
                         $totalRequired = count($hardwareItems);
                         foreach($hardwareItems as $index => $hardware) {
-                            if($isHardwareComplete($index)) {
+                            if($this->isHardwareComplete($index)) {
                                 $totalComplete++;
                             }
                         }
@@ -180,8 +180,8 @@
                 </button>
                 
                 <button wire:click="continue" 
-                        class="px-6 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-colors duration-200 {{ $allHardwareComplete() ? '' : 'opacity-75' }}">
-                    @if($allHardwareComplete())
+                        class="px-6 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-colors duration-200 {{ $this->allHardwareComplete() ? '' : 'opacity-75' }}">
+                    @if($this->allHardwareComplete())
                         Complete Setup
                     @else
                         Continue (Incomplete)
