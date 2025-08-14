@@ -1,3 +1,4 @@
+
 # Migration and Seeder Cleanup Plan for Beta Release 5.5.0
 
 This guide documents the tasks required to align migrations and seeders with the current application state.
@@ -39,33 +40,34 @@ Follow the steps in order; each item notes the affected file, the problem, and t
 
 ### 1.3 Merge User Avatar Column
 ### 1.3 Integrate Related Table Indexes
- **Files:**
- - `database/migrations/2025_01_01_000006_create_ticket_messages_table.php`
- - `database/migrations/2025_01_01_000007_create_ticket_notes_table.php`
- - `database/migrations/2025_01_01_000004_create_users_table.php`
- - `database/migrations/2025_01_01_000003_create_departments_table.php`
- - `database/migrations/2025_01_01_000021_add_performance_indexes_to_tickets_table.php`
- **Issue:** Indexes for these tables were added in a separate patch migration.
- **Fix:** Add the necessary indexes directly to each table's creation migration and remove `add_performance_indexes_to_tickets_table.php`.
- **Before:**
- ```php
- // create_ticket_messages_table
- Schema::create('ticket_messages', function (Blueprint $table) {
-     $table->id();
-     $table->foreignId('ticket_id');
-     $table->timestamps();
- });
- ```
- **After:**
- ```php
- // create_ticket_messages_table
- Schema::create('ticket_messages', function (Blueprint $table) {
-     $table->id();
-     $table->foreignId('ticket_id');
-     $table->timestamps();
-     $table->index(['ticket_id', 'created_at']);
- });
- ```
+- **Files:**
+  - `database/migrations/2025_01_01_000006_create_ticket_messages_table.php`
+  - `database/migrations/2025_01_01_000007_create_ticket_notes_table.php`
+  - `database/migrations/2025_01_01_000004_create_users_table.php`
+  - `database/migrations/2025_01_01_000003_create_departments_table.php`
+  - `database/migrations/2025_01_01_000021_add_performance_indexes_to_tickets_table.php`
+- **Issue:** Indexes for these tables were added in a separate patch migration.
+- **Fix:** Add the necessary indexes directly to each table's creation migration and remove `add_performance_indexes_to_tickets_table.php`.
+- **Before:**
+  ```php
+  // create_ticket_messages_table
+  Schema::create('ticket_messages', function (Blueprint $table) {
+      $table->id();
+      $table->foreignId('ticket_id');
+      $table->timestamps();
+  });
+  ```
+- **After:**
+  ```php
+  // create_ticket_messages_table
+  Schema::create('ticket_messages', function (Blueprint $table) {
+      $table->id();
+      $table->foreignId('ticket_id');
+      $table->timestamps();
+      $table->index(['ticket_id', 'created_at']);
+  });
+  ```
+
 ### 1.4 Merge User Avatar Column
 - **Files:**
   - `database/migrations/2025_01_01_000004_create_users_table.php`

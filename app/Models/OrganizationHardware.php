@@ -13,21 +13,16 @@ class OrganizationHardware extends Model
     protected $table = 'organization_hardware';
 
     protected $fillable = [
-        // Legacy fields (deprecated in UI)
+        // Legacy fields (kept for compatibility)
         'asset_tag',
         'hardware_type',
         'serial_number',
-        'specifications',
         'purchase_date',
-        'purchase_price',
-        'warranty_start',
-        'warranty_expiration',
-        'status',
         'location',
         'last_maintenance',
         'next_maintenance',
 
-        // New simplified contract-first fields
+        // New contract-first fields
         'organization_id',
         'contract_id',
         'hardware_type_id',
@@ -40,10 +35,6 @@ class OrganizationHardware extends Model
 
     protected $casts = [
         'purchase_date' => 'date',
-        'purchase_price' => 'decimal:2',
-        'warranty_start' => 'date',
-        'warranty_expiration' => 'date',
-        'custom_fields' => 'array',
         'last_maintenance' => 'datetime',
         'next_maintenance' => 'datetime',
         'serial_required' => 'boolean',
@@ -67,5 +58,49 @@ class OrganizationHardware extends Model
     public function serials()
     {
         return $this->hasMany(HardwareSerial::class, 'organization_hardware_id');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            // Auto-populate legacy hardware_type field based on hardware_type_id
+            if ($model->hardware_type_id && !$model->hardware_type) {
+                $hardwareType = HardwareType::find($model->hardware_type_id);
+                if ($hardwareType) {
+                    // Map hardware type names to enum values
+                    $model->hardware_type = self::mapHardwareTypeToEnum($hardwareType->slug);
+                }
+            }
+        });
+
+        static::updating(function ($model) {
+            // Auto-populate legacy hardware_type field based on hardware_type_id
+            if ($model->hardware_type_id && !$model->hardware_type) {
+                $hardwareType = HardwareType::find($model->hardware_type_id);
+                if ($hardwareType) {
+                    // Map hardware type names to enum values
+                    $model->hardware_type = self::mapHardwareTypeToEnum($hardwareType->slug);
+                }
+            }
+        });
+    }
+
+    protected static function mapHardwareTypeToEnum($slug)
+    {
+        // Map HardwareType slugs to enum values
+        return match($slug) {
+            'desktop_computer', 'desktop' => 'desktop',
+            'laptop_computer', 'laptop' => 'laptop', 
+            'server' => 'server',
+            'printer' => 'printer',
+            'monitor' => 'monitor',
+            'network_equipment' => 'router', // closest match
+            'mobile_device' => 'tablet',
+            'storage_device' => 'storage',
+            'peripheral' => 'other',
+            default => 'other'
+        };
     }
 }

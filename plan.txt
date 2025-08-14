@@ -1,1 +1,53 @@
-Update the **Schedule** module only and bring every event-type reference into a single, consistent contract that matches how the project’s schedule settings already work. Treat an event type as exactly: `label` (string, required), `description` (text, nullable), `color` (a stored color value you already use, e.g., hex or token), and `tailwind_classes` (string of classes used to render chips/cells). Audit the entire Schedule feature—models, migrations, seeders/factories, Livewire components, Blade views, validation rules, and the in-app **Settings → Event Types** UI—and replace any older or divergent fields like `name`, `code`, `bg_color`, `text_color`, `badge`, or ad-hoc style flags with the canonical four fields above. Create safe, reversible migrations to rename or add/drop columns as needed, backfill `label/description/color/tailwind_classes` from the legacy fields without losing data, and keep foreign keys and existing IDs intact so any `schedules` rows that reference event types continue to work. Refactor the `ScheduleEventType` model to expose only these attributes (fillable/casts), update the `Schedule` model and any calendar rendering to read `color` and `tailwind_classes` for display, and ensure remarks on schedule entries remain unaffected. Align the Settings management screens to create/edit event types using this contract, enforce validation accordingly, and standardize how the calendar cells pick up styling (read from `tailwind_classes`, not hardcoded palettes). Remove dead code paths and constants that duplicate styling or old keys, and fix any seeders/factories so they populate event types with `label`, `description`, `color`, and `tailwind_classes` only, idempotently. Verify route middleware and policies continue to use the existing `schedules.*` and `schedule-event-types.*` permissions without introducing new scopes, and do not touch any non-schedule modules. When finished, commit the code with the new migrations, updated models/components/views/seeders, and a short summary of what changed; no markdown guide is required—just perform the change and keep the scope strictly to **Schedule** and **Schedule Event Types**.
+
+---
+
+# **Instruction Guide — Organization Hardware Module Changes**
+
+## **1. Migration & Database Structure Changes**
+
+* **Remove** the following columns from the `organization_hardware` table:
+
+  * `specifications`
+  * `purchase_price`
+  * `warranty_start`
+  * `warranty_expiration`
+  * `status` (ENUM) — *status will now be managed dynamically in **Application Settings***.
+  * `custom_fields`
+* **Make `hardware_type` dynamic** — hardware types should also be managed from **Application Settings** under a new **Hardware** tab.
+* Keep `location`, `last_maintenance`, and `next_maintenance` fields **as they are**, but make them **non-editable** in the Manage Hardware pages.
+
+---
+
+## **2. Business Logic Adjustments**
+
+* **Multiple Hardware per Contract**
+
+  * When creating hardware, allow **one contract to have multiple hardware entries**.
+* **Multiple Serial Numbers per Hardware**
+
+  * Each hardware record should support **multiple serial numbers** (up to the quantity specified).
+  * Ensure both **create** and **edit** operations support this.
+
+---
+
+## **3. Manage Hardware Page Enhancements**
+
+* Group hardware items **by their type/group** for better readability.
+* Add **filter options**:
+
+  * By **contract** (hardware only).
+  * By **is\_oracle** contracts (toggle filter).
+
+---
+
+## **4. Hardware Creation Wizard Improvements**
+
+* **Redesign** the wizard to be more user-friendly:
+
+  * Clearly indicate **current step** in the process.
+  * Include an **option to cancel** and return to the list page at any time.
+  * Match the **styling and layout** with the rest of the application for consistency.
+* Ensure **Create Hardware** links to the **latest version** of the hardware wizard.
+* For **editing**, use a **simplified form** aligned with the updated field requirements.
+
+---

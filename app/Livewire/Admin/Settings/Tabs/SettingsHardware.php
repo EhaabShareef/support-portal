@@ -3,27 +3,16 @@
 namespace App\Livewire\Admin\Settings\Tabs;
 
 use Livewire\Component;
+use App\Models\HardwareType;
+use App\Models\HardwareStatus;
 
 class SettingsHardware extends Component
 {
     // Hardware Types Management
-    public array $hardwareTypes = [
-        ['id' => 1, 'name' => 'Server', 'slug' => 'server', 'sort_order' => 1, 'is_protected' => true],
-        ['id' => 2, 'name' => 'Workstation', 'slug' => 'workstation', 'sort_order' => 2, 'is_protected' => true],
-        ['id' => 3, 'name' => 'Laptop', 'slug' => 'laptop', 'sort_order' => 3, 'is_protected' => true],
-        ['id' => 4, 'name' => 'Network Device', 'slug' => 'network_device', 'sort_order' => 4, 'is_protected' => false],
-        ['id' => 5, 'name' => 'POS Terminal', 'slug' => 'pos_terminal', 'sort_order' => 5, 'is_protected' => false],
-        ['id' => 6, 'name' => 'Printer', 'slug' => 'printer', 'sort_order' => 6, 'is_protected' => false],
-    ];
+    public array $hardwareTypes = [];
 
     // Hardware Statuses Management  
-    public array $hardwareStatuses = [
-        ['id' => 1, 'name' => 'Active', 'slug' => 'active', 'sort_order' => 1, 'is_protected' => true],
-        ['id' => 2, 'name' => 'Inactive', 'slug' => 'inactive', 'sort_order' => 2, 'is_protected' => true],
-        ['id' => 3, 'name' => 'Maintenance', 'slug' => 'maintenance', 'sort_order' => 3, 'is_protected' => false],
-        ['id' => 4, 'name' => 'Retired', 'slug' => 'retired', 'sort_order' => 4, 'is_protected' => false],
-        ['id' => 5, 'name' => 'Under Repair', 'slug' => 'under_repair', 'sort_order' => 5, 'is_protected' => false],
-    ];
+    public array $hardwareStatuses = [];
 
     public bool $showTypeModal = false;
     public bool $showStatusModal = false;
@@ -59,12 +48,22 @@ class SettingsHardware extends Component
 
     public function loadData()
     {
-        // In future implementation, these would load from database lookup tables
-        // For now, using hardcoded data as placeholder
+        // Load from database models
+        $this->hardwareTypes = HardwareType::ordered()->get()->toArray();
         
-        // TODO: Load from HardwareType and HardwareStatus models when migrations are created
-        // $this->hardwareTypes = HardwareType::orderBy('sort_order')->get()->toArray();
-        // $this->hardwareStatuses = HardwareStatus::orderBy('sort_order')->get()->toArray();
+        // Load from database models
+        try {
+            $this->hardwareStatuses = HardwareStatus::ordered()->get()->toArray();
+        } catch (\Exception $e) {
+            // Fallback to hardcoded data if table doesn't exist yet
+            $this->hardwareStatuses = [
+                ['id' => 1, 'name' => 'Active', 'slug' => 'active', 'sort_order' => 1, 'is_protected' => true],
+                ['id' => 2, 'name' => 'Inactive', 'slug' => 'inactive', 'sort_order' => 2, 'is_protected' => true],
+                ['id' => 3, 'name' => 'Maintenance', 'slug' => 'maintenance', 'sort_order' => 3, 'is_protected' => false],
+                ['id' => 4, 'name' => 'Retired', 'slug' => 'retired', 'sort_order' => 4, 'is_protected' => false],
+                ['id' => 5, 'name' => 'Under Repair', 'slug' => 'under_repair', 'sort_order' => 5, 'is_protected' => false],
+            ];
+        }
     }
 
     public function refreshData()
@@ -116,20 +115,21 @@ class SettingsHardware extends Component
         try {
             if ($this->typeEditMode) {
                 // Update existing type
-                $index = collect($this->hardwareTypes)->search(fn($item) => $item['id'] === $this->selectedTypeId);
-                if ($index !== false) {
-                    $this->hardwareTypes[$index] = array_merge($this->hardwareTypes[$index], $this->typeForm);
+                $type = HardwareType::find($this->selectedTypeId);
+                if ($type) {
+                    $type->update($this->typeForm);
+                    $message = 'Hardware type updated successfully.';
+                } else {
+                    $this->dispatch('error', 'Hardware type not found.');
+                    return;
                 }
-                $message = 'Hardware type updated successfully.';
             } else {
                 // Add new type
-                $newId = collect($this->hardwareTypes)->max('id') + 1;
-                $this->hardwareTypes[] = array_merge($this->typeForm, ['id' => $newId]);
+                HardwareType::create($this->typeForm);
                 $message = 'Hardware type created successfully.';
             }
 
-            // TODO: Save to database when lookup tables are implemented
-            
+            $this->loadData();
             $this->closeTypeModal();
             $this->dispatch('saved', $message);
             
@@ -156,13 +156,15 @@ class SettingsHardware extends Component
         $this->checkPermission('settings.update');
         
         try {
-            $this->hardwareTypes = collect($this->hardwareTypes)
-                ->reject(fn($item) => $item['id'] === $this->confirmingTypeDelete)
-                ->values()
-                ->toArray();
-                
-            $this->confirmingTypeDelete = null;
-            $this->dispatch('saved', 'Hardware type deleted successfully.');
+            $type = HardwareType::find($this->confirmingTypeDelete);
+            if ($type) {
+                $type->delete();
+                $this->loadData();
+                $this->confirmingTypeDelete = null;
+                $this->dispatch('saved', 'Hardware type deleted successfully.');
+            } else {
+                $this->dispatch('error', 'Hardware type not found.');
+            }
             
         } catch (\Exception $e) {
             $this->dispatch('error', 'Failed to delete hardware type: ' . $e->getMessage());

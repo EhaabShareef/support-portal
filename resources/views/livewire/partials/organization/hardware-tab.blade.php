@@ -7,11 +7,18 @@
         </div>
         
         @if($organization->hardware->count() > 0)
-            <a href="{{ route('hardware.manage', $organization) }}" 
-               class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
-                <x-heroicon-o-cpu-chip class="h-4 w-4 mr-2" />
-                Manage Hardware
-            </a>
+            <div class="flex gap-2">
+                <a href="{{ route('hardware.manage', $organization) }}" 
+                   class="inline-flex items-center px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-sm text-neutral-800 dark:text-neutral-100 rounded-md transition-all duration-200">
+                    <x-heroicon-o-list-bullet class="h-4 w-4 mr-2" />
+                    View All
+                </a>
+                <a href="{{ route('organizations.hardware.create', $organization) }}" 
+                   class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200">
+                    <x-heroicon-o-plus class="h-4 w-4 mr-2" />
+                    Add Hardware
+                </a>
+            </div>
         @endif
     </div>
 
@@ -76,11 +83,16 @@
         </div>
         
         {{-- View All Link --}}
-        <div class="text-center pt-4">
+        <div class="text-center pt-4 flex gap-4 justify-center">
             <a href="{{ route('hardware.manage', $organization) }}" 
-               class="inline-flex items-center text-sm text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 font-medium">
-                <x-heroicon-o-arrow-right class="h-4 w-4 mr-1" />
+               class="inline-flex items-center text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 font-medium">
+                <x-heroicon-o-list-bullet class="h-4 w-4 mr-1" />
                 View All Hardware ({{ $organization->hardware->count() }})
+            </a>
+            <a href="{{ route('organizations.hardware.create', $organization) }}" 
+               class="inline-flex items-center text-sm text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 font-medium">
+                <x-heroicon-o-plus class="h-4 w-4 mr-1" />
+                Add More Hardware
             </a>
         </div>
     @else
@@ -90,7 +102,7 @@
             <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">This organization doesn't have any hardware assets yet.</p>
             @can('hardware.create')
             <div class="mt-6">
-                <a href="{{ route('hardware.manage', $organization) }}" 
+                <a href="{{ route('organizations.hardware.create', $organization) }}" 
                    class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200">
                     <x-heroicon-o-plus class="h-4 w-4 mr-2" />
                     Add First Hardware
