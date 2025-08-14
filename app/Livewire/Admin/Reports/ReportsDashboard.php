@@ -106,6 +106,13 @@ class ReportsDashboard extends Component
                     'description' => 'Track individual agent performance metrics',
                     'route' => 'admin.reports.agent-productivity',
                     'icon' => 'chart-line'
+                ],
+                [
+                    'name' => 'User Activity Log',
+                    'description' => 'Audit trail of user actions across the system',
+                    'route' => 'admin.reports.user-activity',
+                    'icon' => 'clipboard-document-list',
+                    'available' => true
                 ]
             ],
             'Schedule & Workforce Planning' => [

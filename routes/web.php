@@ -130,6 +130,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports', ReportsDashboard::class)->name('reports.dashboard');
         Route::get('/reports/ticket-volume', TicketVolumeReport::class)->name('reports.ticket-volume');
         Route::get('/reports/organization-summary', OrganizationSummaryReport::class)->name('reports.organization-summary');
+        Route::get('/reports/user-activity', \App\Livewire\Admin\Reports\UserActivityReport::class)->name('reports.user-activity');
     });
 
 });
