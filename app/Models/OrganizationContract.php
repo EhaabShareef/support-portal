@@ -24,9 +24,7 @@ class OrganizationContract extends Model
         'start_date',
         'end_date',
         'renewal_months',
-        'csi_remarks',
         'notes',
-        'service_levels',
     ];
 
     protected $casts = [
@@ -34,7 +32,6 @@ class OrganizationContract extends Model
         'end_date' => 'date',
         'includes_hardware' => 'boolean',
         'is_oracle' => 'boolean',
-        'service_levels' => 'array',
     ];
 
     /**

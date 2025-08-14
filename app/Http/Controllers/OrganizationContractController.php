@@ -28,16 +28,18 @@ class OrganizationContractController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'org_id'        => 'required|exists:organizations,id',
-            'department_id' => 'required|exists:departments,id',
-            'is_hardware'   => 'boolean',
-            'is_oracle'     => 'boolean',
-            'csi_number'    => 'required_if:is_oracle,true|nullable|string',
-            'csi_remarks'   => 'nullable|string',
-            'start_date'    => 'required|date',
-            'end_date'      => 'nullable|date|after_or_equal:start_date',
-            'status'        => 'required|string|in:active,expired,terminated,onhold',
-            'notes'         => 'nullable|string',
+            'contract_number' => 'required|string|max:255|unique:organization_contracts,contract_number',
+            'organization_id' => 'required|exists:organizations,id',
+            'department_id'   => 'required|exists:departments,id',
+            'type'           => 'required|string',
+            'status'         => 'required|string',
+            'includes_hardware' => 'boolean',
+            'is_oracle'      => 'boolean',
+            'csi_number'     => 'required_if:is_oracle,true|nullable|string|max:255',
+            'start_date'     => 'required|date',
+            'end_date'       => 'nullable|date|after_or_equal:start_date',
+            'renewal_months' => 'nullable|integer|min:1|max:120',
+            'notes'          => 'nullable|string',
         ]);
 
 
@@ -68,16 +70,18 @@ class OrganizationContractController extends Controller
     public function update(Request $request, OrganizationContract $contract)
     {
         $data = $request->validate([
-            'org_id'        => 'required|exists:organizations,id',
-            'department_id' => 'required|exists:departments,id',
-            'is_hardware'   => 'boolean',
-            'is_oracle'     => 'boolean',
-            'csi_number'    => 'required_if:is_oracle,true|nullable|string',
-            'csi_remarks'   => 'nullable|string',
-            'start_date'    => 'required|date',
-            'end_date'      => 'nullable|date|after_or_equal:start_date',
-            'status'        => 'required|string|in:active,expired,terminated,onhold',
-            'notes'         => 'nullable|string',
+            'contract_number' => 'required|string|max:255|unique:organization_contracts,contract_number,' . $contract->id,
+            'organization_id' => 'required|exists:organizations,id',
+            'department_id'   => 'required|exists:departments,id',
+            'type'           => 'required|string',
+            'status'         => 'required|string',
+            'includes_hardware' => 'boolean',
+            'is_oracle'      => 'boolean',
+            'csi_number'     => 'required_if:is_oracle,true|nullable|string|max:255',
+            'start_date'     => 'required|date',
+            'end_date'       => 'nullable|date|after_or_equal:start_date',
+            'renewal_months' => 'nullable|integer|min:1|max:120',
+            'notes'          => 'nullable|string',
         ]);
 
         $contract->update($data);

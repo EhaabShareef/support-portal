@@ -26,6 +26,63 @@
         </div>
     @endif
 
+    {{-- Filters --}}
+    <div class="bg-white/10 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {{-- Department Group Filter --}}
+            <div>
+                <label for="filterDepartmentGroup" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Department Group
+                </label>
+                <select wire:model.live="filterDepartmentGroup" 
+                        id="filterDepartmentGroup"
+                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+                    <option value="">All Groups</option>
+                    @foreach($departmentGroups as $group)
+                        <option value="{{ $group->id }}">{{ $group->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Department Filter --}}
+            <div>
+                <label for="filterDepartment" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Department
+                </label>
+                <select wire:model.live="filterDepartment" 
+                        id="filterDepartment"
+                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+                    <option value="">All Departments</option>
+                    @foreach($departments as $department)
+                        <option value="{{ $department->id }}">{{ $department->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Status Filter --}}
+            <div>
+                <label for="filterStatus" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Status
+                </label>
+                <select wire:model.live="filterStatus" 
+                        id="filterStatus"
+                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+
+            {{-- Clear Filters --}}
+            <div class="flex items-end">
+                <button wire:click="clearFilters" 
+                        class="w-full px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-sm text-neutral-800 dark:text-neutral-100 rounded-md transition-all duration-200">
+                    <x-heroicon-o-x-mark class="inline h-4 w-4 mr-1" /> Clear Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
     {{-- Form --}}
     <div x-data="{ open: @entangle('showForm') }" 
          x-show="open" 
@@ -203,20 +260,6 @@
                             @endif
                         </div>
 
-                        {{-- CSI Remarks --}}
-                        <div>
-                            <label for="csi_remarks" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                                CSI Remarks
-                            </label>
-                            <textarea wire:model="form.csi_remarks"
-                                      id="csi_remarks"
-                                      rows="3"
-                                      class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
-                                      placeholder="Customer Service Index remarks..."></textarea>
-                            @error('form.csi_remarks') 
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                            @enderror
-                        </div>
 
                         {{-- Notes --}}
                         <div>
@@ -249,74 +292,81 @@
                 </div>
             </div>
 
-    {{-- Contract List --}}
-    <div class="space-y-4">
+    {{-- Contract Grid --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse ($contracts as $contract)
             <div wire:key="contract-{{ $contract->id }}"
-                 class="bg-white/10 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-4 shadow-md dark:shadow-neutral-200/10 space-y-2 hover:bg-white/15 transition-all duration-200">
-                <div class="flex items-center justify-between">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-3 mb-2">
-                                <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
-                                    {{ $contract->contract_number }}
-                                </h3>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                    @if($contract->status === 'active') bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300
-                                    @elseif($contract->status === 'draft') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300
-                                    @elseif($contract->status === 'expired') bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300
-                                    @else bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300
-                                    @endif">
-                                    {{ ucfirst($contract->status) }}
-                                </span>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-neutral-600 dark:text-neutral-400">
-                                <div class="flex items-center gap-2">
-                                    <x-heroicon-o-building-office class="h-4 w-4" />
-                                    <span>{{ $contract->department->name ?? 'No Department' }}</span>
-                                </div>
-                                
-                                <div class="flex items-center gap-2">
-                                    <x-heroicon-o-tag class="h-4 w-4" />
-                                    <span>{{ ucfirst($contract->type) }}</span>
-                                </div>
-                                
-                                <div class="flex items-center gap-2">
-                                    <x-heroicon-o-calendar class="h-4 w-4" />
-                                    <span>{{ $contract->start_date->format('M d, Y') }} - {{ $contract->end_date ? $contract->end_date->format('M d, Y') : 'Ongoing' }}</span>
-                                </div>
-                            </div>
-                            
-                            @if($contract->includes_hardware)
-                                <div class="mt-2 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                                    <x-heroicon-o-cpu-chip class="h-4 w-4" />
-                                    <span>Hardware Included</span>
-                                </div>
-                            @endif
-                            
-                            @if($contract->csi_remarks)
-                                <div class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                    <span class="font-medium">CSI:</span> {{ $contract->csi_remarks }}
-                                </div>
-                            @endif
-                        </div>
-                        
-                        <div class="flex items-center gap-2 ml-4">
-                            @can('contracts.update')
-                            <button wire:click="edit({{ $contract->id }})" 
-                                    class="inline-flex items-center p-2 text-neutral-600 dark:text-neutral-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-md transition-colors duration-200">
-                                <x-heroicon-o-pencil class="h-4 w-4" />
-                            </button>
-                            @endcan
-                            
-                            @can('contracts.delete')
-                            <button wire:click="confirmDelete({{ $contract->id }})" 
-                                    class="inline-flex items-center p-2 text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors duration-200">
-                                <x-heroicon-o-trash class="h-4 w-4" />
-                            </button>
-                            @endcan
-                        </div>
+                 class="bg-white/10 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-4 shadow-md dark:shadow-neutral-200/10 hover:bg-white/15 transition-all duration-200 flex flex-col">
+                {{-- Card Header --}}
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100 truncate">
+                            {{ $contract->contract_number }}
+                        </h3>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1
+                            @if($contract->status === 'active') bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300
+                            @elseif($contract->status === 'draft') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300
+                            @elseif($contract->status === 'expired') bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300
+                            @else bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300
+                            @endif">
+                            {{ ucfirst($contract->status) }}
+                        </span>
                     </div>
+                    
+                    <div class="flex items-center gap-1 ml-2">
+                        @can('contracts.update')
+                        <button wire:click="edit({{ $contract->id }})" 
+                                class="inline-flex items-center p-2 text-neutral-600 dark:text-neutral-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-md transition-colors duration-200">
+                            <x-heroicon-o-pencil class="h-4 w-4" />
+                        </button>
+                        @endcan
+                        
+                        @can('contracts.delete')
+                        <button wire:click="confirmDelete({{ $contract->id }})" 
+                                class="inline-flex items-center p-2 text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors duration-200">
+                            <x-heroicon-o-trash class="h-4 w-4" />
+                        </button>
+                        @endcan
+                    </div>
+                </div>
+
+                {{-- Card Body --}}
+                <div class="flex-1 space-y-3 text-sm text-neutral-600 dark:text-neutral-400">
+                    <div class="flex items-center gap-2">
+                        <x-heroicon-o-building-office class="h-4 w-4 flex-shrink-0" />
+                        <span class="truncate">
+                            @if($contract->department && $contract->department->departmentGroup)
+                                {{ $contract->department->departmentGroup->name }} - {{ $contract->department->name }}
+                            @else
+                                {{ $contract->department->name ?? 'No Department' }}
+                            @endif
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <x-heroicon-o-tag class="h-4 w-4 flex-shrink-0" />
+                        <span>{{ ucfirst($contract->type) }}</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <x-heroicon-o-calendar class="h-4 w-4 flex-shrink-0" />
+                        <span class="text-xs">{{ $contract->start_date->format('M d, Y') }} - {{ $contract->end_date ? $contract->end_date->format('M d, Y') : 'Ongoing' }}</span>
+                    </div>
+                    
+                    @if($contract->includes_hardware)
+                        <div class="flex items-center gap-2 text-green-600 dark:text-green-400">
+                            <x-heroicon-o-cpu-chip class="h-4 w-4 flex-shrink-0" />
+                            <span>Hardware Included</span>
+                        </div>
+                    @endif
+                    
+                    @if($contract->is_oracle && $contract->csi_number)
+                        <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                            <x-heroicon-o-server class="h-4 w-4 flex-shrink-0" />
+                            <span class="truncate">Oracle: {{ $contract->csi_number }}</span>
+                        </div>
+                    @endif
+                </div>
                     
                     @if ($deleteId === $contract->id)
                         <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
@@ -340,11 +390,24 @@
                     @endif
                 </div>
             @empty
-                <div class="text-center py-12">
+                <div class="col-span-full text-center py-12">
                     <x-heroicon-o-document-text class="mx-auto h-12 w-12 text-neutral-400 dark:text-neutral-600" />
                     <h3 class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">No contracts found</h3>
-                    <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Get started by creating your first contract.</p>
-                    <div class="mt-6">
+                    <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                        @if($filterDepartmentGroup || $filterDepartment || $filterStatus)
+                            Try adjusting your filters or create a new contract.
+                        @else
+                            Get started by creating your first contract.
+                        @endif
+                    </p>
+                    <div class="mt-6 flex flex-col sm:flex-row gap-2 justify-center">
+                        @if($filterDepartmentGroup || $filterDepartment || $filterStatus)
+                            <button wire:click="clearFilters" 
+                                    class="inline-flex items-center px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-800 dark:text-neutral-100 text-sm font-medium rounded-md transition-all duration-200">
+                                <x-heroicon-o-x-mark class="h-4 w-4 mr-2" />
+                                Clear Filters
+                            </button>
+                        @endif
                         <button wire:click="create" 
                                 class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200">
                             <x-heroicon-o-plus class="h-4 w-4 mr-2" />

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class DepartmentGroup extends Model
 {
@@ -41,5 +42,10 @@ class DepartmentGroup extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order')->orderBy('name');
+    }
+
+    public function ticketStatuses(): BelongsToMany
+    {
+        return $this->belongsToMany(TicketStatus::class, 'department_group_ticket_status');
     }
 }

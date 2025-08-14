@@ -20,9 +20,24 @@ interface SettingsRepositoryInterface
     public function group(string $group): Collection;
 
     /**
+     * Retrieve settings for a given group (alias for group method).
+     */
+    public function forGroup(string $group): Collection;
+
+    /**
      * Get a setting value by key.
      */
     public function get(string $key, $default = null);
+
+    /**
+     * Set a setting value by key.
+     */
+    public function set(string $key, $value, string $type = 'string'): void;
+
+    /**
+     * Reset a setting to its default value.
+     */
+    public function reset(string $key): void;
 
     /**
      * Create a new setting.

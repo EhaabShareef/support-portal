@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\Organization;
 use App\Models\OrganizationContract;
 use App\Models\Department;
+use App\Models\DepartmentGroup;
 use Livewire\WithPagination;
 
 class ManageContracts extends Component
@@ -18,6 +19,11 @@ class ManageContracts extends Component
     public $deleteId = null;
     public $editingContract = null;
 
+    // Filters
+    public $filterDepartmentGroup = '';
+    public $filterDepartment = '';
+    public $filterStatus = '';
+
     public array $form = [
         'contract_number' => '',
         'department_id' => '',
@@ -29,7 +35,6 @@ class ManageContracts extends Component
         'start_date' => '',
         'end_date' => '',
         'renewal_months' => '',
-        'csi_remarks' => '',
         'notes' => '',
     ];
 
@@ -44,7 +49,6 @@ class ManageContracts extends Component
         'form.start_date' => 'required|date',
         'form.end_date' => 'nullable|date|after_or_equal:form.start_date',
         'form.renewal_months' => 'nullable|integer|min:1|max:120',
-        'form.csi_remarks' => 'nullable|string',
         'form.notes' => 'nullable|string',
     ];
 
@@ -53,17 +57,67 @@ class ManageContracts extends Component
         $this->organization = $organization;
     }
 
+    public function updatedFilterDepartmentGroup()
+    {
+        $this->filterDepartment = ''; // Reset department filter when group changes
+        $this->resetPage();
+    }
+
+    public function updatedFilterDepartment()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterStatus()
+    {
+        $this->resetPage();
+    }
+
+    public function clearFilters()
+    {
+        $this->filterDepartmentGroup = '';
+        $this->filterDepartment = '';
+        $this->filterStatus = '';
+        $this->resetPage();
+    }
+
     public function render()
     {
-        $contracts = OrganizationContract::where('organization_id', $this->organization->id)
-            ->with('department')
-            ->orderByDesc('start_date')
-            ->paginate(10);
+        $query = OrganizationContract::where('organization_id', $this->organization->id)
+            ->with(['department.departmentGroup']);
 
-        $departments = Department::orderBy('name')->get();
+        // Apply filters
+        if ($this->filterDepartmentGroup) {
+            $query->whereHas('department', function ($q) {
+                $q->where('department_group_id', $this->filterDepartmentGroup);
+            });
+        }
+
+        if ($this->filterDepartment) {
+            $query->where('department_id', $this->filterDepartment);
+        }
+
+        if ($this->filterStatus) {
+            if ($this->filterStatus === 'active') {
+                $query->where('status', 'active');
+            } elseif ($this->filterStatus === 'inactive') {
+                $query->whereIn('status', ['draft', 'expired', 'terminated', 'renewed']);
+            }
+        }
+
+        $contracts = $query->orderByDesc('start_date')->paginate(9); // Changed to 9 for 3x3 grid
+
+        $departmentGroups = DepartmentGroup::active()->ordered()->get();
+        
+        $departments = Department::active()->ordered();
+        if ($this->filterDepartmentGroup) {
+            $departments = $departments->where('department_group_id', $this->filterDepartmentGroup);
+        }
+        $departments = $departments->get();
 
         return view('livewire.manage-contracts', [
             'contracts' => $contracts,
+            'departmentGroups' => $departmentGroups,
             'departments' => $departments
         ]);
     }
@@ -83,7 +137,6 @@ class ManageContracts extends Component
             'start_date' => now()->format('Y-m-d'),
             'end_date' => null,
             'renewal_months' => null,
-            'csi_remarks' => null,
             'notes' => null,
         ];
         
@@ -105,7 +158,6 @@ class ManageContracts extends Component
             'start_date' => $this->editingContract->start_date?->format('Y-m-d') ?? '',
             'end_date' => $this->editingContract->end_date?->format('Y-m-d') ?? '',
             'renewal_months' => $this->editingContract->renewal_months,
-            'csi_remarks' => $this->editingContract->csi_remarks,
             'notes' => $this->editingContract->notes,
         ];
 
@@ -136,7 +188,7 @@ class ManageContracts extends Component
         }
 
         // Convert empty strings to null for nullable text fields
-        $nullableTextFields = ['end_date', 'csi_remarks', 'csi_number', 'notes'];
+        $nullableTextFields = ['end_date', 'csi_number', 'notes'];
         foreach ($nullableTextFields as $field) {
             if (empty($data[$field]) || $data[$field] === '') {
                 $data[$field] = null;

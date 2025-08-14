@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
-class HardwareType extends Model
+class ContractType extends Model
 {
     protected $fillable = [
         'name',
@@ -22,9 +22,9 @@ class HardwareType extends Model
         'is_active' => 'boolean',
     ];
 
-    public function hardware(): HasMany
+    public function contracts(): HasMany
     {
-        return $this->hasMany(Hardware::class, 'type_id');
+        return $this->hasMany(Contract::class, 'type_id');
     }
 
     public function scopeActive(Builder $query): Builder

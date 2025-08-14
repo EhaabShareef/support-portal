@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Ticket;
 use App\Contracts\SettingsRepositoryInterface;
 use App\Enums\TicketPriority;
+use App\Enums\TicketStatus;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TicketPolicy
@@ -181,5 +182,30 @@ class TicketPolicy
         }
 
         return false;
+    }
+
+    /**
+     * Determine whether the user can set a specific status for a ticket.
+     */
+    public function setStatus(User $user, Ticket $ticket, string $status): bool
+    {
+        // First check if user can update the ticket
+        if (!$this->update($user, $ticket)) {
+            return false;
+        }
+
+        // Admin can set any status
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // Support staff can only set statuses allowed for their department group
+        if ($user->hasRole('support') && $user->department?->department_group_id) {
+            $allowedStatuses = array_keys(TicketStatus::optionsForDepartmentGroup($user->department->department_group_id));
+            return in_array($status, $allowedStatuses);
+        }
+
+        // Clients and users without department groups can use default statuses
+        return in_array($status, array_keys(TicketStatus::options()));
     }
 }

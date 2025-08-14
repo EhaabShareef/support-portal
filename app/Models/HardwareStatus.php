@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
-class HardwareType extends Model
+class HardwareStatus extends Model
 {
     protected $fillable = [
         'name',
@@ -24,7 +24,7 @@ class HardwareType extends Model
 
     public function hardware(): HasMany
     {
-        return $this->hasMany(Hardware::class, 'type_id');
+        return $this->hasMany(Hardware::class, 'status_id');
     }
 
     public function scopeActive(Builder $query): Builder

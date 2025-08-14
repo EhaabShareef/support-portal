@@ -20,30 +20,6 @@
         </div>
     </div>
 
-    {{-- Action Buttons --}}
-    @if($ticket->status !== 'closed')
-        <div class="bg-white/60 dark:bg-neutral-900/50 backdrop-blur-sm rounded-lg border border-neutral-200/50 dark:border-neutral-700/50">
-            <div class="px-6 py-4">
-                <div class="flex items-center justify-center gap-4">
-                    @if($this->canReply)
-                        <button wire:click="openReplyModal" 
-                                class="inline-flex items-center px-4 py-2 bg-sky-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200">
-                            <x-heroicon-o-paper-airplane class="h-4 w-4 mr-2" />
-                            Add Reply
-                        </button>
-                    @endif
-
-                    @if($this->canAddNotes)
-                        <button wire:click="openNoteModal" 
-                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200">
-                            <x-heroicon-o-plus class="h-4 w-4 mr-2" />
-                            Add Note
-                        </button>
-                    @endif
-                </div>
-            </div>
-        </div>
-    @endif
 
     {{-- Reply Modal --}}
     @if($showReplyModal)

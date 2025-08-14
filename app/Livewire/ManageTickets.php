@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Contracts\SettingsRepositoryInterface;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\TicketStatus as TicketStatusModel;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -429,6 +430,12 @@ class ManageTickets extends Component
                 return;
             }
             
+            // Check if status is allowed using the policy
+            if (!$user->can('setStatus', [$ticket, $status])) {
+                session()->flash('error', 'This ticket status is not available for your department group.');
+                return;
+            }
+            
             // Check if this is a ticket reopening (from closed to any other status)
             $wasTicketClosed = $ticket->status === 'closed';
             $isTicketBeingReopened = $wasTicketClosed && $status !== 'closed';
@@ -631,12 +638,22 @@ class ManageTickets extends Component
             $agents = collect(); // Clients don't see agent assignments
         }
 
+        // Get status options based on user's department group
+        $statusOptions = [];
+        if ($user->hasRole('admin')) {
+            $statusOptions = TicketStatus::options();
+        } elseif ($user->hasRole('support') && $user->department?->department_group_id) {
+            $statusOptions = TicketStatus::optionsForDepartmentGroup($user->department->department_group_id);
+        } else {
+            $statusOptions = TicketStatus::options(); // Fallback to default options
+        }
+
         return view('livewire.manage-tickets', [
             'tickets' => $query->paginate(15),
             'organizations' => $organizations,
             'departments' => $departments,
             'agents' => $agents,
-            'statusOptions' => TicketStatus::options(),
+            'statusOptions' => $statusOptions,
             'priorityOptions' => TicketPriority::options(),
             'showFilters' => $this->quickFilter === 'all',
         ]);

@@ -68,23 +68,6 @@
         @else
             {{-- Display Mode --}}
             <div class="space-y-4">
-                {{-- Organization Notes Card --}}
-                @if($ticket->organization && $ticket->organization->notes)
-                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                        <div class="flex items-center mb-3">
-                            <div class="flex-shrink-0">
-                                <x-heroicon-o-building-office class="h-5 w-5 text-blue-500" />
-                            </div>
-                            <div class="ml-3">
-                                <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200">Organization Note</h4>
-                            </div>
-                        </div>
-                        <div class="text-sm text-blue-700 dark:text-blue-300">
-                            {!! nl2br(e($ticket->organization->notes)) !!}
-                        </div>
-                    </div>
-                @endif
-
                 <div class="grid grid-cols-2 gap-6">
                     <div class="space-y-3">
                         <div>
