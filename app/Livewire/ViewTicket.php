@@ -804,7 +804,7 @@ class ViewTicket extends Component
             $statusOptions = TicketStatus::options(); // Fallback to default options
         }
 
-        return view('livewire.view-ticket', [
+        return view('livewire.tickets.view-ticket', [
             'departments' => $departments,
             'users' => $users,
             'statusOptions' => $statusOptions,
