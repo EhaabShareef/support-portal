@@ -425,6 +425,6 @@ class TicketConversation extends Component
 
     public function render()
     {
-        return view('tickets.conversation');
+        return view('livewire.tickets.conversation');
     }
 }

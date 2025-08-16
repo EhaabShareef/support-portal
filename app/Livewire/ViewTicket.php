@@ -43,6 +43,12 @@ class ViewTicket extends Component
     public string $noteColor = 'sky';
     public bool $noteInternal = true;
     public ?int $editingNoteId = null;
+    
+    // Form state management
+    public string $activeInput = '';
+    public string $replyMessage = '';
+    public string $replyStatus = 'in_progress';
+    public array $attachments = [];
 
     public function mount(Ticket $ticket)
     {
@@ -192,6 +198,44 @@ class ViewTicket extends Component
     public function activeContract()
     {
         return $this->ticket->organization->contracts->first();
+    }
+
+    #[Computed]
+    public function priorityHexColor()
+    {
+        $colorService = app(\App\Services\TicketColorService::class);
+        $priorityColors = $colorService->getPriorityColors();
+        return $priorityColors[$this->ticket->priority] ?? '#3b82f6';
+    }
+
+    #[Computed]
+    public function statusHexColor()
+    {
+        $statusModel = \App\Models\TicketStatus::where('key', $this->ticket->status)->first();
+        return $statusModel ? $statusModel->color : '#3b82f6';
+    }
+
+    #[Computed]
+    public function canReopen()
+    {
+        if ($this->ticket->status !== 'closed') {
+            return false;
+        }
+
+        $user = auth()->user();
+        
+        // Admin and support can always reopen
+        if ($user->hasRole(['admin', 'support'])) {
+            return true;
+        }
+
+        // Clients can reopen within window
+        if ($user->hasRole('client') && $user->organization_id === $this->ticket->organization_id) {
+            $reopenLimit = app(\App\Contracts\SettingsRepositoryInterface::class)->get('tickets.reopen_window_days', 3);
+            return $this->ticket->closed_at && now()->diffInDays($this->ticket->closed_at) <= $reopenLimit;
+        }
+
+        return false;
     }
 
     public function enableEdit()
@@ -557,6 +601,166 @@ class ViewTicket extends Component
         $this->dispatch('open-note-modal')->to('tickets.ticket-conversation');
     }
 
+    public function sendMessage()
+    {
+        $this->validate([
+            'replyMessage' => 'required|string|max:5000',
+            'replyStatus' => 'required|in:open,in_progress,solution_provided',
+        ]);
+
+        try {
+            // Create the message
+            TicketMessage::create([
+                'ticket_id' => $this->ticket->id,
+                'sender_id' => auth()->id(),
+                'message' => $this->replyMessage,
+                'is_internal' => false,
+                'is_system_message' => false,
+            ]);
+
+            // Update ticket status
+            $this->ticket->update(['status' => $this->replyStatus]);
+
+            // Reset form
+            $this->replyMessage = '';
+            $this->replyStatus = 'in_progress';
+            $this->activeInput = '';
+            $this->attachments = [];
+
+            // Refresh ticket data
+            $this->ticket->refresh();
+            $this->loadConversation();
+
+            session()->flash('message', 'Reply sent successfully.');
+            $this->dispatch('message-sent');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to send reply.');
+        }
+    }
+
+    public function addNote()
+    {
+        $this->validate([
+            'note' => 'required|string|max:2000',
+            'noteColor' => 'required|in:sky,green,yellow,red,purple',
+        ]);
+
+        try {
+            TicketNote::create([
+                'ticket_id' => $this->ticket->id,
+                'user_id' => auth()->id(),
+                'note' => $this->note,
+                'color' => $this->noteColor,
+                'is_internal' => $this->noteInternal,
+            ]);
+
+            // Reset form
+            $this->note = '';
+            $this->noteColor = 'sky';
+            $this->noteInternal = true;
+            $this->activeInput = '';
+
+            // Refresh notes
+            $this->refreshNotes();
+
+            session()->flash('message', 'Note added successfully.');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to add note.');
+        }
+    }
+
+    public function updateNote()
+    {
+        $this->validate([
+            'note' => 'required|string|max:2000',
+            'noteColor' => 'required|in:sky,green,yellow,red,purple',
+        ]);
+
+        try {
+            $note = TicketNote::find($this->editingNoteId);
+            if ($note && ($note->user_id === auth()->id() || auth()->user()->hasRole('admin'))) {
+                $note->update([
+                    'note' => $this->note,
+                    'color' => $this->noteColor,
+                    'is_internal' => $this->noteInternal,
+                ]);
+
+                // Reset form
+                $this->note = '';
+                $this->noteColor = 'sky';
+                $this->noteInternal = true;
+                $this->editingNoteId = null;
+                $this->activeInput = '';
+
+                // Refresh notes
+                $this->refreshNotes();
+
+                session()->flash('message', 'Note updated successfully.');
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to update note.');
+        }
+    }
+
+    public function removeAttachment($index)
+    {
+        if (isset($this->attachments[$index])) {
+            unset($this->attachments[$index]);
+            $this->attachments = array_values($this->attachments); // Re-index array
+        }
+    }
+
+    public function updatedFormPriority()
+    {
+        try {
+            if (!$this->canEdit) {
+                session()->flash('error', 'You do not have permission to edit this ticket.');
+                return;
+            }
+
+            $user = auth()->user();
+            $previousPriority = $this->ticket->priority;
+
+            // Check priority escalation for clients
+            if ($user->hasRole('client') && TicketPriority::compare($this->form['priority'], $previousPriority) > 0) {
+                session()->flash('error', 'Clients cannot escalate ticket priority.');
+                $this->form['priority'] = $previousPriority; // Reset to original
+                return;
+            }
+
+            // Check escalation authorization
+            if (!$user->can('escalatePriority', [$this->ticket, $this->form['priority']])) {
+                session()->flash('error', 'You are not authorized to change this ticket priority.');
+                $this->form['priority'] = $previousPriority; // Reset to original
+                return;
+            }
+
+            // Update the ticket priority
+            $this->ticket->update(['priority' => $this->form['priority']]);
+
+            // Log priority escalation if it's an increase
+            if (TicketPriority::compare($this->form['priority'], $previousPriority) > 0) {
+                ActivityLog::record('ticket.priority_escalated', $this->ticket->id, $this->ticket, [
+                    'description' => "Priority escalated from {$previousPriority} to {$this->form['priority']}",
+                    'old_priority' => $previousPriority,
+                    'new_priority' => $this->form['priority']
+                ]);
+            }
+
+            $this->ticket->refresh();
+            session()->flash('message', 'Ticket priority updated successfully.');
+
+        } catch (\Exception $e) {
+            logger()->error('Failed to update ticket priority', [
+                'user_id' => auth()->id(),
+                'ticket_id' => $this->ticket->id,
+                'new_priority' => $this->form['priority'],
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Failed to update ticket priority.');
+        }
+    }
+
     public function render()
     {
         $user = auth()->user();
@@ -600,7 +804,7 @@ class ViewTicket extends Component
             $statusOptions = TicketStatus::options(); // Fallback to default options
         }
 
-        return view('tickets.show', [
+        return view('livewire.view-ticket', [
             'departments' => $departments,
             'users' => $users,
             'statusOptions' => $statusOptions,

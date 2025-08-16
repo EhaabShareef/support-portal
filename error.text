@@ -1,18 +1,44 @@
- SQLSTATE[42S22]: Column not found: 1054 Unknown column 'service_type' in 'where clause' (Connection: mysql, SQL: select * from `organization_contracts` where (`organization_id` = 2 and `department_id` = 1 and `service_type` = PMS Support) and `organization_contracts`.`deleted_at` is null limit 1)
+refer
 
-  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:824
-    820▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
-    821▕                 );
-    822▕             }
-    823▕
-  ➜ 824▕             throw new QueryException(
-    825▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
-    826▕             );
-    827▕         }
-    828▕     }
+http://127.0.0.1:8000/admin/settings
 
-  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:406
-      PDOException::("SQLSTATE[42S22]: Column not found: 1054 Unknown column 'service_type' in 'where clause'")
+Body:
+```
+{
+    "_token": "iljiwRSSznC6og0rrHIuB5tAqjqRUInd6NKs8Y05",
+    "components": [
+        {
+            "snapshot": "{"data":{"defaultReplyStatus":"in_progress","reopenWindowDays":3,"requireEscalationConfirmation":true,"messageOrder":"newest_first","attachmentMaxSizeMb":10,"attachmentMaxCount":5,"priorityColors":[{"low":"gray","normal":"blue","high":"orange","urgent":"red","critical":"red"},{"s":"arr"}],"editingPriorityKey":"high","editPriorityForm":[{"color":"#6d5050"},{"s":"arr"}],"ticketStatusesArray":[{"open":[{"id":1,"name":"Open","key":"open","description":"New ticket that has not been assigned or started","color":"#3b82f6","sort_order":1,"is_active":true,"is_protected":true},{"s":"arr"}],"in_progress":[{"id":2,"name":"In Progress","key":"in_progress","description":"Ticket is currently being worked on","color":"#f59e0b","sort_order":2,"is_active":true,"is_protected":true},{"s":"arr"}],"waiting_for_customer":[{"id":3,"name":"Waiting for Customer","key":"waiting_for_customer","description":"Waiting for customer response or action","color":"#8b5cf6","sort_order":3,"is_active":true,"is_protected":false},{"s":"arr"}],"resolved":[{"id":4,"name":"Resolved","key":"resolved","description":"Issue has been resolved, awaiting customer confirmation","color":"#10b981","sort_order":4,"is_active":true,"is_protected":false},{"s":"arr"}],"closed":[{"id":5,"name":"Closed","key":"closed","description":"Ticket has been completed and closed","color":"#6b7280","sort_order":5,"is_active":true,"is_protected":true},{"s":"arr"}]},{"s":"arr"}],"showAddStatusForm":false,"editingStatusKey":"","newStatusForm":[{"name":"","key":"","description":"","color":"#3b82f6"},{"s":"arr"}],"editStatusForm":[{"name":"","key":"","description":"","color":"#3b82f6"},{"s":"arr"}],"hasUnsavedChanges":false},"memo":{"id":"uaJLlTEMJp6CAPbVzrJ3","name":"admin.settings.tabs.settings-ticket","path":"admin/settings","method":"GET","children":[],"scripts":[],"assets":[],"errors":[],"locale":"en"},"checksum":"fd43ac1d2d231231037a6f6b1911f3f32ff9d8e26ffc174f77f1f9ad62ec13b0"}",
+            "updates": [],
+            "calls": [
+                {
+                    "path": "",
+                    "method": "savePriorityColor",
+                    "params": []
+                }
+            ]
+        }
+    ]
+}
+```
 
-  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:406
-      PDO::prepare("select * from `organization_contracts` where (`organization_id` = ? and `department_id` = ? and `service_type` = ?) and `organization_contracts`.`deleted_at` is null limit 1")
+D:\SupportPortal\ht-portal\app\Livewire\Admin\Settings\Tabs\SettingsTicket.php :181
+
+```
+    public function savePriorityColor()
+    {
+        $this->checkPermission('settings.update');
+ 
+->      $this->validate([
+            'editPriorityForm.color' => 'required|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
+        ]);
+ 
+        try {
+            $colorService = app(TicketColorService::class);
+            $this->priorityColors[$this->editingPriorityKey] = $this->editPriorityForm['color'];
+            $colorService->updatePriorityColors($this->priorityColors);
+ 
+            $this->editingPriorityKey = '';
+            $this->editPriorityForm = ['color' => '#3b82f6'];
+            $this->dispatch('saved', 'Priority color updated successfully.');
+```

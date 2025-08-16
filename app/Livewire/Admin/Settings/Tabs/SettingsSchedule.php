@@ -189,12 +189,11 @@ class SettingsSchedule extends Component
     {
         $this->checkPermission('schedule-event-types.delete');
         
-        // TODO: Check if event type is in use by any schedules
-        // $eventType = ScheduleEventType::withCount('schedules')->findOrFail($id);
-        // if ($eventType->schedules_count > 0) {
-        //     $this->dispatch('error', 'Cannot delete event type that is in use by schedules.');
-        //     return;
-        // }
+        $eventType = ScheduleEventType::withCount('schedules')->findOrFail($id);
+        if ($eventType->schedules_count > 0) {
+            $this->dispatch('error', 'Cannot delete event type that is in use by schedules.');
+            return;
+        }
         
         $this->confirmingEventTypeDelete = $id;
     }

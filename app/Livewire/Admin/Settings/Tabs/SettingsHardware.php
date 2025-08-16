@@ -5,14 +5,10 @@ namespace App\Livewire\Admin\Settings\Tabs;
 use Livewire\Component;
 use App\Models\HardwareType;
 use App\Models\HardwareStatus;
+use Livewire\Attributes\Computed;
 
 class SettingsHardware extends Component
 {
-    // Hardware Types Management
-    public array $hardwareTypes = [];
-
-    // Hardware Statuses Management  
-    public array $hardwareStatuses = [];
 
     public bool $showTypeModal = false;
     public bool $showStatusModal = false;
@@ -48,27 +44,24 @@ class SettingsHardware extends Component
 
     public function loadData()
     {
-        // Load from database models
-        $this->hardwareTypes = HardwareType::ordered()->get()->toArray();
-        
-        // Load from database models
-        try {
-            $this->hardwareStatuses = HardwareStatus::ordered()->get()->toArray();
-        } catch (\Exception $e) {
-            // Fallback to hardcoded data if table doesn't exist yet
-            $this->hardwareStatuses = [
-                ['id' => 1, 'name' => 'Active', 'slug' => 'active', 'sort_order' => 1, 'is_protected' => true],
-                ['id' => 2, 'name' => 'Inactive', 'slug' => 'inactive', 'sort_order' => 2, 'is_protected' => true],
-                ['id' => 3, 'name' => 'Maintenance', 'slug' => 'maintenance', 'sort_order' => 3, 'is_protected' => false],
-                ['id' => 4, 'name' => 'Retired', 'slug' => 'retired', 'sort_order' => 4, 'is_protected' => false],
-                ['id' => 5, 'name' => 'Under Repair', 'slug' => 'under_repair', 'sort_order' => 5, 'is_protected' => false],
-            ];
-        }
+        // Data now loaded via computed properties
     }
 
     public function refreshData()
     {
         $this->loadData();
+    }
+
+    #[Computed]
+    public function hardwareTypes()
+    {
+        return HardwareType::ordered()->get();
+    }
+
+    #[Computed]
+    public function hardwareStatuses()
+    {
+        return HardwareStatus::ordered()->get();
     }
 
     // Hardware Type Methods
@@ -83,19 +76,24 @@ class SettingsHardware extends Component
     public function editType($id)
     {
         $this->checkPermission('settings.update');
-        $type = collect($this->hardwareTypes)->firstWhere('id', $id);
+        $type = HardwareType::find($id);
         
         if (!$type) {
             $this->dispatch('error', 'Hardware type not found.');
             return;
         }
 
+        if ($type->is_protected) {
+            $this->dispatch('error', 'Cannot edit protected hardware type.');
+            return;
+        }
+
         $this->selectedTypeId = $id;
         $this->typeForm = [
-            'name' => $type['name'],
-            'slug' => $type['slug'],
-            'sort_order' => $type['sort_order'],
-            'is_protected' => $type['is_protected'],
+            'name' => $type->name,
+            'slug' => $type->slug,
+            'sort_order' => $type->sort_order,
+            'is_protected' => $type->is_protected,
         ];
         $this->typeEditMode = true;
         $this->showTypeModal = true;
@@ -107,29 +105,29 @@ class SettingsHardware extends Component
 
         $this->validate([
             'typeForm.name' => 'required|string|max:255',
-            'typeForm.slug' => 'required|string|max:255|regex:/^[a-z0-9_]+$/',
+            'typeForm.slug' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9_]+$/',
+                $this->typeEditMode 
+                    ? 'unique:hardware_types,slug,' . $this->selectedTypeId
+                    : 'unique:hardware_types,slug',
+            ],
             'typeForm.sort_order' => 'integer|min:0',
             'typeForm.is_protected' => 'boolean',
         ]);
 
         try {
             if ($this->typeEditMode) {
-                // Update existing type
-                $type = HardwareType::find($this->selectedTypeId);
-                if ($type) {
-                    $type->update($this->typeForm);
-                    $message = 'Hardware type updated successfully.';
-                } else {
-                    $this->dispatch('error', 'Hardware type not found.');
-                    return;
-                }
+                $type = HardwareType::findOrFail($this->selectedTypeId);
+                $type->update($this->typeForm);
+                $message = 'Hardware type updated successfully.';
             } else {
-                // Add new type
                 HardwareType::create($this->typeForm);
                 $message = 'Hardware type created successfully.';
             }
 
-            $this->loadData();
             $this->closeTypeModal();
             $this->dispatch('saved', $message);
             
@@ -141,10 +139,21 @@ class SettingsHardware extends Component
     public function confirmDeleteType($id)
     {
         $this->checkPermission('settings.update');
-        $type = collect($this->hardwareTypes)->firstWhere('id', $id);
+        $type = HardwareType::find($id);
         
-        if ($type && $type['is_protected']) {
+        if (!$type) {
+            $this->dispatch('error', 'Hardware type not found.');
+            return;
+        }
+        
+        if ($type->is_protected) {
             $this->dispatch('error', 'Cannot delete protected hardware type.');
+            return;
+        }
+        
+        // Check if type is in use
+        if ($type->organizationHardware()->count() > 0) {
+            $this->dispatch('error', 'Cannot delete hardware type that is in use.');
             return;
         }
         
@@ -156,15 +165,9 @@ class SettingsHardware extends Component
         $this->checkPermission('settings.update');
         
         try {
-            $type = HardwareType::find($this->confirmingTypeDelete);
-            if ($type) {
-                $type->delete();
-                $this->loadData();
-                $this->confirmingTypeDelete = null;
-                $this->dispatch('saved', 'Hardware type deleted successfully.');
-            } else {
-                $this->dispatch('error', 'Hardware type not found.');
-            }
+            HardwareType::findOrFail($this->confirmingTypeDelete)->delete();
+            $this->confirmingTypeDelete = null;
+            $this->dispatch('saved', 'Hardware type deleted successfully.');
             
         } catch (\Exception $e) {
             $this->dispatch('error', 'Failed to delete hardware type: ' . $e->getMessage());
@@ -194,19 +197,24 @@ class SettingsHardware extends Component
     public function editStatus($id)
     {
         $this->checkPermission('settings.update');
-        $status = collect($this->hardwareStatuses)->firstWhere('id', $id);
+        $status = HardwareStatus::find($id);
         
         if (!$status) {
             $this->dispatch('error', 'Hardware status not found.');
             return;
         }
 
+        if ($status->is_protected) {
+            $this->dispatch('error', 'Cannot edit protected hardware status.');
+            return;
+        }
+
         $this->selectedStatusId = $id;
         $this->statusForm = [
-            'name' => $status['name'],
-            'slug' => $status['slug'],
-            'sort_order' => $status['sort_order'],
-            'is_protected' => $status['is_protected'],
+            'name' => $status->name,
+            'slug' => $status->slug,
+            'sort_order' => $status->sort_order,
+            'is_protected' => $status->is_protected,
         ];
         $this->statusEditMode = true;
         $this->showStatusModal = true;
@@ -218,27 +226,28 @@ class SettingsHardware extends Component
 
         $this->validate([
             'statusForm.name' => 'required|string|max:255',
-            'statusForm.slug' => 'required|string|max:255|regex:/^[a-z0-9_]+$/',
+            'statusForm.slug' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9_]+$/',
+                $this->statusEditMode 
+                    ? 'unique:hardware_statuses,slug,' . $this->selectedStatusId
+                    : 'unique:hardware_statuses,slug',
+            ],
             'statusForm.sort_order' => 'integer|min:0',
             'statusForm.is_protected' => 'boolean',
         ]);
 
         try {
             if ($this->statusEditMode) {
-                // Update existing status
-                $index = collect($this->hardwareStatuses)->search(fn($item) => $item['id'] === $this->selectedStatusId);
-                if ($index !== false) {
-                    $this->hardwareStatuses[$index] = array_merge($this->hardwareStatuses[$index], $this->statusForm);
-                }
+                $status = HardwareStatus::findOrFail($this->selectedStatusId);
+                $status->update($this->statusForm);
                 $message = 'Hardware status updated successfully.';
             } else {
-                // Add new status
-                $newId = collect($this->hardwareStatuses)->max('id') + 1;
-                $this->hardwareStatuses[] = array_merge($this->statusForm, ['id' => $newId]);
+                HardwareStatus::create($this->statusForm);
                 $message = 'Hardware status created successfully.';
             }
-
-            // TODO: Save to database when lookup tables are implemented
             
             $this->closeStatusModal();
             $this->dispatch('saved', $message);
@@ -251,10 +260,21 @@ class SettingsHardware extends Component
     public function confirmDeleteStatus($id)
     {
         $this->checkPermission('settings.update');
-        $status = collect($this->hardwareStatuses)->firstWhere('id', $id);
+        $status = HardwareStatus::find($id);
         
-        if ($status && $status['is_protected']) {
+        if (!$status) {
+            $this->dispatch('error', 'Hardware status not found.');
+            return;
+        }
+        
+        if ($status->is_protected) {
             $this->dispatch('error', 'Cannot delete protected hardware status.');
+            return;
+        }
+        
+        // Check if status is in use
+        if ($status->organizationHardware()->count() > 0) {
+            $this->dispatch('error', 'Cannot delete hardware status that is in use.');
             return;
         }
         
@@ -266,11 +286,7 @@ class SettingsHardware extends Component
         $this->checkPermission('settings.update');
         
         try {
-            $this->hardwareStatuses = collect($this->hardwareStatuses)
-                ->reject(fn($item) => $item['id'] === $this->confirmingStatusDelete)
-                ->values()
-                ->toArray();
-                
+            HardwareStatus::findOrFail($this->confirmingStatusDelete)->delete();
             $this->confirmingStatusDelete = null;
             $this->dispatch('saved', 'Hardware status deleted successfully.');
             
@@ -296,7 +312,7 @@ class SettingsHardware extends Component
         $this->typeForm = [
             'name' => '',
             'slug' => '',
-            'sort_order' => count($this->hardwareTypes) + 1,
+            'sort_order' => $this->hardwareTypes->count() + 1,
             'is_protected' => false,
         ];
         $this->selectedTypeId = null;
@@ -308,7 +324,7 @@ class SettingsHardware extends Component
         $this->statusForm = [
             'name' => '',
             'slug' => '',
-            'sort_order' => count($this->hardwareStatuses) + 1,
+            'sort_order' => $this->hardwareStatuses->count() + 1,
             'is_protected' => false,
         ];
         $this->selectedStatusId = null;

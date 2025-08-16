@@ -105,27 +105,28 @@ class SettingsContracts extends Component
 
         $this->validate([
             'typeForm.name' => 'required|string|max:255',
-            'typeForm.slug' => 'required|string|max:255|regex:/^[a-z0-9_]+$/',
+            'typeForm.slug' => [
+                'required',
+                'string', 
+                'max:255',
+                'regex:/^[a-z0-9_]+$/',
+                $this->typeEditMode 
+                    ? 'unique:contract_types,slug,' . $this->selectedTypeId
+                    : 'unique:contract_types,slug',
+            ],
             'typeForm.sort_order' => 'integer|min:0',
             'typeForm.is_protected' => 'boolean',
         ]);
 
         try {
             if ($this->typeEditMode) {
-                // Update existing type
-                $index = collect($this->contractTypes)->search(fn($item) => $item['id'] === $this->selectedTypeId);
-                if ($index !== false) {
-                    $this->contractTypes[$index] = array_merge($this->contractTypes[$index], $this->typeForm);
-                }
+                $type = ContractType::findOrFail($this->selectedTypeId);
+                $type->update($this->typeForm);
                 $message = 'Contract type updated successfully.';
             } else {
-                // Add new type
-                $newId = collect($this->contractTypes)->max('id') + 1;
-                $this->contractTypes[] = array_merge($this->typeForm, ['id' => $newId]);
+                ContractType::create($this->typeForm);
                 $message = 'Contract type created successfully.';
             }
-
-            // TODO: Save to database when lookup tables are implemented
             
             $this->closeTypeModal();
             $this->dispatch('saved', $message);
@@ -138,10 +139,21 @@ class SettingsContracts extends Component
     public function confirmDeleteType($id)
     {
         $this->checkPermission('settings.update');
-        $type = collect($this->contractTypes)->firstWhere('id', $id);
+        $type = ContractType::find($id);
         
-        if ($type && $type['is_protected']) {
+        if (!$type) {
+            $this->dispatch('error', 'Contract type not found.');
+            return;
+        }
+        
+        if ($type->is_protected) {
             $this->dispatch('error', 'Cannot delete protected contract type.');
+            return;
+        }
+        
+        // Check if type is in use
+        if ($type->organizationContracts()->count() > 0) {
+            $this->dispatch('error', 'Cannot delete contract type that is in use.');
             return;
         }
         
@@ -153,11 +165,7 @@ class SettingsContracts extends Component
         $this->checkPermission('settings.update');
         
         try {
-            $this->contractTypes = collect($this->contractTypes)
-                ->reject(fn($item) => $item['id'] === $this->confirmingTypeDelete)
-                ->values()
-                ->toArray();
-                
+            ContractType::findOrFail($this->confirmingTypeDelete)->delete();
             $this->confirmingTypeDelete = null;
             $this->dispatch('saved', 'Contract type deleted successfully.');
             
@@ -189,19 +197,24 @@ class SettingsContracts extends Component
     public function editStatus($id)
     {
         $this->checkPermission('settings.update');
-        $status = collect($this->contractStatuses)->firstWhere('id', $id);
+        $status = ContractStatus::find($id);
         
         if (!$status) {
             $this->dispatch('error', 'Contract status not found.');
             return;
         }
 
+        if ($status->is_protected) {
+            $this->dispatch('error', 'Cannot edit protected contract status.');
+            return;
+        }
+
         $this->selectedStatusId = $id;
         $this->statusForm = [
-            'name' => $status['name'],
-            'slug' => $status['slug'],
-            'sort_order' => $status['sort_order'],
-            'is_protected' => $status['is_protected'],
+            'name' => $status->name,
+            'slug' => $status->slug,
+            'sort_order' => $status->sort_order,
+            'is_protected' => $status->is_protected,
         ];
         $this->statusEditMode = true;
         $this->showStatusModal = true;
@@ -213,27 +226,28 @@ class SettingsContracts extends Component
 
         $this->validate([
             'statusForm.name' => 'required|string|max:255',
-            'statusForm.slug' => 'required|string|max:255|regex:/^[a-z0-9_]+$/',
+            'statusForm.slug' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9_]+$/',
+                $this->statusEditMode 
+                    ? 'unique:contract_statuses,slug,' . $this->selectedStatusId
+                    : 'unique:contract_statuses,slug',
+            ],
             'statusForm.sort_order' => 'integer|min:0',
             'statusForm.is_protected' => 'boolean',
         ]);
 
         try {
             if ($this->statusEditMode) {
-                // Update existing status
-                $index = collect($this->contractStatuses)->search(fn($item) => $item['id'] === $this->selectedStatusId);
-                if ($index !== false) {
-                    $this->contractStatuses[$index] = array_merge($this->contractStatuses[$index], $this->statusForm);
-                }
+                $status = ContractStatus::findOrFail($this->selectedStatusId);
+                $status->update($this->statusForm);
                 $message = 'Contract status updated successfully.';
             } else {
-                // Add new status
-                $newId = collect($this->contractStatuses)->max('id') + 1;
-                $this->contractStatuses[] = array_merge($this->statusForm, ['id' => $newId]);
+                ContractStatus::create($this->statusForm);
                 $message = 'Contract status created successfully.';
             }
-
-            // TODO: Save to database when lookup tables are implemented
             
             $this->closeStatusModal();
             $this->dispatch('saved', $message);
@@ -246,10 +260,21 @@ class SettingsContracts extends Component
     public function confirmDeleteStatus($id)
     {
         $this->checkPermission('settings.update');
-        $status = collect($this->contractStatuses)->firstWhere('id', $id);
+        $status = ContractStatus::find($id);
         
-        if ($status && $status['is_protected']) {
+        if (!$status) {
+            $this->dispatch('error', 'Contract status not found.');
+            return;
+        }
+        
+        if ($status->is_protected) {
             $this->dispatch('error', 'Cannot delete protected contract status.');
+            return;
+        }
+        
+        // Check if status is in use
+        if ($status->organizationContracts()->count() > 0) {
+            $this->dispatch('error', 'Cannot delete contract status that is in use.');
             return;
         }
         
@@ -261,11 +286,7 @@ class SettingsContracts extends Component
         $this->checkPermission('settings.update');
         
         try {
-            $this->contractStatuses = collect($this->contractStatuses)
-                ->reject(fn($item) => $item['id'] === $this->confirmingStatusDelete)
-                ->values()
-                ->toArray();
-                
+            ContractStatus::findOrFail($this->confirmingStatusDelete)->delete();
             $this->confirmingStatusDelete = null;
             $this->dispatch('saved', 'Contract status deleted successfully.');
             
@@ -291,7 +312,7 @@ class SettingsContracts extends Component
         $this->typeForm = [
             'name' => '',
             'slug' => '',
-            'sort_order' => count($this->contractTypes) + 1,
+            'sort_order' => $this->contractTypes->count() + 1,
             'is_protected' => false,
         ];
         $this->selectedTypeId = null;
@@ -303,7 +324,7 @@ class SettingsContracts extends Component
         $this->statusForm = [
             'name' => '',
             'slug' => '',
-            'sort_order' => count($this->contractStatuses) + 1,
+            'sort_order' => $this->contractStatuses->count() + 1,
             'is_protected' => false,
         ];
         $this->selectedStatusId = null;

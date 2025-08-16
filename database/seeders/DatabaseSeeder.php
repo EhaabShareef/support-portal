@@ -35,6 +35,9 @@ class DatabaseSeeder extends Seeder
             OrganizationContractSeeder::class,  // Creates sample contracts for default organization
             OrganizationHardwareSeeder::class,  // Creates sample hardware for default organization
             SampleTicketSeeder::class,          // Creates sample tickets with messages
+            
+            // Additional sample client organizations
+            ClientSampleDataSeeder::class,      // Creates sample client organizations with users, contracts, hardware
         ]);
         
         $this->command->info('✅ Database rebuild completed successfully!');

@@ -87,7 +87,7 @@
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2 mb-2">
                                         <div class="w-4 h-4 rounded-full border-2 border-neutral-200 dark:border-neutral-600" style="background-color: {{ $eventType->color }}"></div>
-                                        <h4 class="font-medium text-neutral-800 dark:text-neutral-100 text-sm">{{ $eventType->name }}</h4>
+                                        <h4 class="font-medium text-neutral-800 dark:text-neutral-100 text-sm">{{ $eventType->label }}</h4>
                                         @if(!$eventType->is_active)
                                             <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
                                                 Inactive
@@ -185,9 +185,9 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Name *</label>
-                            <input type="text" wire:model="eventTypeForm.name" required
+                            <input type="text" wire:model="eventTypeForm.label" required
                                    class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                            @error('eventTypeForm.name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                            @error('eventTypeForm.label') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
@@ -234,7 +234,7 @@
                             <div class="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Preview:</div>
                             <div class="flex items-center gap-2">
                                 <div class="w-4 h-4 rounded-full border-2 border-neutral-200 dark:border-neutral-600" style="background-color: {{ $eventTypeForm['color'] }}"></div>
-                                <span class="text-sm text-neutral-800 dark:text-neutral-100">{{ $eventTypeForm['name'] ?: 'Event Type Name' }}</span>
+                                <span class="text-sm text-neutral-800 dark:text-neutral-100">{{ $eventTypeForm['label'] ?: 'Event Type Name' }}</span>
                             </div>
                         </div>
                     </div>

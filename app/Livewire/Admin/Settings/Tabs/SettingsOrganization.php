@@ -2,41 +2,27 @@
 
 namespace App\Livewire\Admin\Settings\Tabs;
 
-use App\Models\Department;
-use App\Models\DepartmentGroup;
+use App\Models\OrganizationSubscriptionStatus;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class SettingsOrganization extends Component
 {
-    // Department Group Management
-    public bool $showDeptGroupModal = false;
-    public bool $deptGroupEditMode = false;
-    public ?int $selectedDeptGroupId = null;
-    public array $deptGroupForm = [
-        'name' => '',
-        'description' => '',
-        'color' => '#3B82F6',
-        'is_active' => true,
+    // Subscription Status Management
+    public bool $showStatusModal = false;
+    public bool $statusEditMode = false;
+    public ?int $selectedStatusId = null;
+    public array $statusForm = [
+        'key' => '',
+        'label' => '',
+        'color' => '#3b82f6',
         'sort_order' => 0,
-    ];
-
-    // Department Management
-    public bool $showDeptModal = false;
-    public bool $deptEditMode = false;
-    public ?int $selectedDeptId = null;
-    public array $deptForm = [
-        'name' => '',
-        'description' => '',
-        'department_group_id' => null,
-        'email' => '',
         'is_active' => true,
-        'sort_order' => 0,
+        'description' => '',
     ];
 
     // Delete confirmations
-    public ?int $confirmingDeptGroupDelete = null;
-    public ?int $confirmingDeptDelete = null;
+    public ?int $confirmingStatusDelete = null;
 
     protected $listeners = ['tabChanged' => 'refreshData'];
 
@@ -47,217 +33,166 @@ class SettingsOrganization extends Component
 
     public function refreshData()
     {
-        // Refresh computed properties by clearing cache
-        unset($this->departmentGroups);
-        unset($this->departments);
+        // Data loaded via computed properties
     }
 
     #[Computed]
-    public function departmentGroups()
+    public function subscriptionStatuses()
     {
-        return DepartmentGroup::withCount('departments')->ordered()->get();
+        return OrganizationSubscriptionStatus::ordered()->get();
     }
 
-    #[Computed]
-    public function departments()
+    // Subscription Status Methods
+    public function createStatus()
     {
-        return Department::with(['departmentGroup:id,name'])
-            ->withCount(['users', 'tickets'])
-            ->ordered()
-            ->get();
+        $this->checkPermission('settings.update');
+        $this->resetStatusForm();
+        $this->statusEditMode = false;
+        $this->showStatusModal = true;
     }
 
-    // Department Group Methods
-    public function createDeptGroup()
+    public function editStatus($id)
     {
-        $this->checkPermission('department-groups.create');
-        $this->resetDeptGroupForm();
-        $this->deptGroupEditMode = false;
-        $this->showDeptGroupModal = true;
+        $this->checkPermission('settings.update');
+        $status = OrganizationSubscriptionStatus::find($id);
+        
+        if (!$status) {
+            $this->dispatch('error', 'Subscription status not found.');
+            return;
+        }
+
+        $this->selectedStatusId = $id;
+        $this->statusForm = [
+            'key' => $status->key,
+            'label' => $status->label,
+            'color' => $status->color,
+            'sort_order' => $status->sort_order,
+            'is_active' => $status->is_active,
+            'description' => $status->description,
+        ];
+        $this->statusEditMode = true;
+        $this->showStatusModal = true;
     }
 
-    public function editDeptGroup($id)
+    public function saveStatus()
     {
-        $this->checkPermission('department-groups.update');
-        $group = DepartmentGroup::findOrFail($id);
-        $this->selectedDeptGroupId = $id;
-        $this->deptGroupForm = $group->toArray();
-        $this->deptGroupEditMode = true;
-        $this->showDeptGroupModal = true;
-    }
+        $this->checkPermission('settings.update');
 
-    public function saveDeptGroup()
-    {
-        $this->checkPermission($this->deptGroupEditMode ? 'department-groups.update' : 'department-groups.create');
-
-        $validated = $this->validate([
-            'deptGroupForm.name' => 'required|string|max:255',
-            'deptGroupForm.description' => 'nullable|string',
-            'deptGroupForm.color' => 'nullable|string|max:7',
-            'deptGroupForm.is_active' => 'boolean',
-            'deptGroupForm.sort_order' => 'integer|min:0',
+        $this->validate([
+            'statusForm.key' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[a-z_]+$/',
+                $this->statusEditMode 
+                    ? 'unique:organization_subscription_statuses,key,' . $this->selectedStatusId
+                    : 'unique:organization_subscription_statuses,key',
+            ],
+            'statusForm.label' => 'required|string|max:255',
+            'statusForm.color' => 'required|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
+            'statusForm.sort_order' => 'integer|min:0',
+            'statusForm.is_active' => 'boolean',
+            'statusForm.description' => 'nullable|string',
         ]);
 
         try {
-            if ($this->deptGroupEditMode) {
-                DepartmentGroup::findOrFail($this->selectedDeptGroupId)->update($validated['deptGroupForm']);
-                $message = 'Department group updated successfully.';
+            if ($this->statusEditMode) {
+                $status = OrganizationSubscriptionStatus::findOrFail($this->selectedStatusId);
+                $status->update($this->statusForm);
+                $message = 'Subscription status updated successfully.';
             } else {
-                DepartmentGroup::create($validated['deptGroupForm']);
-                $message = 'Department group created successfully.';
+                OrganizationSubscriptionStatus::create($this->statusForm);
+                $message = 'Subscription status created successfully.';
             }
 
-            $this->closeDeptGroupModal();
+            $this->closeStatusModal();
             $this->dispatch('saved', $message);
+            
         } catch (\Exception $e) {
-            $this->dispatch('error', 'Failed to save department group: ' . $e->getMessage());
+            $this->dispatch('error', 'Failed to save subscription status: ' . $e->getMessage());
         }
     }
 
-    public function confirmDeleteDeptGroup($id)
+    public function confirmDeleteStatus($id)
     {
-        $this->checkPermission('department-groups.delete');
-        $group = DepartmentGroup::withCount('departments')->findOrFail($id);
-        if ($group->departments_count > 0) {
-            $this->dispatch('error', 'Cannot delete department group with associated departments.');
+        $this->checkPermission('settings.update');
+        $status = OrganizationSubscriptionStatus::withCount('organizations')->find($id);
+        
+        if (!$status) {
+            $this->dispatch('error', 'Subscription status not found.');
             return;
         }
-        $this->confirmingDeptGroupDelete = $id;
-    }
-
-    public function deleteDeptGroup()
-    {
-        $this->checkPermission('department-groups.delete');
         
-        try {
-            DepartmentGroup::findOrFail($this->confirmingDeptGroupDelete)->delete();
-            $this->confirmingDeptGroupDelete = null;
-            $this->dispatch('saved', 'Department group deleted successfully.');
-        } catch (\Exception $e) {
-            $this->dispatch('error', 'Failed to delete department group: ' . $e->getMessage());
-        }
-    }
-
-    public function closeDeptGroupModal()
-    {
-        $this->showDeptGroupModal = false;
-        $this->resetDeptGroupForm();
-    }
-
-    public function cancelDeptGroupDelete()
-    {
-        $this->confirmingDeptGroupDelete = null;
-    }
-
-    // Department Methods
-    public function createDept()
-    {
-        $this->checkPermission('departments.create');
-        $this->resetDeptForm();
-        $this->deptEditMode = false;
-        $this->showDeptModal = true;
-    }
-
-    public function editDept($id)
-    {
-        $this->checkPermission('departments.update');
-        $dept = Department::findOrFail($id);
-        $this->selectedDeptId = $id;
-        $this->deptForm = $dept->toArray();
-        $this->deptEditMode = true;
-        $this->showDeptModal = true;
-    }
-
-    public function saveDept()
-    {
-        $this->checkPermission($this->deptEditMode ? 'departments.update' : 'departments.create');
-
-        $validated = $this->validate([
-            'deptForm.name' => 'required|string|max:255',
-            'deptForm.description' => 'nullable|string',
-            'deptForm.department_group_id' => 'nullable|exists:department_groups,id',
-            'deptForm.email' => 'nullable|email|max:255',
-            'deptForm.is_active' => 'boolean',
-            'deptForm.sort_order' => 'integer|min:0',
-        ]);
-
-        try {
-            if ($this->deptEditMode) {
-                Department::findOrFail($this->selectedDeptId)->update($validated['deptForm']);
-                $message = 'Department updated successfully.';
-            } else {
-                Department::create($validated['deptForm']);
-                $message = 'Department created successfully.';
-            }
-
-            $this->closeDeptModal();
-            $this->dispatch('saved', $message);
-        } catch (\Exception $e) {
-            $this->dispatch('error', 'Failed to save department: ' . $e->getMessage());
-        }
-    }
-
-    public function confirmDeleteDept($id)
-    {
-        $this->checkPermission('departments.delete');
-        $dept = Department::withCount(['users', 'tickets'])->findOrFail($id);
-        if ($dept->users_count > 0 || $dept->tickets_count > 0) {
-            $this->dispatch('error', 'Cannot delete department with associated users or tickets.');
+        if ($status->organizations_count > 0) {
+            $this->dispatch('error', 'Cannot delete subscription status that is in use by organizations.');
             return;
         }
-        $this->confirmingDeptDelete = $id;
+        
+        $this->confirmingStatusDelete = $id;
     }
 
-    public function deleteDept()
+    public function deleteStatus()
     {
-        $this->checkPermission('departments.delete');
+        $this->checkPermission('settings.update');
         
         try {
-            Department::findOrFail($this->confirmingDeptDelete)->delete();
-            $this->confirmingDeptDelete = null;
-            $this->dispatch('saved', 'Department deleted successfully.');
+            OrganizationSubscriptionStatus::findOrFail($this->confirmingStatusDelete)->delete();
+            $this->confirmingStatusDelete = null;
+            $this->dispatch('saved', 'Subscription status deleted successfully.');
+            
         } catch (\Exception $e) {
-            $this->dispatch('error', 'Failed to delete department: ' . $e->getMessage());
+            $this->dispatch('error', 'Failed to delete subscription status: ' . $e->getMessage());
         }
     }
 
-    public function closeDeptModal()
+    public function closeStatusModal()
     {
-        $this->showDeptModal = false;
-        $this->resetDeptForm();
+        $this->showStatusModal = false;
+        $this->resetStatusForm();
     }
 
-    public function cancelDeptDelete()
+    public function cancelStatusDelete()
     {
-        $this->confirmingDeptDelete = null;
+        $this->confirmingStatusDelete = null;
+    }
+
+    public function toggleStatusActive($id)
+    {
+        $this->checkPermission('settings.update');
+        
+        try {
+            $status = OrganizationSubscriptionStatus::findOrFail($id);
+            $status->update(['is_active' => !$status->is_active]);
+            
+            $statusText = $status->is_active ? 'enabled' : 'disabled';
+            $this->dispatch('saved', "Subscription status {$statusText} successfully.");
+            
+        } catch (\Exception $e) {
+            $this->dispatch('error', 'Failed to update subscription status: ' . $e->getMessage());
+        }
     }
 
     // Helper Methods
-    private function resetDeptGroupForm()
+    private function resetStatusForm()
     {
-        $this->deptGroupForm = [
-            'name' => '',
-            'description' => '',
-            'color' => '#3B82F6',
+        $this->statusForm = [
+            'key' => '',
+            'label' => '',
+            'color' => '#3b82f6',
+            'sort_order' => $this->subscriptionStatuses->count() + 1,
             'is_active' => true,
-            'sort_order' => 0,
+            'description' => '',
         ];
-        $this->selectedDeptGroupId = null;
-        $this->resetErrorBag('deptGroupForm');
+        $this->selectedStatusId = null;
+        $this->resetErrorBag('statusForm');
     }
 
-    private function resetDeptForm()
+    public function updatedStatusFormLabel()
     {
-        $this->deptForm = [
-            'name' => '',
-            'description' => '',
-            'department_group_id' => null,
-            'email' => '',
-            'is_active' => true,
-            'sort_order' => 0,
-        ];
-        $this->selectedDeptId = null;
-        $this->resetErrorBag('deptForm');
+        if (!$this->statusEditMode) {
+            $this->statusForm['key'] = strtolower(str_replace([' ', '-'], '_', $this->statusForm['label']));
+            $this->statusForm['key'] = preg_replace('/[^a-z0-9_]/', '', $this->statusForm['key']);
+        }
     }
 
     protected function checkPermission(string $permission): void

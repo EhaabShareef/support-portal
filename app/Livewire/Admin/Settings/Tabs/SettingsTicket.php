@@ -7,7 +7,6 @@ use App\Services\TicketColorService;
 use App\Enums\TicketStatus;
 use App\Enums\TicketPriority;
 use App\Models\TicketStatus as TicketStatusModel;
-use App\Models\DepartmentGroup;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -21,28 +20,29 @@ class SettingsTicket extends Component
     public int $attachmentMaxSizeMb = 10;
     public int $attachmentMaxCount = 5;
 
-    // Color Management
-    public array $statusColors = [];
+    // Priority Color Management (inline editing)
     public array $priorityColors = [];
-    public bool $showColorModal = false;
-    public string $editingColorType = ''; // 'status' or 'priority'
-    public string $editingColorKey = '';
-    public string $editingColorValue = '#3b82f6';
+    public string $editingPriorityKey = '';
+    public array $editPriorityForm = [
+        'color' => '#3b82f6',
+    ];
 
-    // Ticket Status Management
-    public bool $showStatusModal = false;
-    public bool $statusEditMode = false;
-    public ?int $selectedStatusId = null;
-    public array $statusForm = [
+    // Status Management (inline editing)
+    public array $ticketStatusesArray = [];
+    public bool $showAddStatusForm = false;
+    public string $editingStatusKey = '';
+    public array $newStatusForm = [
         'name' => '',
         'key' => '',
         'description' => '',
         'color' => '#3b82f6',
-        'sort_order' => 0,
-        'is_active' => true,
     ];
-    public array $statusDepartmentGroups = [];
-    public ?int $confirmingStatusDelete = null;
+    public array $editStatusForm = [
+        'name' => '',
+        'key' => '',
+        'description' => '',
+        'color' => '#3b82f6',
+    ];
 
     public bool $hasUnsavedChanges = false;
 
@@ -69,13 +69,22 @@ class SettingsTicket extends Component
 
             // Load color settings
             $colorService = app(TicketColorService::class);
-            $this->statusColors = $colorService->getStatusColors();
             $this->priorityColors = $colorService->getPriorityColors();
+            
+            // Load ticket statuses as array for easier management
+            $this->ticketStatusesArray = $this->ticketStatuses->keyBy('key')->map(function($status) {
+                return [
+                    'id' => $status->id,
+                    'name' => $status->name,
+                    'key' => $status->key,
+                    'description' => $status->description,
+                    'color' => $status->color,
+                    'sort_order' => $status->sort_order,
+                    'is_active' => $status->is_active,
+                    'is_protected' => $status->is_protected,
+                ];
+            })->toArray();
 
-            // Load department group assignments for all statuses
-            foreach ($this->ticketStatuses as $status) {
-                $this->statusDepartmentGroups[$status->id] = $status->departmentGroups->pluck('id')->toArray();
-            }
             
         } catch (\Exception $e) {
             $this->dispatch('error', 'Failed to load ticket settings: ' . $e->getMessage());
@@ -90,14 +99,9 @@ class SettingsTicket extends Component
     #[Computed]
     public function ticketStatuses()
     {
-        return TicketStatusModel::with('departmentGroups')->ordered()->get();
+        return TicketStatusModel::ordered()->get();
     }
 
-    #[Computed]
-    public function departmentGroups()
-    {
-        return DepartmentGroup::active()->ordered()->get();
-    }
 
     public function updatedDefaultReplyStatus()
     {
@@ -160,64 +164,63 @@ class SettingsTicket extends Component
         }
     }
 
-    public function editColor($type, $key, $currentColor)
+    // Priority Color Management
+    public function editPriorityColor($key)
     {
         $this->checkPermission('settings.update');
-        $this->editingColorType = $type;
-        $this->editingColorKey = $key;
-        $this->editingColorValue = $currentColor;
-        $this->showColorModal = true;
+        $this->editingPriorityKey = $key;
+        $this->editPriorityForm = [
+            'color' => $this->priorityColors[$key] ?? '#3b82f6',
+        ];
     }
 
-    public function saveColor()
+    public function savePriorityColor()
     {
         $this->checkPermission('settings.update');
 
+        // Validate color format manually to avoid regex issues
+        if (!preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $this->editPriorityForm['color'])) {
+            $this->addError('editPriorityForm.color', 'The color must be a valid hex color code (e.g., #3b82f6).');
+            return;
+        }
+
         $this->validate([
-            'editingColorValue' => 'required|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
+            'editPriorityForm.color' => 'required|string',
         ]);
 
         try {
             $colorService = app(TicketColorService::class);
-            
-            if ($this->editingColorType === 'status') {
-                $this->statusColors[$this->editingColorKey] = $this->editingColorValue;
-                $colorService->updateStatusColors($this->statusColors);
-            } else {
-                $this->priorityColors[$this->editingColorKey] = $this->editingColorValue;
-                $colorService->updatePriorityColors($this->priorityColors);
-            }
+            $this->priorityColors[$this->editingPriorityKey] = $this->editPriorityForm['color'];
+            $colorService->updatePriorityColors($this->priorityColors);
 
-            $this->showColorModal = false;
-            $this->dispatch('saved', 'Color updated successfully.');
+            $this->editingPriorityKey = '';
+            $this->editPriorityForm = ['color' => '#3b82f6'];
+            $this->dispatch('saved', 'Priority color updated successfully.');
             
         } catch (\Exception $e) {
-            $this->dispatch('error', 'Failed to save color: ' . $e->getMessage());
+            $this->dispatch('error', 'Failed to save priority color: ' . $e->getMessage());
         }
     }
 
-    public function closeColorModal()
+    public function cancelEditPriorityColor()
     {
-        $this->showColorModal = false;
-        $this->editingColorType = '';
-        $this->editingColorKey = '';
-        $this->editingColorValue = '#3b82f6';
+        $this->editingPriorityKey = '';
+        $this->editPriorityForm = ['color' => '#3b82f6'];
     }
 
-    public function resetColors()
+    public function resetPriorityColors()
     {
         $this->checkPermission('settings.update');
         
         try {
             $colorService = app(TicketColorService::class);
-            $colorService->resetStatusColorsToDefaults();
             $colorService->resetPriorityColorsToDefaults();
             
             $this->loadData();
-            $this->dispatch('reset', 'Colors reset to defaults successfully.');
+            $this->dispatch('reset', 'Priority colors reset to defaults successfully.');
             
         } catch (\Exception $e) {
-            $this->dispatch('error', 'Failed to reset colors: ' . $e->getMessage());
+            $this->dispatch('error', 'Failed to reset priority colors: ' . $e->getMessage());
         }
     }
 
@@ -270,143 +273,198 @@ class SettingsTicket extends Component
     }
 
     // Status Management Methods
-    public function createStatus()
+    public function addNewStatus()
     {
         $this->checkPermission('settings.update');
-        $this->resetStatusForm();
-        $this->statusEditMode = false;
-        $this->showStatusModal = true;
+        $this->showAddStatusForm = true;
+        $this->newStatusForm = [
+            'name' => '',
+            'key' => '',
+            'description' => '',
+            'color' => '#3b82f6',
+        ];
     }
 
-    public function editStatus($id)
+    public function cancelAddStatus()
+    {
+        $this->showAddStatusForm = false;
+        $this->newStatusForm = [
+            'name' => '',
+            'key' => '',
+            'description' => '',
+            'color' => '#3b82f6',
+        ];
+    }
+
+    public function saveNewStatus()
     {
         $this->checkPermission('settings.update');
-        $status = TicketStatusModel::findOrFail($id);
+
+        // Ensure key is generated if empty
+        if (empty($this->newStatusForm['key'])) {
+            $this->newStatusForm['key'] = $this->generateKeyFromName($this->newStatusForm['name']);
+        }
+
+        // Clean the key to ensure it only contains valid characters
+        $this->newStatusForm['key'] = $this->generateKeyFromName($this->newStatusForm['key']);
+
+        // Validate key format manually to avoid regex issues
+        if (!preg_match('/^[a-z0-9_]+$/', $this->newStatusForm['key'])) {
+            $this->addError('newStatusForm.key', 'The key may only contain lowercase letters, numbers, and underscores.');
+            return;
+        }
+
+        // Validate color format manually to avoid regex issues
+        if (!preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $this->newStatusForm['color'])) {
+            $this->addError('newStatusForm.color', 'The color must be a valid hex color code (e.g., #3b82f6).');
+            return;
+        }
+
+        $this->validate([
+            'newStatusForm.name' => 'required|string|max:255',
+            'newStatusForm.key' => [
+                'required',
+                'string',
+                'max:50',
+                'unique:ticket_statuses,key'
+            ],
+            'newStatusForm.description' => 'nullable|string',
+            'newStatusForm.color' => 'required|string',
+        ]);
+
+        try {
+            $statusData = array_merge($this->newStatusForm, [
+                'sort_order' => count($this->ticketStatusesArray) + 1,
+                'is_active' => true,
+                'is_protected' => false,
+            ]);
+            
+            $status = TicketStatusModel::create($statusData);
+
+            // Update the color service with the new color
+            $colorService = app(TicketColorService::class);
+            $colorService->setStatusColor($this->newStatusForm['key'], $this->newStatusForm['color']);
+
+            $this->showAddStatusForm = false;
+            $this->newStatusForm = ['name' => '', 'key' => '', 'description' => '', 'color' => '#3b82f6'];
+            $this->dispatch('saved', 'Ticket status created successfully.');
+            $this->refreshData();
+            
+        } catch (\Exception $e) {
+            $this->dispatch('error', 'Failed to create ticket status: ' . $e->getMessage());
+        }
+    }
+
+    public function startEditStatus($key)
+    {
+        $this->checkPermission('settings.update');
+        $status = $this->ticketStatusesArray[$key] ?? null;
         
-        if ($status->is_protected) {
+        if (!$status) {
+            $this->dispatch('error', 'Status not found.');
+            return;
+        }
+
+        if ($status['is_protected']) {
             $this->dispatch('error', 'Cannot edit protected ticket status.');
             return;
         }
 
-        $this->selectedStatusId = $id;
-        $this->statusForm = [
-            'name' => $status->name,
-            'key' => $status->key,
-            'description' => $status->description,
-            'color' => $status->color,
-            'sort_order' => $status->sort_order,
-            'is_active' => $status->is_active,
+        $this->editingStatusKey = $key;
+        $this->editStatusForm = [
+            'name' => $status['name'],
+            'key' => $status['key'],
+            'description' => $status['description'],
+            'color' => $status['color'],
         ];
-        $this->statusEditMode = true;
-        $this->showStatusModal = true;
     }
 
-    public function saveStatus()
+    public function cancelEditStatus()
+    {
+        $this->editingStatusKey = '';
+        $this->editStatusForm = [
+            'name' => '',
+            'key' => '',
+            'description' => '',
+            'color' => '#3b82f6',
+        ];
+    }
+
+    public function saveEditStatus()
     {
         $this->checkPermission('settings.update');
 
+        // Clean the key to ensure it only contains valid characters
+        $this->editStatusForm['key'] = $this->generateKeyFromName($this->editStatusForm['key']);
+
+        // Validate key format manually to avoid regex issues
+        if (!preg_match('/^[a-z0-9_]+$/', $this->editStatusForm['key'])) {
+            $this->addError('editStatusForm.key', 'The key may only contain lowercase letters, numbers, and underscores.');
+            return;
+        }
+
+        // Validate color format manually to avoid regex issues
+        if (!preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $this->editStatusForm['color'])) {
+            $this->addError('editStatusForm.color', 'The color must be a valid hex color code (e.g., #3b82f6).');
+            return;
+        }
+
         $this->validate([
-            'statusForm.name' => 'required|string|max:255',
-            'statusForm.key' => [
+            'editStatusForm.name' => 'required|string|max:255',
+            'editStatusForm.key' => [
                 'required',
                 'string',
                 'max:50',
-                'regex:/^[a-z_]+$/',
-                $this->statusEditMode 
-                    ? 'unique:ticket_statuses,key,' . $this->selectedStatusId
-                    : 'unique:ticket_statuses,key',
+                'unique:ticket_statuses,key,' . $this->ticketStatusesArray[$this->editingStatusKey]['id']
             ],
-            'statusForm.description' => 'nullable|string',
-            'statusForm.color' => 'required|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
-            'statusForm.sort_order' => 'integer|min:0',
-            'statusForm.is_active' => 'boolean',
+            'editStatusForm.description' => 'nullable|string',
+            'editStatusForm.color' => 'required|string',
         ]);
 
         try {
-            if ($this->statusEditMode) {
-                $status = TicketStatusModel::findOrFail($this->selectedStatusId);
-                $status->update($this->statusForm);
-                $message = 'Ticket status updated successfully.';
-            } else {
-                $status = TicketStatusModel::create($this->statusForm);
-                $message = 'Ticket status created successfully.';
-            }
+            $status = TicketStatusModel::findOrFail($this->ticketStatusesArray[$this->editingStatusKey]['id']);
+            $status->update($this->editStatusForm);
 
             // Update the color service with the new color
             $colorService = app(TicketColorService::class);
-            $colorService->setStatusColor($this->statusForm['key'], $this->statusForm['color']);
+            $colorService->setStatusColor($this->editStatusForm['key'], $this->editStatusForm['color']);
 
-            $this->closeStatusModal();
-            $this->dispatch('saved', $message);
-            $this->refreshData(); // Reload data to show changes
+            $this->editingStatusKey = '';
+            $this->editStatusForm = ['name' => '', 'key' => '', 'description' => '', 'color' => '#3b82f6'];
+            $this->dispatch('saved', 'Ticket status updated successfully.');
+            $this->refreshData();
             
         } catch (\Exception $e) {
-            $this->dispatch('error', 'Failed to save ticket status: ' . $e->getMessage());
+            $this->dispatch('error', 'Failed to update ticket status: ' . $e->getMessage());
         }
     }
 
-    public function closeStatusModal()
-    {
-        $this->showStatusModal = false;
-        $this->resetStatusForm();
-    }
 
-    public function updateDepartmentGroupAssignment($statusId, $departmentGroupId, $assigned)
+    public function deleteStatus($key)
     {
         $this->checkPermission('settings.update');
         
-        try {
-            $status = TicketStatusModel::findOrFail($statusId);
-            
-            if ($assigned) {
-                $status->departmentGroups()->syncWithoutDetaching([$departmentGroupId]);
-            } else {
-                $status->departmentGroups()->detach($departmentGroupId);
-            }
-            
-            // Update local state
-            if ($assigned) {
-                $this->statusDepartmentGroups[$statusId][] = $departmentGroupId;
-            } else {
-                $this->statusDepartmentGroups[$statusId] = array_diff(
-                    $this->statusDepartmentGroups[$statusId] ?? [], 
-                    [$departmentGroupId]
-                );
-            }
-            
-            $this->dispatch('saved', 'Department group assignment updated.');
-            
-        } catch (\Exception $e) {
-            $this->dispatch('error', 'Failed to update assignment: ' . $e->getMessage());
+        $status = $this->ticketStatusesArray[$key] ?? null;
+        if (!$status) {
+            $this->dispatch('error', 'Status not found.');
+            return;
         }
-    }
-
-    public function confirmDeleteStatus($id)
-    {
-        $this->checkPermission('settings.update');
         
-        $status = TicketStatusModel::findOrFail($id);
-        if ($status->is_protected) {
+        if ($status['is_protected']) {
             $this->dispatch('error', 'Cannot delete protected ticket status.');
             return;
         }
         
-        // Check if status is in use
-        if ($status->tickets()->count() > 0) {
-            $this->dispatch('error', 'Cannot delete ticket status that is in use by tickets.');
-            return;
-        }
-        
-        $this->confirmingStatusDelete = $id;
-    }
-
-    public function deleteStatus()
-    {
-        $this->checkPermission('settings.update');
-        
         try {
-            TicketStatusModel::findOrFail($this->confirmingStatusDelete)->delete();
-            $this->confirmingStatusDelete = null;
+            $statusModel = TicketStatusModel::findOrFail($status['id']);
+            
+            // Check if status is in use
+            if ($statusModel->tickets()->count() > 0) {
+                $this->dispatch('error', 'Cannot delete ticket status that is in use by tickets.');
+                return;
+            }
+            
+            $statusModel->delete();
             $this->dispatch('saved', 'Ticket status deleted successfully.');
             $this->refreshData();
             
@@ -415,20 +473,21 @@ class SettingsTicket extends Component
         }
     }
 
-    public function cancelStatusDelete()
-    {
-        $this->confirmingStatusDelete = null;
-    }
-
-    public function toggleStatusActive($id)
+    public function toggleStatusActive($key)
     {
         $this->checkPermission('settings.update');
         
+        $status = $this->ticketStatusesArray[$key] ?? null;
+        if (!$status) {
+            $this->dispatch('error', 'Status not found.');
+            return;
+        }
+        
         try {
-            $status = TicketStatusModel::findOrFail($id);
-            $status->update(['is_active' => !$status->is_active]);
+            $statusModel = TicketStatusModel::findOrFail($status['id']);
+            $statusModel->update(['is_active' => !$statusModel->is_active]);
             
-            $statusText = $status->is_active ? 'enabled' : 'disabled';
+            $statusText = $statusModel->is_active ? 'enabled' : 'disabled';
             $this->dispatch('saved', "Ticket status {$statusText} successfully.");
             $this->refreshData();
             
@@ -437,18 +496,26 @@ class SettingsTicket extends Component
         }
     }
 
-    private function resetStatusForm()
+    public function updatedNewStatusFormName()
     {
-        $this->statusForm = [
-            'name' => '',
-            'key' => '',
-            'description' => '',
-            'color' => '#3b82f6',
-            'sort_order' => $this->ticketStatuses->count() + 1,
-            'is_active' => true,
-        ];
-        $this->selectedStatusId = null;
-        $this->resetErrorBag('statusForm');
+        // Only auto-generate key if user hasn't manually modified it
+        if (empty($this->newStatusForm['key']) || $this->shouldAutoGenerateKey()) {
+            $this->newStatusForm['key'] = $this->generateKeyFromName($this->newStatusForm['name']);
+        }
+    }
+    
+    private function shouldAutoGenerateKey(): bool
+    {
+        // Check if the current key looks like it was auto-generated from the name
+        $expectedKey = $this->generateKeyFromName($this->newStatusForm['name']);
+        return $this->newStatusForm['key'] === $expectedKey || 
+               $this->newStatusForm['key'] === $this->generateKeyFromName(substr($this->newStatusForm['name'], 0, -1));
+    }
+    
+    private function generateKeyFromName(string $name): string
+    {
+        $key = strtolower(str_replace([' ', '-'], '_', $name));
+        return preg_replace('/[^a-z0-9_]/', '', $key);
     }
 
     protected function checkPermission(string $permission): void

@@ -6,7 +6,7 @@
             <div class="flex items-center gap-4">
                 <a href="{{ route('tickets.index') }}"
                     class="inline-flex items-center text-sm text-neutral-600 dark:text-neutral-300 hover:text-neutral-800 dark:hover:text-neutral-100 hover:underline transition-colors duration-200">
-                    <x-heroicon-o-arrow-left class="h-4 w-4 mr-1" /> Back to Tickets
+                    <x-heroicon-o-arrow-left class="h-4 w-4 mr-1" /> Back to Ticket
                 </a>
                 <div class="hidden sm:block w-px h-6 bg-neutral-300 dark:bg-neutral-600"></div>
                 <div>
@@ -18,31 +18,115 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-2 relative z-50">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketPriority::from($ticket->priority)->cssClass() }}">
-                    <x-dynamic-component :component="\App\Enums\TicketPriority::from($ticket->priority)->icon()" class="h-3 w-3 mr-1" />
-                    {{ \App\Enums\TicketPriority::from($ticket->priority)->label() }}
-                </span>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketStatus::from($ticket->status)->cssClass() }}">
-                    {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
-                </span>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                {{-- Status & Priority Badges with hex colors --}}
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white" 
+                          style="background-color: {{ $this->priorityHexColor }}">
+                        <x-dynamic-component :component="\App\Enums\TicketPriority::from($ticket->priority)->icon()" class="h-3 w-3 mr-1" />
+                        {{ \App\Enums\TicketPriority::from($ticket->priority)->label() }}
+                    </span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
+                          style="background-color: {{ $this->statusHexColor }}">
+                        {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
+                    </span>
+                </div>
 
-                @if(auth()->user()->can('tickets.update'))
-                    @if(!$ticket->owner_id && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
-                        <button wire:click="assignToMe"
-                                class="inline-flex items-center px-2 py-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-all duration-200"
-                                title="Assign to Me">
-                            <x-heroicon-o-user-plus class="h-4 w-4" />
+                {{-- Action Buttons Row --}}
+                @if($ticket->status === 'closed')
+                    {{-- Closed Ticket: Only Reopen Button --}}
+                    @if($this->canReopen)
+                        <button wire:click="changeStatus('open')"
+                                class="inline-flex items-center px-3 py-1.5 text-xs border border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 hover:bg-green-500/10 hover:border-green-500 rounded-md transition-all duration-200">
+                            <x-heroicon-o-arrow-path class="h-4 w-4 mr-1" />
+                            Reopen
                         </button>
                     @endif
+                @else
+                    {{-- Open Ticket: All Action Buttons in Specified Order --}}
+                    <div class="flex items-center gap-2 flex-wrap">
+                        {{-- 1. Reply --}}
+                        @if($this->canReply)
+                            <button wire:click="$set('activeInput', 'reply')"
+                                    class="inline-flex items-center px-3 py-1.5 text-xs border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-sky-500/10 hover:border-sky-500 rounded-md transition-all duration-200">
+                                <x-heroicon-o-chat-bubble-left class="h-4 w-4 mr-1" />
+                                Reply
+                            </button>
+                        @endif
 
-                    <div class="relative">
-                        <button @click="$dispatch('toggle-status-dropdown')"
-                                x-ref="statusButton"
-                                class="inline-flex items-center px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded transition-all duration-200"
-                                title="Change Status">
-                            <x-heroicon-o-arrow-path class="h-4 w-4" />
-                        </button>
+                        {{-- 2. Note --}}
+                        @if($this->canAddNotes)
+                            <button wire:click="$set('activeInput', 'note')"
+                                    class="inline-flex items-center px-3 py-1.5 text-xs border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-sky-500/10 hover:border-sky-500 rounded-md transition-all duration-200">
+                                <x-heroicon-o-plus class="h-4 w-4 mr-1" />
+                                Note
+                            </button>
+                        @endif
+
+                        @if(!$editMode && auth()->user()->can('tickets.update'))
+                            {{-- 3. Status Change Dropdown --}}
+                            <button @click="$dispatch('toggle-status-dropdown')"
+                                    x-ref="statusButton"
+                                    class="inline-flex items-center px-3 py-1.5 text-xs border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-sky-500/10 hover:border-sky-500 rounded-md transition-all duration-200">
+                                <x-heroicon-o-arrow-path class="h-4 w-4 mr-1" />
+                                Status
+                            </button>
+
+                            {{-- 4. Priority Quick Change Dropdown --}}
+                            <div x-data="{ open: false }" class="relative">
+                                <button @click="open = !open" @click.away="open = false"
+                                        class="inline-flex items-center px-3 py-1.5 text-xs border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-sky-500/10 hover:border-sky-500 rounded-md transition-all duration-200">
+                                    <x-heroicon-o-arrow-up-circle class="h-4 w-4 mr-1" />
+                                    Priority
+                                </button>
+                                <div x-show="open" x-cloak
+                                     x-transition:enter="transition ease-out duration-100"
+                                     x-transition:enter-start="transform opacity-0 scale-95"
+                                     x-transition:enter-end="transform opacity-100 scale-100"
+                                     x-transition:leave="transition ease-in duration-75"
+                                     x-transition:leave-start="transform opacity-100 scale-100"
+                                     x-transition:leave-end="transform opacity-0 scale-95"
+                                     class="absolute right-0 mt-1 w-32 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg z-50">
+                                    <div class="py-1">
+                                        @foreach($priorityOptions as $value => $label)
+                                            @if($value !== $ticket->priority)
+                                                <button wire:click="$set('form.priority', '{{ $value }}')" @click="open = false"
+                                                        class="w-full text-left px-3 py-1 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700">
+                                                    {{ $label }}
+                                                </button>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- 5. Edit --}}
+                        @if($this->canEdit)
+                            <button wire:click="enableEdit"
+                                    class="inline-flex items-center px-3 py-1.5 text-xs border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-sky-500/10 hover:border-sky-500 rounded-md transition-all duration-200">
+                                <x-heroicon-o-pencil class="h-4 w-4 mr-1" />
+                                Edit
+                            </button>
+                        @endif
+
+                        {{-- 6. Close --}}
+                        @if(auth()->user()->can('tickets.update'))
+                            <button wire:click="openCloseModal"
+                                    class="inline-flex items-center px-3 py-1.5 text-xs border border-red-300 dark:border-red-600 text-red-700 dark:text-red-300 hover:bg-red-500/10 hover:border-red-500 rounded-md transition-all duration-200">
+                                <x-heroicon-o-x-circle class="h-4 w-4 mr-1" />
+                                Close
+                            </button>
+                        @endif
+
+                        {{-- Assign to Me (if unassigned) --}}
+                        @if(!$ticket->owner_id && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('support')))
+                            <button wire:click="assignToMe"
+                                    class="inline-flex items-center px-3 py-1.5 text-xs border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-sky-500/10 hover:border-sky-500 rounded-md transition-all duration-200">
+                                <x-heroicon-o-user-plus class="h-4 w-4 mr-1" />
+                                Assign to Me
+                            </button>
+                        @endif
                     </div>
                 @endif
             </div>
@@ -84,15 +168,8 @@
         <div class="lg:col-span-1 space-y-6">
             {{-- Ticket Information --}}
             <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
-                <div class="flex items-center justify-between mb-4">
+                <div class="mb-4">
                     <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Ticket Details</h3>
-                    @if($this->canEdit)
-                    <button wire:click="enableEdit" 
-                        class="inline-flex items-center px-3 py-1.5 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-md transition-all duration-200">
-                        <x-heroicon-o-pencil class="h-3 w-3 mr-1" />
-                        Edit
-                    </button>
-                    @endif
                 </div>
 
                 @if($editMode)
@@ -258,13 +335,8 @@
             @if($this->canAddNotes)
             <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md">
                 <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-                    <div class="flex items-center justify-between">
+                    <div>
                         <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Internal Notes</h3>
-                        <button wire:click="$set('activeInput', 'note')" 
-                                class="inline-flex items-center px-3 py-1.5 text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-md transition-all duration-200">
-                            <x-heroicon-o-plus class="h-3 w-3 mr-1" />
-                            Add Note
-                        </button>
                     </div>
                 </div>
 
@@ -413,24 +485,8 @@
         <div class="lg:col-span-2">
             <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg shadow-md">
                 <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-                    <div class="flex items-center justify-between">
+                    <div>
                         <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Conversation</h3>
-                        @if($this->canReply)
-                        <div class="flex items-center gap-2">
-                            <button wire:click="$set('activeInput', 'reply')"
-                                    class="inline-flex items-center px-3 py-1.5 text-xs text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-md transition-all duration-200">
-                                <x-heroicon-o-chat-bubble-left class="h-3 w-3 mr-1" />
-                                Reply
-                            </button>
-                            @if($ticket->status !== 'closed')
-                            <button wire:click="openCloseModal"
-                                    class="inline-flex items-center px-3 py-1.5 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-all duration-200">
-                                <x-heroicon-o-x-circle class="h-3 w-3 mr-1" />
-                                Close
-                            </button>
-                            @endif
-                        </div>
-                        @endif
                     </div>
                 </div>
 

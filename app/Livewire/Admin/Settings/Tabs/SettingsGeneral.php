@@ -9,15 +9,17 @@ use Livewire\Component;
 class SettingsGeneral extends Component
 {
     public array $hotlines = [];
-    public bool $showHotlineModal = false;
-    public bool $hotlineEditMode = false;
-    public string $selectedHotlineKey = '';
-    public array $hotlineForm = [
+    public bool $showAddForm = false;
+    public string $editingKey = '';
+    public array $newHotlineForm = [
         'name' => '',
         'number' => '',
         'description' => '',
-        'is_active' => true,
-        'sort_order' => 1,
+    ];
+    public array $editHotlineForm = [
+        'name' => '',
+        'number' => '',
+        'description' => '',
     ];
 
     // Theme settings (future expansion)
@@ -59,22 +61,74 @@ class SettingsGeneral extends Component
     }
 
     // Hotline Management Methods
-    public function openHotlineModal()
+    public function addNewHotline()
     {
         $this->checkPermission('settings.update');
-        $this->hotlineEditMode = false;
-        $this->selectedHotlineKey = '';
-        $this->hotlineForm = [
+        $this->showAddForm = true;
+        $this->newHotlineForm = [
             'name' => '',
             'number' => '',
             'description' => '',
-            'is_active' => true,
-            'sort_order' => count($this->hotlines) + 1,
         ];
-        $this->showHotlineModal = true;
     }
 
-    public function editHotline($key)
+    public function cancelAddHotline()
+    {
+        $this->showAddForm = false;
+        $this->newHotlineForm = [
+            'name' => '',
+            'number' => '',
+            'description' => '',
+        ];
+    }
+
+    public function saveNewHotline()
+    {
+        $this->checkPermission('settings.update');
+        
+        $this->validate([
+            'newHotlineForm.name' => 'required|string|max:255',
+            'newHotlineForm.number' => 'required|string|max:255',
+            'newHotlineForm.description' => 'required|string|max:500',
+        ]);
+
+        try {
+            $hotlineService = app(HotlineService::class);
+            
+            // Generate key from name
+            $key = strtolower(str_replace(' ', '_', $this->newHotlineForm['name']));
+            $key = preg_replace('/[^a-z0-9_]/', '', $key);
+            
+            // Ensure unique key
+            $originalKey = $key;
+            $counter = 1;
+            while (isset($this->hotlines[$key])) {
+                $key = $originalKey . '_' . $counter;
+                $counter++;
+            }
+            
+            // Add to hotlines with defaults
+            $this->hotlines[$key] = [
+                'name' => $this->newHotlineForm['name'],
+                'number' => $this->newHotlineForm['number'],
+                'description' => $this->newHotlineForm['description'],
+                'is_active' => true,
+                'sort_order' => count($this->hotlines) + 1,
+            ];
+
+            // Save to database
+            $hotlineService->updateHotlines($this->hotlines);
+            
+            $this->showAddForm = false;
+            $this->newHotlineForm = ['name' => '', 'number' => '', 'description' => ''];
+            $this->dispatch('saved', 'Hotline added successfully.');
+            
+        } catch (\Exception $e) {
+            $this->dispatch('error', 'Failed to add hotline: ' . $e->getMessage());
+        }
+    }
+
+    public function startEditHotline($key)
     {
         $this->checkPermission('settings.update');
         $hotline = $this->hotlines[$key] ?? null;
@@ -84,54 +138,58 @@ class SettingsGeneral extends Component
             return;
         }
 
-        $this->hotlineEditMode = true;
-        $this->selectedHotlineKey = $key;
-        $this->hotlineForm = $hotline;
-        $this->showHotlineModal = true;
+        $this->editingKey = $key;
+        $this->editHotlineForm = [
+            'name' => $hotline['name'],
+            'number' => $hotline['number'],
+            'description' => $hotline['description'],
+        ];
     }
 
-    public function saveHotline()
+    public function cancelEditHotline()
+    {
+        $this->editingKey = '';
+        $this->editHotlineForm = [
+            'name' => '',
+            'number' => '',
+            'description' => '',
+        ];
+    }
+
+    public function saveEditHotline()
     {
         $this->checkPermission('settings.update');
         
         $this->validate([
-            'hotlineForm.name' => 'required|string|max:255',
-            'hotlineForm.number' => 'required|string|max:255',
-            'hotlineForm.description' => 'required|string|max:500',
-            'hotlineForm.is_active' => 'boolean',
-            'hotlineForm.sort_order' => 'required|integer|min:1',
+            'editHotlineForm.name' => 'required|string|max:255',
+            'editHotlineForm.number' => 'required|string|max:255',
+            'editHotlineForm.description' => 'required|string|max:500',
         ]);
 
         try {
             $hotlineService = app(HotlineService::class);
             
-            if ($this->hotlineEditMode && $this->selectedHotlineKey) {
-                // Update existing hotline
-                $this->hotlines[$this->selectedHotlineKey] = $this->hotlineForm;
-            } else {
-                // Add new hotline with generated key
-                $key = strtolower(str_replace(' ', '_', $this->hotlineForm['name']));
-                $key = preg_replace('/[^a-z0-9_]/', '', $key);
-                
-                // Ensure unique key
-                $originalKey = $key;
-                $counter = 1;
-                while (isset($this->hotlines[$key])) {
-                    $key = $originalKey . '_' . $counter;
-                    $counter++;
-                }
-                
-                $this->hotlines[$key] = $this->hotlineForm;
+            if (!isset($this->hotlines[$this->editingKey])) {
+                $this->dispatch('error', 'Hotline not found.');
+                return;
             }
+            
+            // Update existing hotline, preserve other fields
+            $this->hotlines[$this->editingKey] = array_merge($this->hotlines[$this->editingKey], [
+                'name' => $this->editHotlineForm['name'],
+                'number' => $this->editHotlineForm['number'],
+                'description' => $this->editHotlineForm['description'],
+            ]);
 
             // Save to database
             $hotlineService->updateHotlines($this->hotlines);
             
-            $this->showHotlineModal = false;
-            $this->dispatch('saved', 'Hotline saved successfully.');
+            $this->editingKey = '';
+            $this->editHotlineForm = ['name' => '', 'number' => '', 'description' => ''];
+            $this->dispatch('saved', 'Hotline updated successfully.');
             
         } catch (\Exception $e) {
-            $this->dispatch('error', 'Failed to save hotline: ' . $e->getMessage());
+            $this->dispatch('error', 'Failed to update hotline: ' . $e->getMessage());
         }
     }
 
@@ -180,19 +238,6 @@ class SettingsGeneral extends Component
         }
     }
 
-    public function closeHotlineModal()
-    {
-        $this->showHotlineModal = false;
-        $this->hotlineEditMode = false;
-        $this->selectedHotlineKey = '';
-        $this->hotlineForm = [
-            'name' => '',
-            'number' => '',
-            'description' => '',
-            'is_active' => true,
-            'sort_order' => 1,
-        ];
-    }
 
     public function resetToDefaults()
     {
