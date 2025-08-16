@@ -2,13 +2,16 @@
 
 ## Executive Summary
 - **Top Risks**
-  - Duplicate migrations and seeders risk inconsistent schema and seeding (e.g., two `hardware_types` migrations and two hardware type seeders) leading to drift between environments.
-  - Legacy Blade views (`resources/views/tickets`) remain alongside new Livewire tickets module and could reintroduce outdated UI or authorization gaps if referenced.
-  - Dynamic column sorting in ticket management lacks safelist and could allow SQL‑style injection if parameters are tampered with.
+  - Unsanitized sort column in ticket management allows arbitrary column names leading to potential SQL injection.
+  - Role/permission seeding clears all user data and assignments, risking data loss when run outside a disposable environment.
+  - Dynamic Tailwind classes for ticket colors are generated in PHP but not safelisted, causing missing styles in production builds.
+  - Duplicate and deprecated migrations can create schema drift between environments.
 - **Quick Wins**
-  - Consolidate hardware‑type migrations/seeders and prune legacy ticket views.
-  - Enforce a centralized card/layout component to remove styling drift across Livewire views.
-- **Estimated Effort**: ~3 days engineering + design review.
+  - Introduce an allowlist for sortable ticket columns and validate the requested field.
+  - Remove destructive data wipes from `RolePermissionSeeder` or gate behind an environment check.
+  - Add a Tailwind safelist for status/priority color utilities and adopt shared card/button components.
+  - Prune legacy controllers, views, and migrations residing in `database/migrations/deprecated` and `resources/views/tickets`.
+- **Estimated Effort**: ~4–5 days of engineering plus design review.
 
 ## Inventory Snapshot
 - **Routes / Entry Points** (`routes/web.php`)
@@ -22,150 +25,230 @@
   - Schedule `/schedule`
   - Attachments `/attachments/{uuid}/{action}`
   - Admin `/admin/users-roles`, `/admin/settings`, `/admin/reports/*`
+- **Middleware**: `SetDepartmentTeam`, `FilterByUserRole`
+- **Policies**: `TicketPolicy`, `TicketNotePolicy`, `SchedulePolicy`, `ScheduleEventTypePolicy`, `RolePolicy`, `UserPolicy`
 - **Models**: `ActivityLog`, `Attachment`, `ContractStatus`, `ContractType`, `DashboardWidget`, `Department`, `DepartmentGroup`, `HardwareSerial`, `HardwareStatus`, `HardwareType`, `Organization`, `OrganizationContract`, `OrganizationHardware`, `Role`, `Schedule`, `ScheduleEventType`, `Setting`, `Ticket`, `TicketMessage`, `TicketNote`, `TicketStatus`, `User`, `UserWidgetSetting`
-- **Policies**: `RolePolicy`, `SchedulePolicy`, `ScheduleEventTypePolicy`, `TicketPolicy`, `TicketNotePolicy`, `UserPolicy`
-- **Livewire Components**: Organization/Contract/Hardware/User management, Ticket management/viewing, Dashboard widgets, Admin settings, Reports, Auth login, Schedule calendar, etc.
-- **Views**: Components (`resources/views/components`), Livewire views (`resources/views/livewire`), legacy ticket views (`resources/views/tickets`), auth views (`resources/views/auth`), error views.
-- **Migrations**: 40+ files including core tables and later refactors; notable duplicates around hardware types and settings.
-- **Seeders**: `RolePermissionSeeder`, `BasicDataSeeder`, `HardwareTypesSeeder` *and* `HardwareTypeSeeder`, contract/hardware/ticket lookups, widgets, application settings.
+- **Migrations**: 40+ files including core tables and later patches; deprecated copies reside in `database/migrations/deprecated`
+- **Seeders**: `RolePermissionSeeder`, `BasicDataSeeder`, `UserSeeder`, `ScheduleEventTypeSeeder`, `ContractTypeSeeder`, `ContractStatusSeeder`, `HardwareTypeSeeder`, `HardwareStatusSeeder`, `TicketStatusSeeder`, `DashboardWidgetSeeder`, `UserWidgetSettingsSeeder`, `ApplicationSettingsSeeder`, `OrganizationContractSeeder`, `OrganizationHardwareSeeder`, `SampleTicketSeeder`, `ClientSampleDataSeeder`
+- **Factories**: `UserFactory`
+- **Livewire Components**: organization/contract/hardware/user management, ticket management/viewing, dashboard widgets, admin settings, reports, auth login, schedule calendar, etc.
+- **Blade Views**: component library under `resources/views/components`, Livewire views under `resources/views/livewire`, legacy ticket views under `resources/views/tickets`, auth views, error views.
 - **JS / Alpine**: `resources/js/app.js` handles dark‑mode toggle; Alpine loaded via Livewire.
 - **Styles**: Tailwind via `resources/css/app.css`, `tailwind.config.js`.
-- **Config**: Permission modules (`config/modules.php`), theme, loading overlay, services.
+- **Config**: permission modules (`config/modules.php`), theme, loading overlay, services.
+- **Services**: `ThemeService`, `PermissionService`, `SettingsRepository`, `TicketColorService`, `HardwareValidationService`, `HotlineService`
 
 ## Findings
 
 ### Bugs
 1. **Unvalidated sort columns in ticket listing**
    - File Path: `app/Livewire/ManageTickets.php`
-   - Line Number(s): 121-129
+   - Line Number(s): 121-130
    - Category: Bug
-   - Observed: `sortBy($field)` assigns `$field` directly to `$this->sortBy` which is later used in `orderBy` without validation.
-   - Expected: Sort fields should be limited to a predefined allowlist.
-   - Impact/Severity: Medium – tampering via query string could expose SQL injection or broken queries.
-   - Suggested Fix: Validate `$field` against a set of allowed columns before assignment.
-   - Repro/Verification Steps: Modify query string `?sortBy=1 desc` and observe SQL error.
+   - Observed: `sortBy()` assigns any provided field to `orderBy` without validation.
+   - Expected: Only predefined columns should be sortable.
+   - Impact/Severity: High – malicious input could expose internal columns or enable SQL‑style injection.
+   - Suggested Fix: Introduce an allowlist of column names and reject others.
+   - Repro/Verification Steps: Trigger component with `?sortBy=nonexistent` and inspect generated SQL.
    - Minimal Diff or Pseudocode:
      ```php
-     $allowed = ['ticket_number','subject','created_at'];
-     if (in_array($field,$allowed)) { $this->sortBy = $field; }
+     private array $sortable = ['ticket_number','subject','priority','status','created_at'];
+     public function sortBy($field) {
+         if(!in_array($field,$this->sortable)) return;
+         // existing logic
+     }
      ```
-   - Tests to Add/Update: Livewire component test ensuring only safelisted fields are accepted.
+   - Tests to Add/Update: Livewire test asserting invalid sort fields are ignored.
 
-2. **Duplicate form validation rules**
-   - File Path: `app/Livewire/ManageTickets.php`
-   - Line Number(s): 75-93
+2. **Seeder wipes user data**
+   - File Path: `database/seeders/RolePermissionSeeder.php`
+   - Line Number(s): 45-67
    - Category: Bug
-   - Observed: Both `$rules` property and `rules()` method define validation, risking divergence.
-   - Expected: Single source of truth for rules.
-   - Impact/Severity: Low – maintainability issue.
-   - Suggested Fix: Remove `$rules` property and keep `rules()` method.
-   - Repro/Verification Steps: Update one rule and see tests diverge.
+   - Observed: `clearExistingData()` deletes all users, roles, and permissions on every run.
+   - Expected: Seeder should create/update roles/permissions without destructive wipes unless explicitly requested.
+   - Impact/Severity: High – running seeder in non‑fresh environments causes irrecoverable data loss.
+   - Suggested Fix: Guard destructive operations behind an environment check or artisan flag.
+   - Repro/Verification Steps: Execute seeder on populated database and confirm user records are removed.
    - Minimal Diff or Pseudocode:
      ```php
-     // remove protected $rules; rely on rules() only
+     if(app()->environment('local')) {
+         // destructive clears
+     }
      ```
-   - Tests to Add/Update: Component validation tests.
+   - Tests to Add/Update: Seeder test ensuring existing users survive when environment ≠ local.
+
+3. **Mass‑assignment gap when creating tickets**
+   - File Path: `app/Livewire/ManageTickets.php`
+   - Line Number(s): 169-178
+   - Category: Bug
+   - Observed: `$ticketData = $this->form;` passes entire form array to `Ticket::create()`; malicious clients could inject fillable fields like `owner_id`.
+   - Expected: Only validated/authorized fields should be persisted.
+   - Impact/Severity: Medium – could allow privilege escalation by assigning owners or statuses.
+   - Suggested Fix: Use `only()` to select allowed keys before create.
+   - Repro/Verification Steps: Modify payload via browser devtools to include `owner_id`.
+   - Minimal Diff or Pseudocode:
+     ```php
+     $ticketData = collect($this->form)->only(['subject','priority','description','organization_id','client_id','department_id'])->toArray();
+     ```
+   - Tests to Add/Update: Livewire test ensuring unexpected fields are ignored.
+
+4. **Attachment routes lack rate limiting**
+   - File Path: `app/Http/Controllers/AttachmentController.php`
+   - Line Number(s): 13-70
+   - Category: Bug
+   - Observed: Download and view endpoints are unaudited for request frequency.
+   - Expected: File endpoints should apply throttling to prevent abuse.
+   - Impact/Severity: Medium – attackers could hammer download/view routes causing bandwidth exhaustion.
+   - Suggested Fix: Apply `throttle` middleware to attachment routes.
+   - Repro/Verification Steps: Hit `/attachments/{uuid}/download` rapidly and observe no throttling.
+   - Minimal Diff or Pseudocode:
+     ```php
+     Route::middleware(['auth','throttle:60,1'])->group(function() {
+         // attachment routes
+     });
+     ```
+   - Tests to Add/Update: Feature test verifying excessive requests hit rate limit.
 
 ### Deprecated
-1. **Legacy ticket Blade views still present**
+1. **Legacy ticket views**
    - File Path: `resources/views/tickets/*`
-   - Line Number(s): `show.blade.php` 1-40
+   - Line Number(s): n/a
    - Category: Deprecated
-   - Observed: Old ticket pages remain although routes use Livewire components.
-   - Expected: Remove or archive unused views.
-   - Impact/Severity: Medium – risk of accidental routing to outdated UI.
-   - Suggested Fix: Delete `resources/views/tickets` directory; keep redirect in routes if deep links exist.
-   - Repro/Verification Steps: Search routes for references; none found.
-   - Minimal Diff or Pseudocode: `git rm resources/views/tickets -r`
-   - Tests to Add/Update: None.
+   - Observed: Old Blade templates remain alongside new Livewire ticket module.
+   - Expected: Only Livewire-based ticket views should exist.
+   - Impact/Severity: Medium – unused files cause confusion and risk being referenced inadvertently.
+   - Suggested Fix: Remove `resources/views/tickets` directory after confirming no routes reference it.
+   - Repro/Verification Steps: Grep codebase for `resources/views/tickets` references; none found.
+   - Minimal Diff or Pseudocode: `rm -r resources/views/tickets`
+   - Tests to Add/Update: N/A
 
-2. **Redundant hardware type seeder**
-   - File Path: `database/seeders/HardwareTypesSeeder.php`
-   - Line Number(s): 1-16
+2. **Unused organization controllers**
+   - File Path: `app/Http/Controllers/OrganizationController.php`, `OrganizationHardwareController.php`, `OrganizationContractController.php`
+   - Line Number(s): n/a
    - Category: Deprecated
-   - Observed: Simplistic seeder duplicates newer `HardwareTypeSeeder`.
-   - Expected: Use single, fully‑featured seeder.
-   - Impact/Severity: Medium – inconsistent hardware types between environments.
-   - Suggested Fix: Remove `HardwareTypesSeeder` and adjust `DatabaseSeeder` ordering.
-   - Repro/Verification Steps: `php artisan db:seed` would seed both sets.
-   - Minimal Diff or Pseudocode: `git rm database/seeders/HardwareTypesSeeder.php`
-   - Tests to Add/Update: Seeder execution test.
+   - Observed: Controllers provide CRUD views replaced by Livewire components and are no longer routed.
+   - Expected: Livewire components manage these flows.
+   - Impact/Severity: Low – dead code increases maintenance burden.
+   - Suggested Fix: Delete controllers after confirming no references.
+   - Repro/Verification Steps: Search routes for these controllers; none found.
+   - Minimal Diff or Pseudocode: remove files.
+   - Tests to Add/Update: N/A
+
+3. **Deprecated migrations folder**
+   - File Path: `database/migrations/deprecated/*`
+   - Line Number(s): n/a
+   - Category: Deprecated
+   - Observed: Old migration copies (e.g., `create_schedules_table.php`) linger in repository.
+   - Expected: Obsolete migrations should be purged to prevent accidental execution.
+   - Impact/Severity: Medium – risk of running outdated schema changes.
+   - Suggested Fix: Delete folder or move to documentation.
+   - Repro/Verification Steps: `php artisan migrate` with `--path=database/migrations/deprecated` recreates stale tables.
+   - Minimal Diff or Pseudocode: `rm -r database/migrations/deprecated`
+   - Tests to Add/Update: N/A
 
 ### Style
-1. **Inconsistent card/background styles across Livewire views**
+1. **Inline card/button styles bypass shared components**
    - File Path: `resources/views/livewire/manage-tickets.blade.php`
-   - Line Number(s): 1-20
+   - Line Number(s): 1-80
    - Category: Style
-   - Observed: Uses `bg-white/5 backdrop-blur-md shadow-md`; other modules use solid `bg-neutral-50` cards.
-   - Expected: Standardized card component (e.g., `<x-card>` with consistent padding, borders, dark-mode classes).
-   - Impact/Severity: Medium – visual inconsistency, harder theme updates.
-   - Suggested Fix: Introduce reusable card Blade component and refactor views to use it.
-   - Repro/Verification Steps: Compare ticket list vs settings tabs.
+   - Observed: View uses bespoke utility classes instead of provided `glass-card` and `btn` classes from `resources/css/app.css`.
+   - Expected: Layouts should consume shared component classes for consistency.
+   - Impact/Severity: Medium – inconsistent spacing and colors across pages.
+   - Suggested Fix: Replace repeated utility chains with `glass-card` and `btn-primary`/`btn-secondary` classes.
+   - Repro/Verification Steps: Compare ticket page to dashboard card spacing.
    - Minimal Diff or Pseudocode:
-     ```blade
-     <x-card>
-       <x-slot:title>Support Tickets</x-slot:title>
-       ...
-     </x-card>
+     ```html
+     <div class="glass-card">
+     <button class="btn-primary">New Ticket</button>
      ```
-   - Tests to Add/Update: Snapshot/UI tests if available.
+   - Tests to Add/Update: Visual regression or Storybook snapshot.
 
-2. **Settings tabs mix neutral and sky color schemes**
-   - File Path: `resources/views/livewire/admin/settings/tabs/general.blade.php`
-   - Line Number(s): 8-26
+2. **Dynamic color classes not safelisted**
+   - File Path: `app/Services/TicketColorService.php`
+   - Line Number(s): 12-41
    - Category: Style
-   - Observed: Action buttons use neutral and sky palettes interchangeably.
-   - Expected: Follow project monochrome theme; reserve sky accent for primary actions.
-   - Impact/Severity: Low – inconsistent user experience.
-   - Suggested Fix: Define design tokens for button variants; update tab templates.
-   - Repro/Verification Steps: Inspect settings UI.
-   - Minimal Diff or Pseudocode: replace `bg-neutral-600` with standardized `btn-secondary` component.
-   - Tests to Add/Update: None.
+   - Observed: Status/priority classes (`bg-red-100`, etc.) are generated in PHP but Tailwind `content` config only scans views/JS.
+   - Expected: Dynamic utilities must be safelisted to survive purge.
+   - Impact/Severity: High – status/priority badges may render unstyled in production.
+   - Suggested Fix: Add safelist in `tailwind.config.js` for `bg-*`, `text-*`, and `dark:bg-*` combinations used by the service.
+   - Repro/Verification Steps: Build assets and inspect missing classes in `app.css`.
+   - Minimal Diff or Pseudocode:
+     ```js
+     safelist: [{ pattern: /(bg|text|dark:bg|dark:text)-(red|blue|green|yellow|orange|purple|pink|gray|teal|cyan|lime|emerald)-(100|200|300|700|800|900)/ }]
+     ```
+   - Tests to Add/Update: Build test verifying presence of safelisted classes.
+
+3. **Legacy ticket view styling diverges from design system**
+   - File Path: `resources/views/tickets/show.blade.php`
+   - Line Number(s): 1-60
+   - Category: Style
+   - Observed: Uses `bg-white/50 dark:bg-neutral-900/40` palette unlike standardized `bg-white/5` cards.
+   - Expected: All views should adhere to monochrome theme with shared spacing.
+   - Impact/Severity: Low – inconsistent look if legacy view is ever rendered.
+   - Suggested Fix: Remove legacy view or restyle using shared components.
+   - Repro/Verification Steps: Manually render view and compare.
+   - Minimal Diff or Pseudocode: Apply `glass-card` wrapper or delete file.
+   - Tests to Add/Update: N/A
 
 ### Migration/Seeder
-1. **Duplicate `hardware_types` migrations**
-   - File Path: `database/migrations/2025_01_01_000011_create_hardware_types_table.php` & `database/migrations/2025_08_13_174623_create_hardware_types_table.php`
-   - Line Number(s): 1-22; 1-36
+1. **Duplicate permission migrations**
+   - File Path: `database/migrations/2025_01_01_000019_create_permission_tables.php` & `database/migrations/deprecated/2025_01_01_000019_create_permission_tables.php`
+   - Line Number(s): n/a
    - Category: Migration/Seeder
-   - Observed: Two migrations create the same table with different schemas.
-   - Expected: Single migration defining final structure; earlier migration should be removed or merged.
-   - Impact/Severity: High – running migrations may fail on fresh installs.
-   - Suggested Fix: Consolidate into one migration; drop old file and renumber.
-   - Repro/Verification Steps: `php artisan migrate` fails after first create.
-   - Minimal Diff or Pseudocode: delete obsolete migration and adjust references.
-   - Tests to Add/Update: Migration test ensuring table has slug/description columns.
+   - Observed: Two versions of the same migration exist.
+   - Expected: Single authoritative migration per table.
+   - Impact/Severity: High – fresh installs may execute outdated version depending on path.
+   - Suggested Fix: Remove deprecated copy and ensure proper order numbering.
+   - Repro/Verification Steps: Run `php artisan migrate:fresh` and verify only one migration executes.
+   - Minimal Diff or Pseudocode: delete deprecated file.
+   - Tests to Add/Update: Migration test asserting permission tables schema.
 
-2. **Seeder order seeds obsolete data**
-   - File Path: `database/seeders/DatabaseSeeder.php`
-   - Line Number(s): 21-30
+2. **Timestamp collisions across migrations**
+   - File Path: `database/migrations/2025_01_01_000012_create_*`
+   - Line Number(s): n/a
    - Category: Migration/Seeder
-   - Observed: Seeder calls both `HardwareTypesSeeder` and `HardwareTypeSeeder`.
-   - Expected: Only modern `HardwareTypeSeeder` should run.
-   - Impact/Severity: Medium – conflicting records may cause duplicates.
-   - Suggested Fix: Remove `HardwareTypesSeeder` from array.
-   - Repro/Verification Steps: `php artisan db:seed` (on clean DB) shows duplicate hardware types.
-   - Minimal Diff or Pseudocode:
-     ```php
-     $this->call([
-         RolePermissionSeeder::class,
-         BasicDataSeeder::class,
-         HardwareTypeSeeder::class,
-         // ...
-     ]);
-     ```
-   - Tests to Add/Update: Seeder idempotence test.
+   - Observed: Multiple migrations share identical timestamp `000012` leading to unpredictable execution order.
+   - Expected: Each migration should have unique, sequential timestamps.
+   - Impact/Severity: Medium – schema setup may vary by environment.
+   - Suggested Fix: Renumber migrations or use `php artisan schema:dump` to consolidate.
+   - Repro/Verification Steps: Inspect `migrations` table after fresh install to confirm ordering.
+   - Minimal Diff or Pseudocode: rename files with unique timestamps.
+   - Tests to Add/Update: Migration order smoke test.
+
+3. **Seeder ordering depends on destructive RolePermissionSeeder**
+   - File Path: `database/seeders/DatabaseSeeder.php`
+   - Line Number(s): 18-36
+   - Category: Migration/Seeder
+   - Observed: `RolePermissionSeeder` (which deletes users) runs before `UserSeeder`; rerunning `DatabaseSeeder` after data creation wipes users again.
+   - Expected: Idempotent seeders that do not reset unrelated data.
+   - Impact/Severity: High – re-seeding in staging/production wipes accounts.
+   - Suggested Fix: Refactor `RolePermissionSeeder` to sync roles/permissions without clearing `users`.
+   - Repro/Verification Steps: Run `php artisan db:seed` twice and note user count reset.
+   - Minimal Diff or Pseudocode: remove `User::delete()` from seeder and handle permissions separately.
+   - Tests to Add/Update: Seeder idempotence test verifying user count remains stable.
+
+4. **ClientSampleDataSeeder references possibly stale columns**
+   - File Path: `database/seeders/ClientSampleDataSeeder.php`
+   - Line Number(s): 1-120
+   - Category: Migration/Seeder
+   - Observed: Seeder assumes sample client relationships that may not match current schema after contract/hardware refactors.
+   - Expected: Seeders should align with latest column names and foreign keys.
+   - Impact/Severity: Medium – running seeder may fail or produce inconsistent relationships.
+   - Suggested Fix: Review sample seeder against current models and adjust.
+   - Repro/Verification Steps: Run `php artisan db:seed --class=ClientSampleDataSeeder` on fresh DB.
+   - Minimal Diff or Pseudocode: update attributes to match migrations.
+   - Tests to Add/Update: Seeder test confirming inserted sample data matches schema.
 
 ## Test Plan
 - Feature tests for ticket sort allowlist and creation flow.
 - Policy tests for attachment access and ticket status/priority transitions.
-- Seeder/migration test ensuring fresh database builds without duplicates.
+- Seeder/migration tests ensuring fresh database builds without duplicates or data loss.
 - Livewire component tests for dashboard widgets and settings tabs.
 
 ## Cleanup Checklist
-- [ ] Remove `resources/views/tickets` directory and related assets.
-- [ ] Consolidate hardware type migrations; run `php artisan migrate:fresh` to verify.
-- [ ] Delete `HardwareTypesSeeder` and update `DatabaseSeeder`.
-- [ ] Introduce shared card/button components and refactor affected views.
-- [ ] Add sorting allowlist and validation tests for `ManageTickets`.
-- [ ] Review all migrations for duplicate timestamps and rename sequentially.
-
+- [ ] Remove `resources/views/tickets` and deprecated organization controllers.
+- [ ] Add sort column allowlist and tests in `ManageTickets`.
+- [ ] Safelist dynamic Tailwind classes and adopt `glass-card`/`btn-*` utilities.
+- [ ] Delete `database/migrations/deprecated` and resolve duplicate migrations/timestamps.
+- [ ] Refactor `RolePermissionSeeder` to avoid destructive data wipes.
+- [ ] Validate all seeders against current schema and run `php artisan migrate:fresh --seed` once dependencies install.
