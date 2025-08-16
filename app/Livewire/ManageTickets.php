@@ -4,7 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
-use App\Models\ActivityLog;
+use App\Services\ActivityLogger;
 use App\Models\Department;
 use App\Models\Organization;
 use App\Contracts\SettingsRepositoryInterface;
@@ -392,11 +392,8 @@ class ManageTickets extends Component
 
             // Log priority escalation if it's an increase
             if (TicketPriority::compare($priority, $oldPriority) > 0) {
-                ActivityLog::record('ticket.priority_escalated', $ticket->id, $ticket, [
-                    'description' => "Priority escalated from {$oldPriority} to {$priority}",
-                    'old_priority' => $oldPriority,
-                    'new_priority' => $priority
-                ]);
+                app(ActivityLogger::class)->log(auth()->user(), 'tickets', 'priority_escalated', $ticket,
+                    "Priority escalated from {$oldPriority} to {$priority}");
             }
 
             session()->flash('message', 'Ticket priority updated successfully.');
