@@ -20,12 +20,14 @@ class ReplyForm extends Component
     public string $replyMessage = '';
     public string $replyStatus = 'in_progress';
     public array $attachments = [];
+    public string $cc = '';
     public bool $show = false;
 
     protected $rules = [
         'replyMessage' => 'required|string|max:2000',
         'replyStatus' => 'required|string',
-        'attachments.*' => 'file|max:10240'
+        'attachments.*' => 'file|max:10240',
+        'cc' => 'nullable|string'
     ];
 
     protected $listeners = ['reply:toggle' => 'toggle'];

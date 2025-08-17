@@ -65,6 +65,9 @@ class Ticket extends Model
         'latest_message_at',
         'response_time_minutes',
         'resolution_time_minutes',
+        'is_merged',
+        'merged_into_ticket_id',
+        'is_merged_master',
     ];
 
     protected $casts = [
@@ -73,6 +76,8 @@ class Ticket extends Model
         'resolved_at' => 'datetime',
         'closed_at' => 'datetime',
         'latest_message_at' => 'datetime',
+        'is_merged' => 'boolean',
+        'is_merged_master' => 'boolean',
     ];
 
     protected static function boot()
@@ -143,6 +148,18 @@ class Ticket extends Model
     public function notes(): HasMany
     {
         return $this->hasMany(TicketNote::class);
+    }
+
+    // CC recipients
+    public function ccRecipients(): HasMany
+    {
+        return $this->hasMany(TicketCcRecipient::class);
+    }
+
+    // Merged into ticket
+    public function mergedInto(): BelongsTo
+    {
+        return $this->belongsTo(Ticket::class, 'merged_into_ticket_id');
     }
 
     // Attachments

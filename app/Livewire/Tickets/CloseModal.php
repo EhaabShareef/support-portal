@@ -63,7 +63,6 @@ class CloseModal extends Component
                     'is_system_message' => true,
                     'is_internal'       => false,
                 ]);
-
                 // Create remarks message if provided (human-authored, non-system)
                 $remarks = trim((string) $this->remarks);
                 if ($remarks !== '') {

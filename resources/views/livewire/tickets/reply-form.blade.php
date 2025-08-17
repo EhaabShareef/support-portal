@@ -7,6 +7,7 @@
                 <option value="open">Open</option>
                 <option value="solution_provided">Solution Provided</option>
             </select>
+            <input type="text" wire:model="cc" placeholder="CC emails" class="w-full border rounded" />
             <input type="file" wire:model="attachments" multiple class="w-full" />
             <div class="flex gap-2">
                 <button type="submit" class="px-4 py-1.5 bg-sky-600 text-white rounded">Send</button>

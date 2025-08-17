@@ -20,8 +20,9 @@ class ConversationThread extends Component
     public function refreshConversation(): void
     {
         $messages = $this->ticket->messages()
+            ->where('is_log', false)
             ->select(['id','ticket_id','sender_id','message','is_system_message','created_at'])
-            ->with(['sender:id,name','attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'])
+            ->with(['sender:id,name','attachments:id,ticket_message_id,original_name,path,disk'])
             ->selectRaw("'message' as type")
             ->get();
 
