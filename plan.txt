@@ -1,53 +1,24 @@
+You correctly strip department_groups before update. Two follow-ups:
 
----
+Validate the editStatusForm.department_groups input.
+Coerce IDs to integers before syncing.
+Apply this diff to sanitize IDs on sync:
 
-# **Instruction Guide — Organization Hardware Module Changes**
+-            $status->departmentGroups()->sync($this->editStatusForm['department_groups'] ?? []);
++            $status->departmentGroups()->sync(array_map('intval', $this->editStatusForm['department_groups'] ?? []));
+Add validation rules (outside this range) in saveEditStatus():
 
-## **1. Migration & Database Structure Changes**
-
-* **Remove** the following columns from the `organization_hardware` table:
-
-  * `specifications`
-  * `purchase_price`
-  * `warranty_start`
-  * `warranty_expiration`
-  * `status` (ENUM) — *status will now be managed dynamically in **Application Settings***.
-  * `custom_fields`
-* **Make `hardware_type` dynamic** — hardware types should also be managed from **Application Settings** under a new **Hardware** tab.
-* Keep `location`, `last_maintenance`, and `next_maintenance` fields **as they are**, but make them **non-editable** in the Manage Hardware pages.
-
----
-
-## **2. Business Logic Adjustments**
-
-* **Multiple Hardware per Contract**
-
-  * When creating hardware, allow **one contract to have multiple hardware entries**.
-* **Multiple Serial Numbers per Hardware**
-
-  * Each hardware record should support **multiple serial numbers** (up to the quantity specified).
-  * Ensure both **create** and **edit** operations support this.
-
----
-
-## **3. Manage Hardware Page Enhancements**
-
-* Group hardware items **by their type/group** for better readability.
-* Add **filter options**:
-
-  * By **contract** (hardware only).
-  * By **is\_oracle** contracts (toggle filter).
-
----
-
-## **4. Hardware Creation Wizard Improvements**
-
-* **Redesign** the wizard to be more user-friendly:
-
-  * Clearly indicate **current step** in the process.
-  * Include an **option to cancel** and return to the list page at any time.
-  * Match the **styling and layout** with the rest of the application for consistency.
-* Ensure **Create Hardware** links to the **latest version** of the hardware wizard.
-* For **editing**, use a **simplified form** aligned with the updated field requirements.
-
----
+$this->validate([
+    'editStatusForm.name' => 'required|string|max:255',
+    'editStatusForm.key' => [
+        'required',
+        'string',
+        'max:50',
+        'unique:ticket_statuses,key,' . $this->ticketStatusesArray[$this->editingStatusKey]['id']
+    ],
+    'editStatusForm.description' => 'nullable|string',
+    'editStatusForm.color' => 'required|string',
+    // Add:
+    'editStatusForm.department_groups' => 'array',
+    'editStatusForm.department_groups.*' => 'integer|exists:department_groups,id',
+]);

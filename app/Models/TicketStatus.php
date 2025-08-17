@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
+use App\Exceptions\CannotDeleteProtectedStatus;
 
 class TicketStatus extends Model
 {
@@ -44,11 +46,18 @@ class TicketStatus extends Model
         return $query->orderBy('sort_order')->orderBy('name');
     }
 
-    public function scopeForDepartmentGroup(Builder $query, $departmentGroupId): Builder
+    public function scopeForDepartmentGroupOrUngrouped(Builder $query, int $departmentGroupId): Builder
     {
-        return $query->whereHas('departmentGroups', function ($q) use ($departmentGroupId) {
-            $q->where('department_group_id', $departmentGroupId);
+        return $query->where(function ($builder) use ($departmentGroupId) {
+            $builder->whereHas('departmentGroups', function ($q) use ($departmentGroupId) {
+                $q->where('department_groups.id', $departmentGroupId);
+            })->orWhereDoesntHave('departmentGroups');
         });
+    }
+
+    public function scopeForDepartmentGroup(Builder $query, int $departmentGroupId): Builder
+    {
+        return $query->forDepartmentGroupOrUngrouped($departmentGroupId);
     }
 
     public function getRouteKeyName(): string
@@ -58,18 +67,16 @@ class TicketStatus extends Model
 
     public static function options(): array
     {
-        return static::active()->ordered()->pluck('name', 'key')->toArray();
+        return Cache::remember('ticket_status_options', 3600, function () {
+            return static::active()->ordered()->pluck('name', 'key')->toArray();
+        });
     }
 
-    public static function optionsForDepartmentGroup($departmentGroupId): array
+    public static function optionsForDepartmentGroup(int $departmentGroupId): array
     {
         return static::active()
+            ->forDepartmentGroupOrUngrouped($departmentGroupId)
             ->ordered()
-            ->where(function ($query) use ($departmentGroupId) {
-                $query->whereHas('departmentGroups', function ($q) use ($departmentGroupId) {
-                    $q->where('department_group_id', $departmentGroupId);
-                })->orWhereDoesntHave('departmentGroups');
-            })
             ->pluck('name', 'key')
             ->toArray();
     }
@@ -86,8 +93,17 @@ class TicketStatus extends Model
 
         static::deleting(function ($model) {
             if ($model->is_protected) {
-                throw new \Exception('Cannot delete protected ticket status.');
+                throw new CannotDeleteProtectedStatus($model->name);
             }
+        });
+
+        // Clear cache on model changes
+        static::saved(function ($model) {
+            Cache::forget('ticket_status_options');
+        });
+
+        static::deleted(function ($model) {
+            Cache::forget('ticket_status_options');
         });
     }
 }

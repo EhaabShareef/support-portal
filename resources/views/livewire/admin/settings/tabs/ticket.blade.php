@@ -266,9 +266,9 @@
                                     <p class="text-xs text-neutral-500 mb-2">Select which department groups can use this status (leave empty for all)</p>
                                     <div class="space-y-1 max-h-32 overflow-y-auto">
                                         @foreach($this->departmentGroups as $group)
-                                            <label class="flex items-center">
+                                            <label class="flex items-center" wire:key="new-department-group-{{ $group->id }}">
                                                 <input type="checkbox" 
-                                                       wire:model="newStatusForm.department_groups" 
+                                                       wire:model.live="newStatusForm.department_groups" 
                                                        value="{{ $group->id }}"
                                                        class="rounded border-neutral-300 dark:border-neutral-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0 dark:bg-neutral-900">
                                                 <span class="ml-2 text-sm text-neutral-700 dark:text-neutral-300">{{ $group->name }}</span>
@@ -338,9 +338,9 @@
                                         <p class="text-xs text-neutral-500 mb-2">Select which department groups can use this status (leave empty for all)</p>
                                         <div class="space-y-1 max-h-32 overflow-y-auto">
                                             @foreach($this->departmentGroups as $group)
-                                                <label class="flex items-center">
+                                                <label class="flex items-center" wire:key="edit-department-group-{{ $group->id }}">
                                                     <input type="checkbox" 
-                                                           wire:model="editStatusForm.department_groups" 
+                                                           wire:model.live="editStatusForm.department_groups" 
                                                            value="{{ $group->id }}"
                                                            class="rounded border-neutral-300 dark:border-neutral-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0 dark:bg-neutral-900">
                                                     <span class="ml-2 text-sm text-neutral-700 dark:text-neutral-300">{{ $group->name }}</span>
@@ -419,9 +419,12 @@
                                 <div class="mt-2">
                                     <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Department Groups:</p>
                                     <div class="flex flex-wrap gap-1">
+                                        @php
+                                            $groups = $this->departmentGroups->keyBy('id');
+                                        @endphp
                                         @foreach($status['department_groups'] as $groupId)
                                             @php
-                                                $group = $this->departmentGroups->find($groupId);
+                                                $group = $groups->get($groupId);
                                             @endphp
                                             @if($group)
                                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">

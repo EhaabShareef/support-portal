@@ -341,6 +341,8 @@ class SettingsTicket extends Component
             ],
             'newStatusForm.description' => 'nullable|string',
             'newStatusForm.color' => 'required|string',
+            'newStatusForm.department_groups' => 'array',
+            'newStatusForm.department_groups.*' => 'integer|exists:department_groups,id',
         ]);
 
         try {
@@ -354,7 +356,7 @@ class SettingsTicket extends Component
 
             // Sync department groups if provided
             if (!empty($this->newStatusForm['department_groups'])) {
-                $status->departmentGroups()->sync($this->newStatusForm['department_groups']);
+                $status->departmentGroups()->sync(array_map('intval', $this->newStatusForm['department_groups']));
             }
 
             // Update the color service with the new color
@@ -437,6 +439,8 @@ class SettingsTicket extends Component
             ],
             'editStatusForm.description' => 'nullable|string',
             'editStatusForm.color' => 'required|string',
+            'editStatusForm.department_groups' => 'array',
+            'editStatusForm.department_groups.*' => 'integer|exists:department_groups,id',
         ]);
 
         try {
@@ -448,7 +452,7 @@ class SettingsTicket extends Component
             $status->update($updateData);
 
             // Sync department groups
-            $status->departmentGroups()->sync($this->editStatusForm['department_groups'] ?? []);
+            $status->departmentGroups()->sync(array_map('intval', $this->editStatusForm['department_groups'] ?? []));
 
             // Update the color service with the new color
             $colorService = app(TicketColorService::class);

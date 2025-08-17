@@ -62,11 +62,7 @@ enum TicketStatus: string
             return self::options();
         }
 
-        return TicketStatusModel::active()
-            ->forDepartmentGroup($departmentGroupId)
-            ->ordered()
-            ->pluck('name', 'key')
-            ->toArray();
+        return TicketStatusModel::optionsForDepartmentGroup($departmentGroupId);
     }
 
     /**
