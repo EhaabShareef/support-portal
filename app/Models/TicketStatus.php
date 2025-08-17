@@ -56,6 +56,24 @@ class TicketStatus extends Model
         return 'key';
     }
 
+    public static function options(): array
+    {
+        return static::active()->ordered()->pluck('name', 'key')->toArray();
+    }
+
+    public static function optionsForDepartmentGroup($departmentGroupId): array
+    {
+        return static::active()
+            ->ordered()
+            ->where(function ($query) use ($departmentGroupId) {
+                $query->whereHas('departmentGroups', function ($q) use ($departmentGroupId) {
+                    $q->where('department_group_id', $departmentGroupId);
+                })->orWhereDoesntHave('departmentGroups');
+            })
+            ->pluck('name', 'key')
+            ->toArray();
+    }
+
     protected static function boot()
     {
         parent::boot();

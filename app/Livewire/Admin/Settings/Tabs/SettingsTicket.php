@@ -36,12 +36,14 @@ class SettingsTicket extends Component
         'key' => '',
         'description' => '',
         'color' => '#3b82f6',
+        'department_groups' => [],
     ];
     public array $editStatusForm = [
         'name' => '',
         'key' => '',
         'description' => '',
         'color' => '#3b82f6',
+        'department_groups' => [],
     ];
 
     public bool $hasUnsavedChanges = false;
@@ -82,6 +84,7 @@ class SettingsTicket extends Component
                     'sort_order' => $status->sort_order,
                     'is_active' => $status->is_active,
                     'is_protected' => $status->is_protected,
+                    'department_groups' => $status->departmentGroups->pluck('id')->toArray(),
                 ];
             })->toArray();
 
@@ -99,7 +102,13 @@ class SettingsTicket extends Component
     #[Computed]
     public function ticketStatuses()
     {
-        return TicketStatusModel::ordered()->get();
+        return TicketStatusModel::with('departmentGroups')->ordered()->get();
+    }
+
+    #[Computed]
+    public function departmentGroups()
+    {
+        return \App\Models\DepartmentGroup::orderBy('name')->get();
     }
 
 
@@ -282,6 +291,7 @@ class SettingsTicket extends Component
             'key' => '',
             'description' => '',
             'color' => '#3b82f6',
+            'department_groups' => [],
         ];
     }
 
@@ -293,6 +303,7 @@ class SettingsTicket extends Component
             'key' => '',
             'description' => '',
             'color' => '#3b82f6',
+            'department_groups' => [],
         ];
     }
 
@@ -341,12 +352,17 @@ class SettingsTicket extends Component
             
             $status = TicketStatusModel::create($statusData);
 
+            // Sync department groups if provided
+            if (!empty($this->newStatusForm['department_groups'])) {
+                $status->departmentGroups()->sync($this->newStatusForm['department_groups']);
+            }
+
             // Update the color service with the new color
             $colorService = app(TicketColorService::class);
             $colorService->setStatusColor($this->newStatusForm['key'], $this->newStatusForm['color']);
 
             $this->showAddStatusForm = false;
-            $this->newStatusForm = ['name' => '', 'key' => '', 'description' => '', 'color' => '#3b82f6'];
+            $this->newStatusForm = ['name' => '', 'key' => '', 'description' => '', 'color' => '#3b82f6', 'department_groups' => []];
             $this->dispatch('saved', 'Ticket status created successfully.');
             $this->refreshData();
             
@@ -376,6 +392,7 @@ class SettingsTicket extends Component
             'key' => $status['key'],
             'description' => $status['description'],
             'color' => $status['color'],
+            'department_groups' => $status['department_groups'],
         ];
     }
 
@@ -387,6 +404,7 @@ class SettingsTicket extends Component
             'key' => '',
             'description' => '',
             'color' => '#3b82f6',
+            'department_groups' => [],
         ];
     }
 
@@ -423,14 +441,21 @@ class SettingsTicket extends Component
 
         try {
             $status = TicketStatusModel::findOrFail($this->ticketStatusesArray[$this->editingStatusKey]['id']);
-            $status->update($this->editStatusForm);
+            
+            // Remove department_groups from the form data before updating
+            $updateData = $this->editStatusForm;
+            unset($updateData['department_groups']);
+            $status->update($updateData);
+
+            // Sync department groups
+            $status->departmentGroups()->sync($this->editStatusForm['department_groups'] ?? []);
 
             // Update the color service with the new color
             $colorService = app(TicketColorService::class);
             $colorService->setStatusColor($this->editStatusForm['key'], $this->editStatusForm['color']);
 
             $this->editingStatusKey = '';
-            $this->editStatusForm = ['name' => '', 'key' => '', 'description' => '', 'color' => '#3b82f6'];
+            $this->editStatusForm = ['name' => '', 'key' => '', 'description' => '', 'color' => '#3b82f6', 'department_groups' => []];
             $this->dispatch('saved', 'Ticket status updated successfully.');
             $this->refreshData();
             

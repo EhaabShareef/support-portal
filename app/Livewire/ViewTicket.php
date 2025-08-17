@@ -269,6 +269,8 @@ class ViewTicket extends Component
                 return;
             }
 
+            $user = auth()->user();
+
             $this->validate([
                 'form.status' => TicketStatus::validationRule(),
                 'form.priority' => TicketPriority::validationRule(),
@@ -276,23 +278,19 @@ class ViewTicket extends Component
                 'form.department_id' => 'required|exists:departments,id',
             ]);
 
-            // Check if status is allowed using the policy
-            if (!$user->can('setStatus', [$this->ticket, $this->form['status']])) {
-                session()->flash('error', 'This ticket status is not available for your department group.');
-                return;
+            // Check if status is allowed for user's department group
+            if ($user->hasRole('support') && $user->department?->department_group_id) {
+                $allowedStatuses = TicketStatusModel::optionsForDepartmentGroup($user->department->department_group_id);
+                if (!array_key_exists($this->form['status'], $allowedStatuses)) {
+                    session()->flash('error', 'This ticket status is not available for your department group.');
+                    return;
+                }
             }
 
             // Check priority escalation for clients
-            $user = auth()->user();
             $previousPriority = $this->ticket->priority;
             if ($user->hasRole('client') && TicketPriority::compare($this->form['priority'], $previousPriority) > 0) {
                 session()->flash('error', 'Clients cannot escalate ticket priority.');
-                return;
-            }
-
-            // Check escalation authorization
-            if (!$user->can('escalatePriority', [$this->ticket, $this->form['priority']])) {
-                session()->flash('error', 'You are not authorized to change this ticket priority.');
                 return;
             }
 
@@ -728,12 +726,6 @@ class ViewTicket extends Component
                 return;
             }
 
-            // Check escalation authorization
-            if (!$user->can('escalatePriority', [$this->ticket, $this->form['priority']])) {
-                session()->flash('error', 'You are not authorized to change this ticket priority.');
-                $this->form['priority'] = $previousPriority; // Reset to original
-                return;
-            }
 
             // Update the ticket priority
             $this->ticket->update(['priority' => $this->form['priority']]);

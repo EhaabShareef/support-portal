@@ -261,6 +261,22 @@
                                     @error('newStatusForm.color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
 
+                                <div>
+                                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Department Groups</label>
+                                    <p class="text-xs text-neutral-500 mb-2">Select which department groups can use this status (leave empty for all)</p>
+                                    <div class="space-y-1 max-h-32 overflow-y-auto">
+                                        @foreach($this->departmentGroups as $group)
+                                            <label class="flex items-center">
+                                                <input type="checkbox" 
+                                                       wire:model="newStatusForm.department_groups" 
+                                                       value="{{ $group->id }}"
+                                                       class="rounded border-neutral-300 dark:border-neutral-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0 dark:bg-neutral-900">
+                                                <span class="ml-2 text-sm text-neutral-700 dark:text-neutral-300">{{ $group->name }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
                                 <div class="flex gap-2 pt-2">
                                     <button type="submit" 
                                             class="flex-1 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-colors">
@@ -315,6 +331,22 @@
                                                    class="flex-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent font-mono">
                                         </div>
                                         @error('editStatusForm.color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Department Groups</label>
+                                        <p class="text-xs text-neutral-500 mb-2">Select which department groups can use this status (leave empty for all)</p>
+                                        <div class="space-y-1 max-h-32 overflow-y-auto">
+                                            @foreach($this->departmentGroups as $group)
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" 
+                                                           wire:model="editStatusForm.department_groups" 
+                                                           value="{{ $group->id }}"
+                                                           class="rounded border-neutral-300 dark:border-neutral-600 text-sky-600 focus:ring-sky-500 focus:ring-offset-0 dark:bg-neutral-900">
+                                                    <span class="ml-2 text-sm text-neutral-700 dark:text-neutral-300">{{ $group->name }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
                                     </div>
 
                                     <div class="flex gap-2 pt-2">
@@ -381,6 +413,30 @@
                             
                             @if($status['description'])
                                 <p class="text-xs text-neutral-600 dark:text-neutral-400">{{ $status['description'] }}</p>
+                            @endif
+                            
+                            @if(!empty($status['department_groups']))
+                                <div class="mt-2">
+                                    <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Department Groups:</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($status['department_groups'] as $groupId)
+                                            @php
+                                                $group = $this->departmentGroups->find($groupId);
+                                            @endphp
+                                            @if($group)
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
+                                                    {{ $group->name }}
+                                                </span>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @else
+                                <div class="mt-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
+                                        All Department Groups
+                                    </span>
+                                </div>
                             @endif
                             
                             <div class="flex items-center justify-between mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-600">
