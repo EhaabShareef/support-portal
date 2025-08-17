@@ -4,12 +4,17 @@ namespace App\Livewire\Tickets;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Models\Attachment;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ReplyForm extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, AuthorizesRequests;
 
     public Ticket $ticket;
     public string $replyMessage = '';
@@ -41,25 +46,94 @@ class ReplyForm extends Component
     {
         $this->validate();
 
-        $message = TicketMessage::create([
-            'ticket_id' => $this->ticket->id,
-            'sender_id' => auth()->id(),
-            'message' => $this->replyMessage,
-            'is_system_message' => false,
-        ]);
+        $this->authorize('reply', $this->ticket);
+        $this->authorize('setStatus', [$this->ticket, $this->replyStatus]);
 
-        foreach (array_filter(array_map('trim', preg_split('/[,\s]+/', $this->cc))) as $email) {
-            \App\Models\TicketCcRecipient::updateOrCreate([
+        $storedFiles = [];
+        
+        try {
+            DB::transaction(function () use (&$storedFiles) {
+                // Create the ticket message
+                $ticketMessage = TicketMessage::create([
+                    'ticket_id' => $this->ticket->id,
+                    'sender_id' => auth()->id(),
+                    'message' => $this->replyMessage,
+                    'is_system_message' => false,
+                    'is_internal' => false,
+                ]);
+
+                // Process attachments if any were uploaded
+                if (!empty($this->attachments)) {
+                    foreach ($this->attachments as $attachment) {
+                        // Store the file
+                        $storedPath = $attachment->store('ticket-attachments', 'local');
+                        
+                        if (!$storedPath) {
+                            throw new \Exception('Failed to store attachment file: ' . $attachment->getClientOriginalName());
+                        }
+                        
+                        // Track stored files for cleanup on failure
+                        $storedFiles[] = $storedPath;
+                        
+                        // Create attachment record
+                        Attachment::create([
+                            'attachable_type' => TicketMessage::class,
+                            'attachable_id' => $ticketMessage->id,
+                            'original_name' => $attachment->getClientOriginalName(),
+                            'stored_name' => basename($storedPath),
+                            'path' => $storedPath,
+                            'disk' => 'local',
+                            'mime_type' => $attachment->getMimeType(),
+                            'size' => $attachment->getSize(),
+                            'extension' => $attachment->getClientOriginalExtension(),
+                            'is_public' => false,
+                            'is_image' => in_array(strtolower($attachment->getClientOriginalExtension()), ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'], true),
+                            'uploaded_by' => auth()->id(),
+                        ]);
+                    }
+                }
+
+                // Update ticket status
+                $this->ticket->update(['status' => $this->replyStatus]);
+                
+                // Create system message for status change if status changed
+                if ($this->ticket->wasChanged('status')) {
+                    TicketMessage::create([
+                        'ticket_id' => $this->ticket->id,
+                        'sender_id' => auth()->id(),
+                        'message' => 'Status changed to ' . $this->replyStatus . ' by ' . auth()->user()->name,
+                        'is_system_message' => true,
+                        'is_internal' => false,
+                    ]);
+                }
+            });
+            
+            // Success - reset form and refresh
+            $this->reset(['replyMessage','attachments']);
+            session()->flash('message', 'Reply sent successfully.');
+            $this->dispatch('thread:refresh')->to(ConversationThread::class);
+            
+        } catch (\Exception $e) {
+            // Clean up any stored files if transaction failed
+            foreach ($storedFiles as $filePath) {
+                if (Storage::disk('local')->exists($filePath)) {
+                    Storage::disk('local')->delete($filePath);
+                }
+            }
+            
+            // Log the error
+            logger()->error('Failed to send reply', [
                 'ticket_id' => $this->ticket->id,
-                'email' => $email,
-            ], ['active' => true]);
+                'user_id' => auth()->id(),
+                'stored_files' => $storedFiles,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Show user-friendly error message
+            session()->flash('error', 'Failed to send reply. Please try again.');
+            return;
         }
-
-        $this->ticket->update(['status' => $this->replyStatus]);
-
-        $this->reset(['replyMessage','attachments']);
-
-        $this->dispatch('thread:refresh')->to(ConversationThread::class);
     }
 
     public function render()

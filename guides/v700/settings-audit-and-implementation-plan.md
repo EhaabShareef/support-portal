@@ -118,13 +118,11 @@ Suggested fix: Delete assignment block and adjust spacing.
 - Full CRUD persisting to `contract_types` and `contract_statuses` tables.
 
 **Gaps & Fixes**
-```
 File Path: app/Livewire/Admin/Settings/Tabs/SettingsContracts.php
-Line(s): 113‑129
+Line(s): 113-129
 Issue: Save operations update local array only; database not written.
-Expected: Use `ContractType`/`ContractStatus` models for create/update/delete.
-Suggested fix: Replace in‑memory mutations with model calls and refresh lists.
-```
+Expected: Use `ContractType`/`ContractStatus` models (with `key`/`slug`, unique index, optional `color`, `sort_order`) for create/update/delete inside transactions; validate uniqueness and non-empty labels; emit events and refresh lists.
+Suggested fix: Replace in-memory mutations with model calls and refresh lists.
 
 **Permissions**
 - `settings.read` and `settings.update` used for all actions.
