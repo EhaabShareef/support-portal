@@ -208,4 +208,13 @@ class TicketPolicy
         // Clients and users without department groups can use default statuses
         return in_array($status, array_keys(TicketStatus::options()));
     }
+
+    /**
+     * Determine whether the user can view ticket logs.
+     */
+    public function viewLogs(User $user, Ticket $ticket): bool
+    {
+        // Only admins can view ticket logs
+        return $user->hasRole('admin');
+    }
 }

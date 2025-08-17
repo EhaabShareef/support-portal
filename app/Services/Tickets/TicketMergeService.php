@@ -16,27 +16,54 @@ class TicketMergeService
      */
     public function merge(array $ticketIds, int $actorId): Ticket
     {
-        $tickets = Ticket::whereIn('id', $ticketIds)->get();
-        if ($tickets->isEmpty()) {
-            throw new DomainException('No tickets provided');
-        }
+        return DB::transaction(function () use ($ticketIds, $actorId) {
+            // Select and lock the target tickets with deterministic ordering to prevent deadlocks
+            // Order by ID to ensure consistent lock acquisition sequence and prevent deadlocks
+            // The lockForUpdate() prevents concurrent message/note insertion during merge
+            $tickets = Ticket::whereIn('id', $ticketIds)
+                ->lockForUpdate()
+                ->orderBy('id')
+                ->get();
+            
+            // Validate the locked ticket collection
+            if ($tickets->isEmpty()) {
+                throw new DomainException('No tickets provided');
+            }
 
-        $orgId = $tickets->first()->organization_id;
-        if ($tickets->pluck('organization_id')->unique()->count() > 1) {
-            throw new DomainException('Tickets must belong to the same organization');
-        }
+            // Check if any tickets are already merged or are merge masters (with lock held)
+            foreach ($tickets as $ticket) {
+                if ($ticket->is_merged) {
+                    throw new DomainException("Cannot merge ticket #{$ticket->id}: This ticket has already been merged into another ticket.");
+                }
+                if ($ticket->is_merged_master) {
+                    throw new DomainException("Cannot merge ticket #{$ticket->id}: This ticket is a merge master and cannot be merged into another ticket.");
+                }
+            }
 
-        return DB::transaction(function () use ($tickets, $orgId, $actorId) {
+            // Select base ticket from original input order (first provided ID) while maintaining deterministic locking
+            $baseTicketId = $ticketIds[0];
+            $baseTicket = $tickets->firstWhere('id', $baseTicketId);
+            
+            if (!$baseTicket) {
+                throw new DomainException("Base ticket #{$baseTicketId} not found in provided tickets");
+            }
+
+            // Validate organization consistency (with lock held)
+            $orgId = $baseTicket->organization_id;
+            if ($tickets->pluck('organization_id')->unique()->count() > 1) {
+                throw new DomainException('Tickets must belong to the same organization');
+            }
+            
             $actor = User::findOrFail($actorId);
-            $clientId = optional($tickets->first()->organization->users()->whereHas('roles', fn($q) => $q->where('name','client'))->first())->id ?? $actorId;
+            $clientId = optional($baseTicket->organization->users()->whereHas('roles', fn($q) => $q->where('name','client'))->first())->id ?? $actorId;
 
             $newTicket = Ticket::create([
-                'subject' => $tickets->first()->subject,
+                'subject' => $baseTicket->subject,
                 'status' => 'open',
-                'priority' => $tickets->first()->priority,
+                'priority' => $baseTicket->priority,
                 'organization_id' => $orgId,
                 'client_id' => $clientId,
-                'department_id' => $tickets->first()->department_id,
+                'department_id' => $baseTicket->department_id,
                 'is_merged_master' => true,
             ]);
 
@@ -56,6 +83,7 @@ class TicketMergeService
                     'is_merged' => true,
                     'merged_into_ticket_id' => $newTicket->id,
                     'status' => 'closed',
+                    'closed_at' => now(),
                 ]);
 
                 TicketMessage::create([

@@ -3,18 +3,22 @@
 namespace App\Livewire\Tickets;
 
 use App\Models\Ticket;
+use App\Services\PermissionService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 
 class TicketLogsTab extends Component
 {
+    use AuthorizesRequests;
+    
     public Ticket $ticket;
 
     public function mount(Ticket $ticket): void
     {
         $this->ticket = $ticket;
-        if (!auth()->user()->hasRole('admin')) {
-            abort(403);
-        }
+        
+        // Use centralized policy-based authorization
+        $this->authorize('viewLogs', $this->ticket);
     }
 
     public function render()

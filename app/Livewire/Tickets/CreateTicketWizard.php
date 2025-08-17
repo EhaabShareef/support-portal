@@ -64,8 +64,7 @@ class CreateTicketWizard extends Component
             'organization_id' => $data['form']['organization_id'],
             'client_id' => auth()->id(),
             'department_id' => $data['form']['department_id'],
-            'owner_id' => $data['form']['owner_id'],
-            'description' => $data['form']['description'],
+            'owner_id' => empty($data['form']['owner_id']) ? null : $data['form']['owner_id'],
         ]);
 
         $message = TicketMessage::create([
@@ -76,12 +75,13 @@ class CreateTicketWizard extends Component
         ]);
 
         foreach ($this->attachments as $file) {
-            $path = $file->store('ticket-attachments', 'public');
+            $path = $file->store('ticket-attachments');
             TicketMessageAttachment::create([
                 'ticket_message_id' => $message->id,
-                'disk' => 'public',
+                'disk' => 'local',
                 'path' => $path,
                 'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
                 'size' => $file->getSize(),
             ]);
         }

@@ -4,6 +4,7 @@ namespace App\Livewire\Tickets;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Models\TicketCcRecipient;
 use App\Models\Attachment;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -106,10 +107,37 @@ class ReplyForm extends Component
                         'is_internal' => false,
                     ]);
                 }
+                
+                // Process CC recipients if provided
+                if (!empty($this->cc)) {
+                    $ccEmails = array_map('trim', explode(',', $this->cc));
+                    $validCcEmails = [];
+                    
+                    foreach ($ccEmails as $email) {
+                        $email = strtolower(trim($email));
+                        if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                            $validCcEmails[] = $email;
+                        }
+                    }
+                    
+                    // Remove duplicates and process each valid email
+                    $uniqueCcEmails = array_unique($validCcEmails);
+                    foreach ($uniqueCcEmails as $email) {
+                        TicketCcRecipient::updateOrCreate(
+                            [
+                                'ticket_id' => $this->ticket->id,
+                                'email' => $email,
+                            ],
+                            [
+                                'active' => true,
+                            ]
+                        );
+                    }
+                }
             });
             
             // Success - reset form and refresh
-            $this->reset(['replyMessage','attachments']);
+            $this->reset(['replyMessage', 'attachments', 'cc']);
             session()->flash('message', 'Reply sent successfully.');
             $this->dispatch('thread:refresh')->to(ConversationThread::class);
             
