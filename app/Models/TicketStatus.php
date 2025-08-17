@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 
 class TicketStatus extends Model
 {
@@ -56,6 +57,31 @@ class TicketStatus extends Model
         return 'key';
     }
 
+    public static function options(): array
+    {
+        return Cache::remember('ticket_status_options', 3600, function () {
+            return static::active()->ordered()->pluck('name', 'key')->toArray();
+        });
+    }
+
+    public static function optionsForDepartmentGroup(int $departmentGroupId): array
+    {
+        return static::active()
+            ->forDepartmentGroupOrUngrouped($departmentGroupId)
+            ->ordered()
+            ->pluck('name', 'key')
+            ->toArray();
+    }
+
+    public function scopeForDepartmentGroupOrUngrouped(Builder $query, int $departmentGroupId): Builder
+    {
+        return $query->where(function ($builder) use ($departmentGroupId) {
+            $builder->whereHas('departmentGroups', function ($q) use ($departmentGroupId) {
+                $q->where('department_groups.id', $departmentGroupId);
+            })->orWhereDoesntHave('departmentGroups');
+        });
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -70,6 +96,15 @@ class TicketStatus extends Model
             if ($model->is_protected) {
                 throw new \Exception('Cannot delete protected ticket status.');
             }
+        });
+
+        // Clear cache on model changes
+        static::saved(function () {
+            Cache::forget('ticket_status_options');
+        });
+
+        static::deleted(function () {
+            Cache::forget('ticket_status_options');
         });
     }
 }

@@ -36,12 +36,14 @@ class SettingsTicket extends Component
         'key' => '',
         'description' => '',
         'color' => '#3b82f6',
+        'department_groups' => [],
     ];
     public array $editStatusForm = [
         'name' => '',
         'key' => '',
         'description' => '',
         'color' => '#3b82f6',
+        'department_groups' => [],
     ];
 
     public bool $hasUnsavedChanges = false;
@@ -82,6 +84,7 @@ class SettingsTicket extends Component
                     'sort_order' => $status->sort_order,
                     'is_active' => $status->is_active,
                     'is_protected' => $status->is_protected,
+                    'department_groups' => $status->departmentGroups->pluck('id')->toArray(),
                 ];
             })->toArray();
 
@@ -99,7 +102,13 @@ class SettingsTicket extends Component
     #[Computed]
     public function ticketStatuses()
     {
-        return TicketStatusModel::ordered()->get();
+        return TicketStatusModel::with('departmentGroups')->ordered()->get();
+    }
+
+    #[Computed]
+    public function departmentGroups()
+    {
+        return \App\Models\DepartmentGroup::orderBy('name')->get();
     }
 
 
