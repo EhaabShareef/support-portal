@@ -761,6 +761,24 @@ class ViewTicket extends Component
         }
     }
 
+    /**
+     * Prepare data and render the ticket view based on the current user's role.
+     *
+     * Builds collections for `departments` and `users` and a `statusOptions` array according to role:
+     * - Admin: all departments and all users with `support` or `admin` roles; full status options.
+     * - Support:
+     *   - If the support user belongs to a department group: departments and users scoped to that group, and status options for that group.
+     *   - Otherwise: departments and users limited to the user's own department; falls back to default status options.
+     * Falls back to default ticket status options when no department-group-specific options apply.
+     *
+     * The view returned is `livewire.tickets.view-ticket` with the keys:
+     * - `departments` => Collection|array of Department models
+     * - `users` => Collection|array of User models
+     * - `statusOptions` => array of status option values
+     * - `priorityOptions` => array from TicketPriority::options()
+     *
+     * @return \Illuminate\View\View
+     */
     public function render()
     {
         $user = auth()->user();
