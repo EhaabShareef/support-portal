@@ -15,12 +15,14 @@ class ReplyForm extends Component
     public string $replyMessage = '';
     public string $replyStatus = 'in_progress';
     public array $attachments = [];
+    public string $cc = '';
     public bool $show = false;
 
     protected $rules = [
         'replyMessage' => 'required|string|max:2000',
         'replyStatus' => 'required|string',
-        'attachments.*' => 'file|max:10240'
+        'attachments.*' => 'file|max:10240',
+        'cc' => 'nullable|string'
     ];
 
     protected $listeners = ['reply:toggle' => 'toggle'];
@@ -39,12 +41,19 @@ class ReplyForm extends Component
     {
         $this->validate();
 
-        TicketMessage::create([
+        $message = TicketMessage::create([
             'ticket_id' => $this->ticket->id,
             'sender_id' => auth()->id(),
             'message' => $this->replyMessage,
             'is_system_message' => false,
         ]);
+
+        foreach (array_filter(array_map('trim', preg_split('/[,\s]+/', $this->cc))) as $email) {
+            \App\Models\TicketCcRecipient::updateOrCreate([
+                'ticket_id' => $this->ticket->id,
+                'email' => $email,
+            ], ['active' => true]);
+        }
 
         $this->ticket->update(['status' => $this->replyStatus]);
 

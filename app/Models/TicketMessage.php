@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\TicketMessageAttachment;
 
 class TicketMessage extends Model
 {
@@ -17,12 +18,14 @@ class TicketMessage extends Model
         'message',
         'is_internal',
         'is_system_message',
+        'is_log',
         'metadata',
     ];
 
     protected $casts = [
         'is_internal' => 'boolean',
         'is_system_message' => 'boolean',
+        'is_log' => 'boolean',
         'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -56,8 +59,8 @@ class TicketMessage extends Model
     }
 
     // Attachments
-    public function attachments(): MorphMany
+    public function attachments(): HasMany
     {
-        return $this->morphMany(Attachment::class, 'attachable');
+        return $this->hasMany(TicketMessageAttachment::class);
     }
 }

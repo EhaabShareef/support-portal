@@ -38,6 +38,8 @@ class CloseModal extends Component
             'is_system_message' => true,
         ]);
 
+        \App\Models\TicketCcRecipient::where('ticket_id', $this->ticket->id)->update(['active' => false]);
+
         if ($this->solution) {
             TicketMessage::create([
                 'ticket_id' => $this->ticket->id,
