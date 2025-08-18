@@ -4,6 +4,7 @@ namespace App\Livewire\Tickets;
 
 use App\Models\Ticket;
 use Livewire\Component;
+use App\Livewire\Tickets\SplitTicketModal;
 
 class QuickActions extends Component
 {
@@ -32,6 +33,11 @@ class QuickActions extends Component
     public function showReopen(): void
     {
         $this->dispatch('reopen:toggle')->to(ReopenModal::class);
+    }
+
+    public function showSplit(): void
+    {
+        $this->dispatch('split:toggle')->to(SplitTicketModal::class);
     }
 
     public function render()

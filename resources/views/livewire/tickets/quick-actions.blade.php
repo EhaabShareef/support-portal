@@ -1,6 +1,9 @@
 <div class="flex gap-2">
     <button wire:click="showReply" class="inline-flex items-center px-3 py-1.5 text-xs border border-neutral-300 rounded-md">Reply</button>
     <button wire:click="showNote" class="inline-flex items-center px-3 py-1.5 text-xs border border-neutral-300 rounded-md">Note</button>
+    @can('split', $ticket)
+        <button wire:click="showSplit" class="inline-flex items-center px-3 py-1.5 text-xs border border-neutral-300 rounded-md">Split</button>
+    @endcan
     @if($ticket->status === 'closed')
         <button wire:click="showReopen" class="inline-flex items-center px-3 py-1.5 text-xs border border-neutral-300 rounded-md">Reopen</button>
     @else

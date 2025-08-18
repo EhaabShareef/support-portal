@@ -147,6 +147,14 @@ class TicketPolicy
     }
 
     /**
+     * Determine whether the user can split a ticket.
+     */
+    public function split(User $user, Ticket $ticket): bool
+    {
+        return $user->can('tickets.update');
+    }
+
+    /**
      * Determine whether the user can escalate the priority of a ticket.
      */
     public function escalatePriority(User $user, Ticket $ticket, string $newPriority): bool
