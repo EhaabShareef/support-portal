@@ -78,9 +78,14 @@
 
             {{-- Right: User Actions --}}
             <div class="flex items-center space-x-3">
-                
+
                 {{-- Theme Toggle --}}
                 <x-theme-toggle />
+
+                {{-- Report Issue Button --}}
+                <button @click="$dispatch('openReportIssue')" class="p-2 rounded-lg text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:outline-none">
+                    <x-heroicon-o-exclamation-triangle class="h-5 w-5" />
+                </button>
 
                 {{-- User Menu --}}
                 <div class="relative" x-data="{ userMenuOpen: false }">
