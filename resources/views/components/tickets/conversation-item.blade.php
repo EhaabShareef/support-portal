@@ -72,15 +72,17 @@
             @if(!$isSystemMessage && isset($item->attachments) && $item->attachments->count() > 0)
                 <div class="mt-3 space-y-2">
                     @foreach($item->attachments as $attachment)
-                        <a href="{{ route('attachments.download', $attachment->uuid) }}" class="flex items-center gap-2 p-2 bg-neutral-50 dark:bg-neutral-700 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-600 transition-colors">
+                        <a href="{{ route('attachments.download', $attachment->uuid) }}" 
+                           class="flex items-center gap-2 p-2 bg-neutral-50 dark:bg-neutral-700 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-600 transition-colors"
+                           aria-label="Download {{ $attachment->original_name }}">
                             @php
                                 $extension = strtolower(pathinfo($attachment->original_name, PATHINFO_EXTENSION));
                                 $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
                             @endphp
                             @if($isImage)
-                                <x-heroicon-o-photo class="h-4 w-4 text-neutral-500" />
+                                <x-heroicon-o-photo class="h-4 w-4 text-neutral-500" aria-hidden="true" />
                             @else
-                                <x-heroicon-o-document class="h-4 w-4 text-neutral-500" />
+                                <x-heroicon-o-document class="h-4 w-4 text-neutral-500" aria-hidden="true" />
                             @endif
                             <span class="text-xs text-neutral-600 dark:text-neutral-400">
                                 {{ $attachment->original_name }}
@@ -88,7 +90,7 @@
                                     ({{ number_format($attachment->size / 1024, 1) }} KB)
                                 </span>
                             </span>
-                            <x-heroicon-o-arrow-down-tray class="h-3 w-3 text-neutral-400 ml-auto" />
+                            <x-heroicon-o-arrow-down-tray class="h-3 w-3 text-neutral-400 ml-auto" aria-hidden="true" />
                         </a>
                     @endforeach
                 </div>

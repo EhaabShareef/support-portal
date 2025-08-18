@@ -3,35 +3,68 @@
 namespace App\Livewire\Tickets;
 
 use App\Models\Ticket;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 
 class QuickActions extends Component
 {
+    use AuthorizesRequests;
+
     public Ticket $ticket;
+
+    protected $listeners = ['ticket:refresh' => '$refresh'];
 
     public function mount(Ticket $ticket): void
     {
         $this->ticket = $ticket;
     }
 
-    public function showReply(): void
+    public function reply(): void
     {
-        $this->dispatch('reply:toggle')->to(ReplyForm::class);
+        $this->authorize('reply', $this->ticket);
+        $this->dispatch('reply:toggle');
     }
 
-    public function showNote(): void
+    public function note(): void
     {
-        $this->dispatch('note:toggle')->to(NoteForm::class);
+        $this->authorize('addNote', $this->ticket);
+        $this->dispatch('note:toggle');
     }
 
-    public function showClose(): void
+    public function edit(): void
     {
-        $this->dispatch('close:toggle')->to(CloseModal::class);
+        $this->authorize('update', $this->ticket);
+        $this->dispatch('edit:toggle');
     }
 
-    public function showReopen(): void
+    public function close(): void
     {
-        $this->dispatch('reopen:toggle')->to(ReopenModal::class);
+        $this->authorize('update', $this->ticket);
+        $this->dispatch('close:toggle');
+    }
+
+    public function reopen(): void
+    {
+        $this->authorize('update', $this->ticket);
+        $this->dispatch('reopen:toggle');
+    }
+
+    public function assignToMe(): void
+    {
+        $this->authorize('assign', $this->ticket);
+        
+        $this->ticket->update([
+            'owner_id' => auth()->id()
+        ]);
+
+        session()->flash('success', 'Ticket assigned to you successfully.');
+        $this->dispatch('ticket:refresh');
+    }
+
+    public function merge(): void
+    {
+        $this->authorize('update', $this->ticket);
+        $this->dispatch('merge:toggle');
     }
 
     public function render()

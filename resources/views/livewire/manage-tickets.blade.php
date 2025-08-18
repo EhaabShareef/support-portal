@@ -292,7 +292,7 @@
                             {{-- Actions --}}
                             <div class="col-span-1">
                                 <div class="flex items-center gap-1">
-                                    <x-tickets.quick-actions :ticket="$ticket" />
+                                    @livewire('tickets.quick-actions', ['ticket' => $ticket], key('ticket-actions-'.$ticket->id))
                                 </div>
                             </div>
                         </div>
@@ -326,7 +326,7 @@
                                     </h3>
                                 </div>
                                 <div class="flex items-center gap-1 ml-2">
-                                    <x-tickets.quick-actions :ticket="$ticket" :isMobile="true" />
+                                    @livewire('tickets.quick-actions', ['ticket' => $ticket], key('ticket-actions-mobile-'.$ticket->id))
                                 </div>
                             </div>
 

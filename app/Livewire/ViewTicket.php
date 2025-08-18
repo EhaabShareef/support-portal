@@ -65,24 +65,15 @@ class ViewTicket extends Component
 
         $this->ticket = $ticket->load([
             'organization:id,name,notes',
-            'organization.contracts' => function($query) use ($ticket) {
+            'organization.contracts' => function($query) {
                 $query->select(['id', 'organization_id', 'department_id', 'contract_number', 'type', 'status', 'start_date', 'end_date'])
-                      ->where('department_id', $ticket->department_id)
                       ->where('status', 'active')
                       ->orderBy('start_date', 'desc')
                       ->limit(1);
             },
-            'department:id,name,department_group_id',
             'department.departmentGroup:id,name',
-            'owner:id,name',
-            'client:id,name,email,organization_id',
-            'notes' => function($query) {
-                $query->select(['id', 'ticket_id', 'user_id', 'note', 'color', 'is_internal', 'created_at'])
-                      ->with('user:id,name')
-                      ->latest();
-            },
-            'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image',
-        ]);
+            'owner:id,name'
+        ])->loadCount(['notes', 'attachments']);
 
         // Load conversation for closed tickets (read-only)
         if ($ticket->status === 'closed') {

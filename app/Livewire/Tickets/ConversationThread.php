@@ -22,7 +22,7 @@ class ConversationThread extends Component
         $messages = $this->ticket->messages()
             ->where('is_log', false)
             ->select(['id','ticket_id','sender_id','message','is_system_message','created_at'])
-            ->with(['sender:id,name','attachments:id,ticket_message_id,original_name,path,disk'])
+            ->with(['sender:id,name', 'attachments:id,uuid,ticket_message_id,original_name,stored_name,mime_type,size,is_image'])
             ->selectRaw("'message' as type")
             ->get();
 
@@ -35,6 +35,7 @@ class ConversationThread extends Component
             ->selectRaw("false as is_system_message")
             ->get()
             ->map(function ($note) {
+                $note->sender = $note->user;
                 $note->attachments = collect();
                 return $note;
             });

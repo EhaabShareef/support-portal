@@ -99,28 +99,35 @@
 
                     <div class="space-y-3">
                         <div>
+                            <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Organization</label>
+                            <div class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
+                                <span class="truncate" title="{{ $ticket->organization->name ?? 'N/A' }}">{{ $ticket->organization->name ?? 'N/A' }}</span>
+                            </div>
+                        </div>
+
+                        <div>
                             <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Client</label>
                             <div class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
-                                <div>{{ $ticket->client->name ?? 'N/A' }}</div>
-                                <div class="text-neutral-600 dark:text-neutral-400">{{ $ticket->organization->name ?? 'N/A' }}</div>
+                                <span class="truncate" title="{{ $ticket->client->name ?? 'N/A' }}">{{ $ticket->client->name ?? 'N/A' }}</span>
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Owner</label>
                             <div class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
-                                {{ $ticket->owner->name ?? 'Unassigned' }}
+                                <span class="truncate" title="{{ $ticket->owner->name ?? 'Unassigned' }}">{{ $ticket->owner->name ?? 'Unassigned' }}</span>
                             </div>
                         </div>
 
                         {{-- Active Contract --}}
-                        @if($this->activeContract)
+                        @if($ticket->organization && $ticket->organization->contracts && $ticket->organization->contracts->count() > 0)
+                            @php $contract = $ticket->organization->contracts->first(); @endphp
                             <div>
-                                <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Active Contract</label>
+                                <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Contract</label>
                                 <div class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
-                                    <div>{{ $this->activeContract->contract_number }}</div>
+                                    <div><span class="truncate" title="{{ $contract->contract_number }}">{{ $contract->contract_number }}</span></div>
                                     <div class="text-neutral-600 dark:text-neutral-400">
-                                        {{ $this->activeContract->type }}
+                                        <span class="truncate" title="{{ $contract->type }}">{{ $contract->type }}</span>
                                     </div>
                                 </div>
                             </div>

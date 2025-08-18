@@ -93,8 +93,9 @@ class CloseModal extends Component
             $this->solution = '';
             $this->toggle();
             
-            // Dispatch refresh event
+            // Dispatch refresh events
             $this->dispatch('thread:refresh')->to(ConversationThread::class);
+            $this->dispatch('ticket:refresh');
             
             // Show success message
             session()->flash('message', 'Ticket closed successfully.');
