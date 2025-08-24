@@ -2,10 +2,10 @@
     <div class="px-6 py-4 border-b border-neutral-200/50 dark:border-neutral-700/50">
         <h3 class="text-lg font-semibold text-neutral-800 dark:text-neutral-200">Conversation</h3>
     </div>
-    <div class="px-6 py-4 space-y-4 max-h-[500px] overflow-y-auto">
+    <div class="px-6 py-4 space-y-1 max-h-[500px] overflow-y-auto">
         @forelse($ticket->conversation ?? [] as $item)
-            <div wire:key="thread-{{ $item->type }}-{{ $item->id }}" class="@if(!($item->is_system_message ?? false)) border-b border-neutral-200 dark:border-neutral-700 pb-4 last:border-b-0 last:pb-0 @endif">
-                <x-ticket.reply-bubble :item="$item" />
+            <div wire:key="thread-{{ $item->type }}-{{ $item->id }}">
+                <x-tickets.conversation-item :item="$item" :ticket="$ticket" />
             </div>
         @empty
             <div class="text-center py-12">

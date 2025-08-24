@@ -37,7 +37,7 @@ class ReopenModal extends Component
         }
 
         // State check - ensure ticket is actually closed
-        if ($this->ticket->status !== 'Closed') {
+        if ($this->ticket->status !== 'closed') {
             session()->flash('error', 'Only closed tickets can be reopened.');
             return;
         }
@@ -45,14 +45,14 @@ class ReopenModal extends Component
         try {
             // Update ticket status and clear closed_at timestamp
             $this->ticket->update([
-                'status' => 'Open',
+                'status' => 'open',
                 'closed_at' => null,
             ]);
 
             // Create system message for reopening
             $message = 'Reopened by ' . auth()->user()->name . ' at ' . now()->format('M d, Y \a\t H:i');
-            if ($this->reason) {
-                $message .= ' - ' . $this->reason;
+            if (!empty(trim($this->reason))) {
+                $message .= ' - Reason: ' . trim($this->reason);
             }
 
             TicketMessage::create([
@@ -70,8 +70,9 @@ class ReopenModal extends Component
             // Show success message
             session()->flash('message', 'Ticket reopened successfully.');
             
-            // Refresh the conversation thread
+            // Dispatch refresh events
             $this->dispatch('thread:refresh')->to(ConversationThread::class);
+            $this->dispatch('ticket:refresh');
             
         } catch (\Exception $e) {
             // Log error and show user-friendly message

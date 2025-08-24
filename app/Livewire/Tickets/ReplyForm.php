@@ -19,7 +19,7 @@ class ReplyForm extends Component
 
     public Ticket $ticket;
     public string $replyMessage = '';
-    public string $replyStatus = 'in_progress';
+    public string $replyStatus;
     public array $attachments = [];
     public string $cc = '';
     public bool $show = false;
@@ -36,6 +36,7 @@ class ReplyForm extends Component
     public function mount(Ticket $ticket): void
     {
         $this->ticket = $ticket;
+        $this->replyStatus = config('tickets.default_reply_status', 'in_progress');
     }
 
     public function toggle(): void
@@ -138,6 +139,7 @@ class ReplyForm extends Component
             
             // Success - reset form and refresh
             $this->reset(['replyMessage', 'attachments', 'cc']);
+            $this->show = false;
             session()->flash('message', 'Reply sent successfully.');
             $this->dispatch('thread:refresh')->to(ConversationThread::class);
             

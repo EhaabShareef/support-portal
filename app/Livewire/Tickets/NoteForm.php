@@ -53,11 +53,20 @@ class NoteForm extends Component
             return;
         }
 
-        $this->reset(['note','noteColor','noteInternal']);
+        // Check if note is public before resetting
+        $wasPublic = !$this->noteInternal;
+        
+        $this->reset(['note','noteColor']);
+        $this->noteInternal = true; // Reset to default
         $this->show = false;
         session()->flash('message', 'Note added successfully.');
 
-        $this->dispatch('thread:refresh')->to(ConversationThread::class);
+        // If public note, refresh thread; otherwise emit refresh-notes
+        if ($wasPublic) {
+            $this->dispatch('thread:refresh')->to(ConversationThread::class);
+        } else {
+            $this->dispatch('refresh-notes');
+        }
     }
 
     public function render()

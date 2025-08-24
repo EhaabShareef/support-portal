@@ -1,9 +1,37 @@
 <div class="space-y-6">
-    <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
-        <h1 class="text-2xl font-bold text-neutral-800 dark:text-neutral-100">{{ $ticket->subject }}</h1>
+    {{-- Header with subject, badges, and quick actions --}}
+    <x-tickets.header :ticket="$ticket" />
+    
+    {{-- Main body grid: conversation (left) + details/notes (right) --}}
+    <div class="grid grid-cols-12 gap-4">
+        {{-- Left column: Conversation thread --}}
+        <div class="col-span-8">
+            <livewire:tickets.conversation-thread :ticket="$ticket" />
+        </div>
+        
+        {{-- Right column: Details, organization notes, internal notes --}}
+        <div class="col-span-4 space-y-4">
+            {{-- Ticket Details --}}
+            <x-tickets.details 
+                :ticket="$ticket" 
+                :editMode="$editMode" 
+                :form="$form" 
+                :departments="$departments ?? []" 
+                :users="$users ?? []" 
+                :statusOptions="$statusOptions ?? []" 
+                :priorityOptions="$priorityOptions ?? []" 
+                :canEdit="$canEdit ?? false"
+            />
+            
+            {{-- Organization Notes --}}
+            <x-tickets.organization-note :ticket="$ticket" />
+            
+            {{-- Internal Notes --}}
+            <x-tickets.notes :ticket="$ticket" />
+        </div>
     </div>
-    <livewire:tickets.quick-actions :ticket="$ticket" />
-    <livewire:tickets.conversation-thread :ticket="$ticket" />
+    
+    {{-- Form and Modal Components (hidden by default) --}}
     <livewire:tickets.reply-form :ticket="$ticket" />
     <livewire:tickets.note-form :ticket="$ticket" />
     <livewire:tickets.close-modal :ticket="$ticket" />
