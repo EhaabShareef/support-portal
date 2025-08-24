@@ -5,6 +5,7 @@ namespace App\Livewire\Tickets;
 use App\Models\Ticket;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
+use App\Livewire\Tickets\SplitTicketModal;
 
 class QuickActions extends Component
 {
@@ -65,6 +66,11 @@ class QuickActions extends Component
     {
         $this->authorize('update', $this->ticket);
         $this->dispatch('merge:toggle');
+    }
+
+    public function showSplit(): void
+    {
+        $this->dispatch('split:toggle')->to(SplitTicketModal::class);
     }
 
     public function render()

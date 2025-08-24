@@ -68,6 +68,7 @@ class Ticket extends Model
         'is_merged',
         'merged_into_ticket_id',
         'is_merged_master',
+        'split_from_ticket_id',
     ];
 
     protected $casts = [
@@ -160,6 +161,16 @@ class Ticket extends Model
     public function mergedInto(): BelongsTo
     {
         return $this->belongsTo(Ticket::class, 'merged_into_ticket_id');
+    }
+
+    public function splitFrom(): BelongsTo
+    {
+        return $this->belongsTo(Ticket::class, 'split_from_ticket_id');
+    }
+
+    public function splits(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'split_from_ticket_id');
     }
 
     // Attachments
