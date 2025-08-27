@@ -5,7 +5,7 @@
         <button wire:click="addSerial" class="px-4 py-2 bg-sky-600 text-white rounded">Add</button>
     </div>
     <div class="text-sm text-neutral-700 dark:text-neutral-300">{{ $progress }} / {{ $targetCount }} serials captured</div>
-    <ul class="space-y-1 max-h-64 overflow-y-auto">
+    <ul class="space-y-1 max-h-64 overflow-y-auto custom-scrollbar scrollbar-on-hover">
         @foreach($serials as $s)
             <li class="flex justify-between items-center border-b border-neutral-200 dark:border-neutral-700 py-1">
                 <span>{{ $s->serial }}</span>

@@ -22,7 +22,7 @@ class ConversationThread extends Component
         $messages = $this->ticket->messages()
             ->where('is_log', false)
             ->select(['id','ticket_id','sender_id','message','is_system_message','created_at'])
-            ->with(['sender:id,name', 'attachments:id,uuid,ticket_message_id,original_name,stored_name,mime_type,size,is_image'])
+            ->with(['sender:id,name', 'attachments:id,uuid,ticket_message_id,original_name,path,mime_type,size'])
             ->selectRaw("'message' as type")
             ->get();
 
@@ -41,7 +41,53 @@ class ConversationThread extends Component
             });
 
         $conversation = $messages->concat($publicNotes)->sortByDesc('created_at')->values();
+        
+        // Filter out system messages if configured to hide them (except close/reopen)
+        if (config('app.hide_system_messages', false)) {
+            $conversation = $conversation->filter(function ($item) {
+                if (!$item->is_system_message) {
+                    return true; // Keep non-system messages
+                }
+                
+                // Keep close and reopen messages
+                $message = strtolower($item->message);
+                if (str_contains($message, 'closed') || str_contains($message, 'reopened')) {
+                    return true;
+                }
+                
+                // Hide other system messages
+                return false;
+            })->values();
+        }
+        
         $this->ticket->setRelation('conversation', $conversation);
+    }
+
+    public function openAttachmentPreview($attachmentId): void
+    {
+        logger()->info('=== ConversationThread::openAttachmentPreview called ===', [
+            'attachmentId' => $attachmentId,
+            'attachmentId_type' => gettype($attachmentId)
+        ]);
+        $this->dispatch('open-attachment-preview', ['id' => $attachmentId]);
+    }
+
+    public function openPreviewById($attachmentId): void
+    {
+        logger()->info('=== ConversationThread::openPreviewById called ===', [
+            'attachmentId' => $attachmentId,
+            'attachmentId_type' => gettype($attachmentId)
+        ]);
+        $this->dispatch('open-attachment-preview', ['id' => $attachmentId]);
+    }
+
+    public function openAttachmentPreviewById($attachmentId): void
+    {
+        logger()->info('=== ConversationThread::openAttachmentPreviewById called ===', [
+            'attachmentId' => $attachmentId,
+            'attachmentId_type' => gettype($attachmentId)
+        ]);
+        $this->dispatch('open-attachment-preview', ['id' => $attachmentId]);
     }
 
     public function render()

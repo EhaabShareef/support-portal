@@ -418,7 +418,7 @@
                                 </div>
                             </div>
                             
-                            <div class="space-y-2 max-h-48 overflow-y-auto border border-neutral-200 dark:border-neutral-600 rounded-lg p-3">
+                            <div class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar scrollbar-on-hover border border-neutral-200 dark:border-neutral-600 rounded-lg p-3">
                                 @foreach($unassignedHardware as $hardware)
                                     <label class="flex items-center p-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded cursor-pointer">
                                         <input type="checkbox"

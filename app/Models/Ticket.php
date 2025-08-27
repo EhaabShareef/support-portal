@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\TicketPriority;
-use App\Enums\TicketStatus;
 use App\Models\TicketStatus as TicketStatusModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -180,10 +179,10 @@ class Ticket extends Model
         return TicketPriority::tryFrom($this->priority);
     }
 
-    // Status enum
-    public function getStatusEnum(): ?TicketStatus
+    // Status model
+    public function getStatusModel(): ?TicketStatusModel
     {
-        return TicketStatus::tryFrom($this->status);
+        return TicketStatusModel::where('key', $this->status)->first();
     }
 
     // Get priority metadata for display
@@ -209,11 +208,14 @@ class Ticket extends Model
     // Get status CSS class
     public function getStatusCssClass(): string
     {
-        $status = $this->getStatusEnum();
+        $statusModel = $this->getStatusModel();
+        
+        if ($statusModel) {
+            $colorService = app(\App\Services\TicketColorService::class);
+            return $colorService->getStatusClasses($statusModel->key);
+        }
 
-        return $status
-            ? $status->cssClass()
-            : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300';
+        return 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300';
     }
 
     // Generate unique ticket number
@@ -310,7 +312,8 @@ class Ticket extends Model
 
     public function getStatusLabelAttribute(): string
     {
-        return TicketStatus::getNameForKey($this->status);
+        $statusModel = $this->getStatusModel();
+        return $statusModel ? $statusModel->name : ucfirst(str_replace('_', ' ', $this->status));
     }
 
     public function getPriorityLabelAttribute(): string

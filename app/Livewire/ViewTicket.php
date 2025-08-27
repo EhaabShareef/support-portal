@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Enums\TicketPriority;
-use App\Enums\TicketStatus;
 use App\Models\ActivityLog;
 use App\Models\Department;
 use App\Contracts\SettingsRepositoryInterface;
@@ -18,7 +17,8 @@ use Livewire\Component;
 
 class ViewTicket extends Component
 {
-    protected $listeners = ['refresh-notes' => 'refreshNotes'];
+    protected $listeners = ['refresh-notes' => 'refreshNotes', 'edit:toggle' => 'enableEdit'];
+    private $lastDispatchTime = 0;
     
     public Ticket $ticket;
     public bool $editMode = false;
@@ -97,7 +97,7 @@ class ViewTicket extends Component
             ->select(['id', 'ticket_id', 'sender_id', 'message', 'is_system_message', 'created_at'])
             ->with([
                 'sender:id,name',
-                'attachments:id,uuid,attachable_id,attachable_type,original_name,stored_name,mime_type,size,is_image'
+                'attachments:id,uuid,ticket_message_id,original_name,path,mime_type,size'
             ])
             ->selectRaw("'message' as type")
             ->get();
@@ -147,6 +147,11 @@ class ViewTicket extends Component
     #[Computed]
     public function canEdit()
     {
+        // Cannot edit closed tickets
+        if ($this->ticket->status === 'closed') {
+            return false;
+        }
+        
         $user = auth()->user();
         return $user->hasRole('admin') || $user->can('tickets.update');
     }
@@ -154,12 +159,22 @@ class ViewTicket extends Component
     #[Computed]
     public function canAddNotes()
     {
+        // Cannot add notes to closed tickets
+        if ($this->ticket->status === 'closed') {
+            return false;
+        }
+        
         return auth()->user()->hasRole('admin') || auth()->user()->hasRole('support');
     }
 
     #[Computed]
     public function canReply()
     {
+        // Cannot reply to closed tickets
+        if ($this->ticket->status === 'closed') {
+            return false;
+        }
+        
         $user = auth()->user();
 
         // Clients can only reply to their own organization's tickets
@@ -239,6 +254,22 @@ class ViewTicket extends Component
         $this->editMode = true;
     }
 
+
+
+    public function openAttachmentPreview($attachmentId): void
+    {
+        $currentTime = microtime(true);
+        
+        // Prevent rapid successive dispatches (within 100ms)
+        if ($currentTime - $this->lastDispatchTime < 0.1) {
+            return;
+        }
+        
+        $this->lastDispatchTime = $currentTime;
+
+        $this->dispatch('open-attachment-preview', $attachmentId);
+    }
+
     public function cancelEdit()
     {
         $this->editMode = false;
@@ -254,14 +285,22 @@ class ViewTicket extends Component
 
     public function updateTicket()
     {
+        logger()->info('updateTicket method called', [
+            'user_id' => auth()->id(),
+            'ticket_id' => $this->ticket->id,
+            'form_data' => $this->form
+        ]);
+        
         try {
             if (! $this->canEdit) {
                 session()->flash('error', 'You do not have permission to edit this ticket.');
                 return;
             }
 
+            $user = auth()->user();
+
             $this->validate([
-                'form.status' => TicketStatus::validationRule(),
+                'form.status' => TicketStatusModel::validationRule(),
                 'form.priority' => TicketPriority::validationRule(),
                 'form.owner_id' => 'nullable|exists:users,id',
                 'form.department_id' => 'required|exists:departments,id',
@@ -277,13 +316,11 @@ class ViewTicket extends Component
             }
 
             // Check priority escalation for clients
-            $user = auth()->user();
             $previousPriority = $this->ticket->priority;
             if ($user->hasRole('client') && TicketPriority::compare($this->form['priority'], $previousPriority) > 0) {
                 session()->flash('error', 'Clients cannot escalate ticket priority.');
                 return;
             }
-
 
             // Check if this is a ticket reopening (from closed to any other status)
             $wasTicketClosed = $this->ticket->status === 'closed';
@@ -316,7 +353,6 @@ class ViewTicket extends Component
             
             // Create system message for status changes
             if ($previousStatus !== $this->form['status']) {
-                $user = auth()->user();
                 $status = $this->form['status'];
                 
                 $statusMessage = match($status) {
@@ -349,7 +385,7 @@ class ViewTicket extends Component
                 'error' => $e->getMessage()
             ]);
             
-            session()->flash('error', 'Failed to update ticket. Please try again or contact support if the problem persists.');
+            session()->flash('error', 'Failed to update ticket. Please try again.');
         }
     }
 
@@ -365,6 +401,12 @@ class ViewTicket extends Component
 
             if (!$this->canAccessTicket($user, $this->ticket)) {
                 session()->flash('error', 'You cannot assign this ticket.');
+                return;
+            }
+
+            // Cannot assign closed tickets
+            if ($this->ticket->status === 'closed') {
+                session()->flash('error', 'Cannot assign a closed ticket.');
                 return;
             }
 
@@ -744,6 +786,8 @@ class ViewTicket extends Component
         }
     }
 
+
+
     public function render()
     {
         $user = auth()->user();
@@ -780,11 +824,11 @@ class ViewTicket extends Component
         // Get status options based on user's department group
         $statusOptions = [];
         if ($user->hasRole('admin')) {
-            $statusOptions = TicketStatus::options();
+            $statusOptions = TicketStatusModel::options();
         } elseif ($user->hasRole('support') && $user->department?->department_group_id) {
-            $statusOptions = TicketStatus::optionsForDepartmentGroup($user->department->department_group_id);
+            $statusOptions = TicketStatusModel::optionsForDepartmentGroup($user->department->department_group_id);
         } else {
-            $statusOptions = TicketStatus::options(); // Fallback to default options
+            $statusOptions = TicketStatusModel::options(); // Fallback to default options
         }
 
         return view('livewire.tickets.view-ticket', [

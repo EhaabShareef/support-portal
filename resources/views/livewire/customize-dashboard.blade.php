@@ -31,7 +31,7 @@
                 </div>
 
                 {{-- Modal Body --}}
-                <div class="bg-white dark:bg-neutral-800 px-6 py-4 max-h-96 overflow-y-auto">
+                <div class="bg-white dark:bg-neutral-800 px-6 py-4 max-h-96 overflow-y-auto custom-scrollbar scrollbar-on-hover">
                     @if(empty($widgets))
                         <div class="text-center py-8">
                             <x-heroicon-o-squares-plus class="mx-auto h-12 w-12 text-neutral-400" />

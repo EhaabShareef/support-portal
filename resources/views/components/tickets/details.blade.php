@@ -8,7 +8,7 @@
     <div class="px-6 py-4">
         @if($editMode)
             {{-- Edit Form --}}
-            <form wire:submit="updateTicket" class="space-y-4" onsubmit="return confirmTicketUpdate(event, '{{ $ticket->priority }}')">
+            <form class="space-y-4" onsubmit="return confirmTicketUpdate(event, '{{ $ticket->priority }}')">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Priority</label>
@@ -59,7 +59,7 @@
                             class="inline-flex items-center px-4 py-2 bg-neutral-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-neutral-700">
                         Cancel
                     </button>
-                    <button type="submit"
+                    <button type="button" wire:click="updateTicket" onclick="return handleSaveClick('{{ $ticket->priority }}')"
                             class="inline-flex items-center px-4 py-2 bg-sky-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-sky-700">
                         Save Changes
                     </button>
@@ -82,8 +82,8 @@
                         <div>
                             <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Status</label>
                             <div class="mt-1">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketStatus::from($ticket->status)->cssClass() }}">
-                                    {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $ticket->getStatusCssClass() }}">
+                                    {{ $ticket->status_label }}
                                 </span>
                             </div>
                         </div>

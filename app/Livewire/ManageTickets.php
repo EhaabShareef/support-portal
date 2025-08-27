@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Enums\TicketPriority;
-use App\Enums\TicketStatus;
 use App\Models\ActivityLog;
 use App\Models\Department;
 use App\Models\Organization;
@@ -641,11 +640,11 @@ class ManageTickets extends Component
         // Get status options based on user's department group
         $statusOptions = [];
         if ($user->hasRole('admin')) {
-            $statusOptions = TicketStatus::options();
+            $statusOptions = TicketStatusModel::options();
         } elseif ($user->hasRole('support') && $user->department?->department_group_id) {
-            $statusOptions = TicketStatus::optionsForDepartmentGroup($user->department->department_group_id);
+            $statusOptions = TicketStatusModel::optionsForDepartmentGroup($user->department->department_group_id);
         } else {
-            $statusOptions = TicketStatus::options(); // Fallback to default options
+            $statusOptions = TicketStatusModel::options(); // Fallback to default options
         }
 
         return view('livewire.manage-tickets', [
@@ -769,4 +768,5 @@ class ManageTickets extends Component
             session()->flash('error', 'Failed to reopen ticket.');
         }
     }
+
 }

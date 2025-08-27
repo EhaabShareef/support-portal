@@ -2,11 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Ticket;
-use App\Contracts\SettingsRepositoryInterface;
-use App\Enums\TicketPriority;
-use App\Enums\TicketStatus;
+use App\Models\User;
+use App\Models\TicketStatus as TicketStatusModel;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TicketPolicy
@@ -201,12 +199,12 @@ class TicketPolicy
 
         // Support staff can only set statuses allowed for their department group
         if ($user->hasRole('support') && $user->department?->department_group_id) {
-            $allowedStatuses = array_keys(TicketStatus::optionsForDepartmentGroup($user->department->department_group_id));
+            $allowedStatuses = array_keys(TicketStatusModel::optionsForDepartmentGroup($user->department->department_group_id));
             return in_array($status, $allowedStatuses);
         }
 
         // Clients and users without department groups can use default statuses
-        return in_array($status, array_keys(TicketStatus::options()));
+        return in_array($status, array_keys(TicketStatusModel::options()));
     }
 
     /**
@@ -216,5 +214,73 @@ class TicketPolicy
     {
         // Only admins can view ticket logs
         return $user->hasRole('admin');
+    }
+
+    /**
+     * Determine whether the user can reply to the ticket.
+     */
+    public function reply(User $user, Ticket $ticket): bool
+    {
+        // Cannot reply to closed tickets
+        if ($ticket->status === 'closed') {
+            return false;
+        }
+
+        // Admin can reply to any ticket
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // Support can reply to tickets in their department or department group
+        if ($user->hasRole('support')) {
+            // Check if same department
+            if ($user->department_id === $ticket->department_id) {
+                return true;
+            }
+            // Check if same department group
+            if ($user->department?->department_group_id && 
+                $user->department->department_group_id === $ticket->department?->department_group_id) {
+                return true;
+            }
+        }
+
+        // Client can reply to tickets from their organization
+        if ($user->hasRole('client') && $user->organization_id === $ticket->organization_id) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can add notes to the ticket.
+     */
+    public function addNote(User $user, Ticket $ticket): bool
+    {
+        // Cannot add notes to closed tickets
+        if ($ticket->status === 'closed') {
+            return false;
+        }
+
+        // Only admin and support can add notes
+        if ($user->hasRole(['admin', 'support'])) {
+            // Support can add notes to tickets in their department or department group
+            if ($user->hasRole('support')) {
+                // Check if same department
+                if ($user->department_id === $ticket->department_id) {
+                    return true;
+                }
+                // Check if same department group
+                if ($user->department?->department_group_id && 
+                    $user->department->department_group_id === $ticket->department?->department_group_id) {
+                    return true;
+                }
+                return false;
+            }
+            // Admin can add notes to any ticket
+            return true;
+        }
+
+        return false;
     }
 }

@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Admin\Settings\Tabs;
 
-use App\Enums\TicketStatus;
 use App\Enums\TicketPriority;
 use App\Services\TicketColorService;
+use App\Models\TicketStatus as TicketStatusModel;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -33,10 +33,10 @@ class TicketColors extends Component
     #[Computed]
     public function ticketStatuses()
     {
-        return collect(TicketStatus::cases())->map(function ($status) {
+        return TicketStatusModel::active()->ordered()->get()->map(function ($status) {
             return [
-                'value' => $status->value,
-                'label' => $status->label(),
+                'value' => $status->key,
+                'label' => $status->name,
             ];
         });
     }
@@ -59,8 +59,8 @@ class TicketColors extends Component
         $colorService = app(TicketColorService::class);
         
         // Validate that all statuses and priorities have colors assigned
-        foreach (TicketStatus::cases() as $status) {
-            if (!isset($this->statusColors[$status->value]) || empty($this->statusColors[$status->value])) {
+        foreach (TicketStatusModel::active()->get() as $status) {
+            if (!isset($this->statusColors[$status->key]) || empty($this->statusColors[$status->key])) {
                 $this->dispatch('flash', 'All ticket statuses must have colors assigned.', 'error');
                 return;
             }

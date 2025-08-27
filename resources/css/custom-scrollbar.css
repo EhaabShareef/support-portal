@@ -1,0 +1,107 @@
+/* Custom Sleek Scrollbar Styles */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.3);
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.5);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(156, 163, 175, 0.7);
+}
+
+/* Dark mode scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.4);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 85, 99, 0.6);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(75, 85, 99, 0.8);
+}
+
+/* Firefox */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+.dark .custom-scrollbar {
+    scrollbar-color: rgba(75, 85, 99, 0.4) transparent;
+}
+
+/* Smooth scrolling */
+.custom-scrollbar {
+    scroll-behavior: smooth;
+}
+
+/* Hide scrollbar when not needed */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+/* Optional: Hide scrollbar completely when not scrolling */
+.custom-scrollbar.scrollbar-hidden::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+.custom-scrollbar.scrollbar-hidden {
+    scrollbar-width: none;
+}
+
+/* Hover to show scrollbar */
+.custom-scrollbar.scrollbar-on-hover::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+.custom-scrollbar.scrollbar-on-hover:hover::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar.scrollbar-on-hover {
+    scrollbar-width: none;
+}
+
+.custom-scrollbar.scrollbar-on-hover:hover {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+.dark .custom-scrollbar.scrollbar-on-hover:hover {
+    scrollbar-color: rgba(75, 85, 99, 0.4) transparent;
+}
+
+/* Utility classes for easy application */
+.scrollbar-sleek {
+    @apply custom-scrollbar scrollbar-on-hover;
+}
+
+.scrollbar-minimal {
+    @apply custom-scrollbar scrollbar-hidden;
+}
+
+.scrollbar-visible {
+    @apply custom-scrollbar;
+}

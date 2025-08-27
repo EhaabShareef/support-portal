@@ -4,8 +4,8 @@ namespace App\Livewire\Tickets;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Models\TicketMessageAttachment;
 use App\Models\TicketCcRecipient;
-use App\Models\Attachment;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -21,15 +21,28 @@ class ReplyForm extends Component
     public string $replyMessage = '';
     public string $replyStatus;
     public array $attachments = [];
+    
+    // Reference to attachment upload component
+    public $attachmentUploadComponent;
     public string $cc = '';
     public bool $show = false;
 
-    protected $rules = [
-        'replyMessage' => 'required|string|max:2000',
-        'replyStatus' => 'required|string',
-        'attachments.*' => 'file|max:10240',
-        'cc' => 'nullable|string'
-    ];
+    protected function rules()
+    {
+        $rules = [
+            'replyMessage' => 'required|string|max:2000',
+            'replyStatus' => 'required|string',
+            'cc' => 'nullable|string'
+        ];
+        
+        // Only add attachment validation if there are attachments
+        if (!empty($this->attachments)) {
+            $maxSizeKB = config('app.max_file_size', 10240); // 10MB in KB
+            $rules['attachments.*'] = 'file|max:' . $maxSizeKB;
+        }
+        
+        return $rules;
+    }
 
     protected $listeners = ['reply:toggle' => 'toggle'];
 
@@ -46,15 +59,46 @@ class ReplyForm extends Component
 
     public function sendMessage(): void
     {
-        $this->validate();
+        // Debug logging
+        logger()->info('ReplyForm sendMessage called', [
+            'ticket_id' => $this->ticket->id,
+            'user_id' => auth()->id(),
+            'attachments_count' => count($this->attachments),
+            'reply_message_length' => strlen($this->replyMessage),
+            'reply_status' => $this->replyStatus,
+            'max_file_size_kb' => config('app.max_file_size', 10240),
+            'attachment_sizes' => collect($this->attachments)->map(function($att) {
+                return [
+                    'name' => $att->getClientOriginalName(),
+                    'size_kb' => round($att->getSize() / 1024, 2)
+                ];
+            })->toArray()
+        ]);
 
-        $this->authorize('reply', $this->ticket);
-        $this->authorize('setStatus', [$this->ticket, $this->replyStatus]);
+        try {
+            $this->validate($this->rules());
+            logger()->info('Validation passed');
+        } catch (\Exception $e) {
+            logger()->error('Validation failed', ['error' => $e->getMessage()]);
+            throw $e;
+        }
+
+        try {
+            $this->authorize('reply', $this->ticket);
+            $this->authorize('setStatus', [$this->ticket, $this->replyStatus]);
+            logger()->info('Authorization passed');
+        } catch (\Exception $e) {
+            logger()->error('Authorization failed', ['error' => $e->getMessage()]);
+            throw $e;
+        }
 
         $storedFiles = [];
         
+        logger()->info('Starting database transaction');
+        
         try {
             DB::transaction(function () use (&$storedFiles) {
+                logger()->info('Inside transaction - creating ticket message');
                 // Create the ticket message
                 $ticketMessage = TicketMessage::create([
                     'ticket_id' => $this->ticket->id,
@@ -63,12 +107,27 @@ class ReplyForm extends Component
                     'is_system_message' => false,
                     'is_internal' => false,
                 ]);
+                
+                logger()->info('Ticket message created', ['message_id' => $ticketMessage->id]);
 
                 // Process attachments if any were uploaded
                 if (!empty($this->attachments)) {
+                    logger()->info('Processing attachments', [
+                        'attachment_count' => count($this->attachments),
+                        'attachments' => collect($this->attachments)->map(function($att) {
+                            return [
+                                'name' => $att->getClientOriginalName(),
+                                'size' => $att->getSize(),
+                                'mime' => $att->getMimeType()
+                            ];
+                        })->toArray()
+                    ]);
+                    
                     foreach ($this->attachments as $attachment) {
-                        // Store the file
-                        $storedPath = $attachment->store('ticket-attachments', 'local');
+                        // Create organized storage path
+                        $year = date('Y');
+                        $month = date('m');
+                        $storedPath = $attachment->store("tickets/{$this->ticket->id}/attachments/{$year}/{$month}", 'local');
                         
                         if (!$storedPath) {
                             throw new \Exception('Failed to store attachment file: ' . $attachment->getClientOriginalName());
@@ -78,19 +137,13 @@ class ReplyForm extends Component
                         $storedFiles[] = $storedPath;
                         
                         // Create attachment record
-                        Attachment::create([
-                            'attachable_type' => TicketMessage::class,
-                            'attachable_id' => $ticketMessage->id,
+                        TicketMessageAttachment::create([
+                            'ticket_message_id' => $ticketMessage->id,
                             'original_name' => $attachment->getClientOriginalName(),
-                            'stored_name' => basename($storedPath),
                             'path' => $storedPath,
                             'disk' => 'local',
                             'mime_type' => $attachment->getMimeType(),
                             'size' => $attachment->getSize(),
-                            'extension' => $attachment->getClientOriginalExtension(),
-                            'is_public' => false,
-                            'is_image' => in_array(strtolower($attachment->getClientOriginalExtension()), ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'], true),
-                            'uploaded_by' => auth()->id(),
                         ]);
                     }
                 }
@@ -135,7 +188,11 @@ class ReplyForm extends Component
                         );
                     }
                 }
+                
+                logger()->info('Transaction completed successfully');
             });
+            
+            logger()->info('Outside transaction - resetting form');
             
             // Success - reset form and refresh
             $this->reset(['replyMessage', 'attachments', 'cc']);
@@ -165,6 +222,16 @@ class ReplyForm extends Component
             return;
         }
     }
+
+    public function removeAttachment($index): void
+    {
+        if (isset($this->attachments[$index])) {
+            unset($this->attachments[$index]);
+            $this->attachments = array_values($this->attachments); // Re-index array
+        }
+    }
+
+
 
     public function render()
     {

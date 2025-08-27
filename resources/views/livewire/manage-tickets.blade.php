@@ -250,8 +250,8 @@
 
                             {{-- Status --}}
                             <div class="col-span-1">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketStatus::from($ticket->status)->cssClass() }}">
-                                    {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $ticket->getStatusCssClass() }}">
+                                    {{ $ticket->status_label }}
                                 </span>
                             </div>
 
@@ -291,9 +291,7 @@
 
                             {{-- Actions --}}
                             <div class="col-span-1">
-                                <div class="flex items-center gap-1">
-                                    @livewire('tickets.quick-actions', ['ticket' => $ticket], key('ticket-actions-'.$ticket->id))
-                                </div>
+                                <x-tickets.table-actions :ticket="$ticket" />
                             </div>
                         </div>
                     </div>
@@ -326,7 +324,7 @@
                                     </h3>
                                 </div>
                                 <div class="flex items-center gap-1 ml-2">
-                                    @livewire('tickets.quick-actions', ['ticket' => $ticket], key('ticket-actions-mobile-'.$ticket->id))
+                                    <x-tickets.table-actions :ticket="$ticket" />
                                 </div>
                             </div>
 
@@ -346,8 +344,8 @@
 
                             {{-- Status and Priority Badges --}}
                             <div class="flex items-center gap-2 flex-wrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketStatus::from($ticket->status)->cssClass() }}">
-                                    {{ \App\Enums\TicketStatus::from($ticket->status)->label() }}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $ticket->getStatusCssClass() }}">
+                                    {{ $ticket->status_label }}
                                 </span>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketPriority::from($ticket->priority)->cssClass() }}">
                                     <x-dynamic-component :component="\App\Enums\TicketPriority::from($ticket->priority)->icon()" class="h-3 w-3 mr-1" />
@@ -734,6 +732,10 @@
         </div>
     </div>
     @endif
+
+    {{-- Merge Tickets Modal --}}
+    {{-- Temporarily disabled to debug 404 issue --}}
+    {{-- @livewire('tickets.merge-tickets-modal', ['ticket' => null], key('merge-modal')) --}}
 
     {{-- Action Confirmation Scripts --}}
     <script>

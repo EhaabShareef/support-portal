@@ -99,6 +99,25 @@ return [
 
     'key' => env('APP_KEY'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | File Upload Settings
+    |--------------------------------------------------------------------------
+    |
+    | Maximum file size for uploads in kilobytes (KB)
+    | Default: 10MB = 10240 KB
+    |
+    */
+
+    'max_file_size' => env('MAX_FILE_SIZE', 10240), // 10MB in KB
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Conversation Thread Settings
+    |--------------------------------------------------------------------------
+    */
+    'hide_system_messages' => env('HIDE_SYSTEM_MESSAGES', false), // Hide system messages except close/reopen
+
     'previous_keys' => [
         ...array_filter(
             explode(',', (string) env('APP_PREVIOUS_KEYS', ''))
