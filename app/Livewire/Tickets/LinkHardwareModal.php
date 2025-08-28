@@ -18,10 +18,17 @@ class LinkHardwareModal extends Component
     public function mount(Ticket $ticket): void
     {
         $this->ticket = $ticket;
+        $this->authorize('view', $this->ticket);
     }
 
     public function toggle(): void
     {
+        $this->authorize('update', $this->ticket);
+
+        if ($this->ticket->isClosed()) {
+            return;
+        }
+
         $this->show = ! $this->show;
     }
 
