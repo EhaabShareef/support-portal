@@ -1,5 +1,6 @@
-@if($show)
-<div class="fixed inset-0 z-50 overflow-y-auto" x-data="{ show: @entangle('show') }" x-show="show" x-cloak>
+<div>
+    @if($show)
+    <div class="fixed inset-0 z-50 overflow-y-auto" x-data="{ show: @entangle('show') }" x-show="show" x-cloak>
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         {{-- Backdrop --}}
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" x-show="show" 
@@ -201,3 +202,4 @@
     </div>
 </div>
 @endif
+</div>
