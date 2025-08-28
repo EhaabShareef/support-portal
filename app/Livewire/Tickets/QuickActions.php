@@ -6,6 +6,7 @@ use App\Models\Ticket;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 use App\Livewire\Tickets\SplitTicketModal;
+use App\Livewire\Tickets\LinkHardwareModal;
 
 class QuickActions extends Component
 {
@@ -114,6 +115,12 @@ class QuickActions extends Component
     public function showSplit(): void
     {
         $this->dispatch('split:toggle')->to(SplitTicketModal::class);
+    }
+
+    public function linkHardware(): void
+    {
+        $this->authorize('update', $this->ticket);
+        $this->dispatch('link-hardware:toggle')->to(LinkHardwareModal::class);
     }
 
     public function render()

@@ -7,11 +7,14 @@ use App\Models\TicketStatus as TicketStatusModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use App\Models\User;
+use App\Models\OrganizationHardware;
+use App\Models\HardwareSerial;
 
 /**
  * App\Models\Ticket
@@ -176,6 +179,21 @@ class Ticket extends Model
     public function attachments(): HasManyThrough
     {
         return $this->hasManyThrough(TicketMessageAttachment::class, TicketMessage::class);
+    }
+
+    // Linked hardware at hardware level
+    public function hardware(): BelongsToMany
+    {
+        return $this->belongsToMany(OrganizationHardware::class, 'ticket_organization_hardware')
+            ->withPivot('maintenance_note')
+            ->withTimestamps();
+    }
+
+    // Linked hardware serials
+    public function serials(): BelongsToMany
+    {
+        return $this->belongsToMany(HardwareSerial::class, 'ticket_hardware_serial')
+            ->withTimestamps();
     }
 
     // Department Group (via Department) - using accessor for simplicity

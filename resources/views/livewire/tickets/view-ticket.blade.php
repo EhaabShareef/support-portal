@@ -39,6 +39,7 @@
     <livewire:tickets.split-ticket-modal :ticket="$ticket" />
     <livewire:tickets.merge-tickets-modal :ticket="$ticket" />
     <livewire:tickets.attachment-preview-modal wire:ref="attachmentModal" />
+    <livewire:tickets.link-hardware-modal :ticket="$ticket" />
 </div>
 
 <script>
