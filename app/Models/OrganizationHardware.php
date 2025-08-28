@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+use App\Models\Ticket;
 
 class OrganizationHardware extends Model
 {
@@ -58,6 +61,13 @@ class OrganizationHardware extends Model
     public function serials()
     {
         return $this->hasMany(HardwareSerial::class, 'organization_hardware_id');
+    }
+
+    public function tickets(): BelongsToMany
+    {
+        return $this->belongsToMany(Ticket::class, 'ticket_organization_hardware')
+            ->withPivot('maintenance_note')
+            ->withTimestamps();
     }
 
     protected static function boot()
