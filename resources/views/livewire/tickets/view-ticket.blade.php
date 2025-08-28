@@ -39,7 +39,9 @@
     <livewire:tickets.split-ticket-modal :ticket="$ticket" />
     <livewire:tickets.merge-tickets-modal :ticket="$ticket" />
     <livewire:tickets.attachment-preview-modal wire:ref="attachmentModal" />
-    <livewire:tickets.link-hardware-modal :ticket="$ticket" />
+    @can('update', $ticket)
+        <livewire:tickets.link-hardware-modal :ticket="$ticket" />
+    @endcan
 </div>
 
 <script>
