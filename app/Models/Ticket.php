@@ -221,12 +221,23 @@ class Ticket extends Model
     {
         $statusModel = $this->getStatusModel();
         
-        if ($statusModel) {
-            $colorService = app(\App\Services\TicketColorService::class);
-            return $colorService->getStatusClasses($statusModel->key);
+        if ($statusModel && $statusModel->color) {
+            $hexColor = $statusModel->color;
+            
+            // Convert hex to RGB for contrast calculation
+            $hex = ltrim($hexColor, '#');
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+            
+            // Calculate luminance to determine text color
+            $luminance = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+            $textColor = $luminance > 0.5 ? '#000000' : '#ffffff';
+            
+            return "background-color: {$hexColor}; color: {$textColor};";
         }
 
-        return 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300';
+        return 'background-color: #6b7280; color: #ffffff;';
     }
 
     // Generate unique ticket number

@@ -250,7 +250,7 @@
 
                             {{-- Status --}}
                             <div class="col-span-1">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $ticket->getStatusCssClass() }}">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="{{ $ticket->getStatusCssClass() }}">
                                     {{ $ticket->status_label }}
                                 </span>
                             </div>
@@ -344,7 +344,7 @@
 
                             {{-- Status and Priority Badges --}}
                             <div class="flex items-center gap-2 flex-wrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $ticket->getStatusCssClass() }}">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="{{ $ticket->getStatusCssClass() }}">
                                     {{ $ticket->status_label }}
                                 </span>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketPriority::from($ticket->priority)->cssClass() }}">

@@ -27,7 +27,7 @@
                                     <h4 class="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
                                         {{ $ticket->subject }}
                                     </h4>
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 {{ $ticket->getStatusCssClass() }}">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0" style="{{ $ticket->getStatusCssClass() }}">
                                         {{ $ticket->status_label }}
                                     </span>
                                 </div>

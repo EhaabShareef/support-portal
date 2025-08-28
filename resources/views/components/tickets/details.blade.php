@@ -82,9 +82,9 @@
                         <div>
                             <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Status</label>
                             <div class="mt-1">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $ticket->getStatusCssClass() }}">
-                                    {{ $ticket->status_label }}
-                                </span>
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style="{{ $ticket->getStatusCssClass() }}">
+                                {{ $ticket->status_label }}
+                            </span>
                             </div>
                         </div>
                     </div>
