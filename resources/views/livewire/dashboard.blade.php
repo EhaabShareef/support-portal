@@ -41,7 +41,7 @@
                             🎉 New Features Available!
                         </h3>
                         <p class="text-sm text-blue-800 dark:text-blue-200 mt-1">
-                            <strong>Enhanced Action Buttons:</strong> Smart hover expansion effects and context-aware actions • <strong>Table Management:</strong> Compact icon-only actions for data tables with tooltips • <strong>Smart Visibility:</strong> Actions automatically hide when not applicable (e.g., "Assign to Me" when already assigned) • <strong>Improved UX:</strong> Professional animations and responsive design across all devices
+                            <strong>🎯 Ticket Splitting:</strong> Split tickets from any conversation message with beautiful modal interface • <strong>Enhanced Action Buttons:</strong> Smart hover expansion effects and context-aware actions • <strong>Table Management:</strong> Compact icon-only actions for data tables with tooltips • <strong>Smart Visibility:</strong> Actions automatically hide when not applicable • <strong>Improved UX:</strong> Professional animations and responsive design across all devices
                         </p>
                     </div>
                 </div>
