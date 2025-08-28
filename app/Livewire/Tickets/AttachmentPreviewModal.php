@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Tickets;
 
 use App\Models\TicketMessageAttachment;
 use Livewire\Component;
@@ -114,6 +114,6 @@ class AttachmentPreviewModal extends Component
 
     public function render()
     {
-        return view('livewire.attachment-preview-modal');
+        return view('livewire.tickets.attachment-preview-modal');
     }
 }

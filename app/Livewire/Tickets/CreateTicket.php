@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Tickets;
 
 use App\Enums\TicketPriority;
 use App\Models\Department;
@@ -305,7 +305,7 @@ class CreateTicket extends Component
 
         public function render()
     {
-        return view('livewire.create-ticket', [
+        return view('livewire.tickets.create-ticket', [
             'organizations' => Organization::where('is_active', true)->get(),
             'departments' => Department::where('is_active', true)->get(),
             'users' => User::where('is_active', true)->get(),

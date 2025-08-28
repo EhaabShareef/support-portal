@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Tickets;
 
 use App\Enums\TicketPriority;
 use App\Models\ActivityLog;
@@ -510,7 +510,7 @@ class ManageTickets extends Component
             $statusOptions = TicketStatusModel::options(); // Fallback to default options
         }
 
-        return view('livewire.manage-tickets', [
+        return view('livewire.tickets.manage-tickets', [
             'tickets' => $query->paginate(15),
             'organizations' => $organizations,
             'departments' => $departments,

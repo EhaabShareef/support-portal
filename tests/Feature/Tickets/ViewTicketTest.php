@@ -55,7 +55,7 @@ class ViewTicketTest extends TestCase
     {
         $this->actingAs($this->admin);
         
-        $component = Livewire::test('view-ticket', ['ticket' => $this->ticket]);
+        $component = Livewire::test('tickets.view-ticket', ['ticket' => $this->ticket]);
         
         // Check that header shows subject and ticket number
         $component->assertSee($this->ticket->subject)
@@ -139,13 +139,13 @@ class ViewTicketTest extends TestCase
         
         // Test as admin - should see both notes
         $this->actingAs($this->admin);
-        $adminComponent = Livewire::test('view-ticket', ['ticket' => $this->ticket]);
+        $adminComponent = Livewire::test('tickets.view-ticket', ['ticket' => $this->ticket]);
         $adminComponent->assertSee('Internal admin note')
                       ->assertSee('Public note visible to client');
         
         // Test as client - should only see public note
         $this->actingAs($this->client);
-        $clientComponent = Livewire::test('view-ticket', ['ticket' => $this->ticket]);
+        $clientComponent = Livewire::test('tickets.view-ticket', ['ticket' => $this->ticket]);
         $clientComponent->assertDontSee('Internal admin note')
                        ->assertSee('Public note visible to client');
     }
@@ -183,7 +183,7 @@ class ViewTicketTest extends TestCase
         $this->ticket->organization->update(['notes' => 'Important organization notes']);
         
         $this->actingAs($this->admin);
-        $component = Livewire::test('view-ticket', ['ticket' => $this->ticket]);
+        $component = Livewire::test('tickets.view-ticket', ['ticket' => $this->ticket]);
         
         // Should see organization notes
         $component->assertSee('Important organization notes');
@@ -220,7 +220,7 @@ class ViewTicketTest extends TestCase
         $this->ticket->organization->update(['name' => $longOrgName]);
         
         $this->actingAs($this->admin);
-        $component = Livewire::test('view-ticket', ['ticket' => $this->ticket]);
+        $component = Livewire::test('tickets.view-ticket', ['ticket' => $this->ticket]);
         
         // Should see truncated organization name with title attribute
         $component->assertSee('title="' . $longOrgName . '"', false);
