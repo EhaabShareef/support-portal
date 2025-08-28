@@ -37,6 +37,10 @@ class ManageHardware extends Component
         'serial_required' => false,
     ];
     
+    // Hardware Details Modal
+    public $showHardwareDetailsModal = false;
+    public $selectedHardware = null;
+    
     // Filters
     public $filterContract = '';
     public $filterIsOracle = null;
@@ -255,5 +259,17 @@ class ManageHardware extends Component
             $this->loadContractHardware(); // Refresh contract hardware list if modal is open
             session()->flash('message', 'Hardware updated successfully.');
         }
+    }
+    
+    public function viewHardwareDetails($hardwareId)
+    {
+        $this->selectedHardware = OrganizationHardware::with(['type', 'contract', 'serials'])
+            ->find($hardwareId);
+        $this->showHardwareDetailsModal = true;
+    }
+    
+    public function closeHardwareDetailsModal()
+    {
+        $this->reset(['showHardwareDetailsModal', 'selectedHardware']);
     }
 }

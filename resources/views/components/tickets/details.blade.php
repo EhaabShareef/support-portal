@@ -191,6 +191,87 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Hardware Section (only for Hardware department tickets) --}}
+                @if($ticket->department->departmentGroup && $ticket->department->departmentGroup->name === 'Hardware')
+                    <div class="pt-4 mt-4 border-t border-neutral-200 dark:border-neutral-700">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Linked Hardware</label>
+                            @can('update', $ticket)
+                                <button wire:click="$dispatch('link-hardware:toggle')" 
+                                        class="text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-medium">
+                                    Edit Links
+                                </button>
+                            @endcan
+                        </div>
+                        
+                        @if($ticket->hardware->count() > 0)
+                            <div class="space-y-2">
+                                @foreach($ticket->hardware as $hardware)
+                                    <div class="bg-neutral-50 dark:bg-neutral-700/50 rounded-lg p-3">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                                    {{ $hardware->brand }} {{ $hardware->model }}
+                                                </h4>
+                                                @if($hardware->type)
+                                                    <p class="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                                                        {{ $hardware->type->name }}
+                                                    </p>
+                                                @endif
+                                                @if($hardware->serial_number)
+                                                    <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                                                        S/N: {{ $hardware->serial_number }}
+                                                    </p>
+                                                @endif
+                                                @if($hardware->asset_tag)
+                                                    <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                                                        Asset: {{ $hardware->asset_tag }}
+                                                    </p>
+                                                @endif
+                                                @if($hardware->location)
+                                                    <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                                                        📍 {{ $hardware->location }}
+                                                    </p>
+                                                @endif
+                                                @if($hardware->pivot->maintenance_note)
+                                                    <div class="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border-l-2 border-yellow-400">
+                                                        <p class="text-xs text-yellow-800 dark:text-yellow-200">
+                                                            <strong>Note:</strong> {{ $hardware->pivot->maintenance_note }}
+                                                        </p>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="flex items-center gap-2 ml-3">
+                                                @if($hardware->serials->isNotEmpty())
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200">
+                                                        {{ $hardware->serials->count() }} Serial{{ $hardware->serials->count() > 1 ? 's' : '' }}
+                                                    </span>
+                                                @endif
+                                                @if($hardware->contract)
+                                                    <span class="text-xs bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-200 px-2 py-1 rounded">
+                                                        {{ $hardware->contract->contract_number }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-4">
+                                <x-heroicon-o-cpu-chip class="mx-auto h-8 w-8 text-neutral-400" />
+                                <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-2">No hardware linked</p>
+                                @can('update', $ticket)
+                                    <button wire:click="$dispatch('link-hardware:toggle')" 
+                                            class="text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-medium mt-1">
+                                        Link Hardware
+                                    </button>
+                                @endcan
+                            </div>
+                        @endif
+                    </div>
+                @endif
             </div>
         @endif
     </div>

@@ -181,38 +181,86 @@
         @else
             <div class="space-y-3">
                 @foreach($this->availableHardware as $hardware)
-                <div class="flex items-center p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
-                    <input type="checkbox" 
-                           wire:model="form.selected_hardware" 
-                           value="{{ $hardware->id }}"
-                           id="hardware-{{ $hardware->id }}"
-                           class="mr-3 rounded border-neutral-300 text-sky-600 focus:ring-sky-500">
-                    
-                    <label for="hardware-{{ $hardware->id }}" class="flex-1 cursor-pointer">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="font-medium text-neutral-900 dark:text-neutral-100">
-                                    {{ $hardware->brand }} {{ $hardware->model }}
-                                </p>
-                                <p class="text-sm text-neutral-600 dark:text-neutral-400">
-                                    @if($hardware->type)
-                                        {{ $hardware->type->name }} • 
-                                    @endif
-                                    Quantity: {{ $hardware->quantity }}
-                                </p>
-                                @if($hardware->location)
-                                    <p class="text-xs text-neutral-500 dark:text-neutral-500">
-                                        Location: {{ $hardware->location }}
+                <div class="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
+                    <div class="flex items-center p-4 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
+                        <input type="checkbox" 
+                               wire:model="form.selected_hardware" 
+                               value="{{ $hardware->id }}"
+                               id="hardware-{{ $hardware->id }}"
+                               class="mr-3 rounded border-neutral-300 text-sky-600 focus:ring-sky-500">
+                        
+                        <label for="hardware-{{ $hardware->id }}" class="flex-1 cursor-pointer">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium text-neutral-900 dark:text-neutral-100">
+                                        {{ $hardware->brand }} {{ $hardware->model }}
                                     </p>
-                                @endif
+                                    <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                                        @if($hardware->type)
+                                            {{ $hardware->type->name }} • 
+                                        @endif
+                                        Quantity: {{ $hardware->quantity }}
+                                    </p>
+                                    @if($hardware->location)
+                                        <p class="text-xs text-neutral-500 dark:text-neutral-500">
+                                            Location: {{ $hardware->location }}
+                                        </p>
+                                    @endif
+                                    @if($hardware->serial_number)
+                                        <p class="text-xs text-neutral-500 dark:text-neutral-500">
+                                            Serial: {{ $hardware->serial_number }}
+                                        </p>
+                                    @endif
+                                    @if($hardware->asset_tag)
+                                        <p class="text-xs text-neutral-500 dark:text-neutral-500">
+                                            Asset: {{ $hardware->asset_tag }}
+                                        </p>
+                                    @endif
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    @if($hardware->serials->isNotEmpty())
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
+                                            {{ $hardware->serials->count() }} Serial{{ $hardware->serials->count() > 1 ? 's' : '' }}
+                                        </span>
+                                    @endif
+                                    @if($hardware->contract)
+                                        <span class="text-xs bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-200 px-2 py-1 rounded">
+                                            {{ $hardware->contract->contract_number }}
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
-                            @if($hardware->contract)
-                                <span class="text-xs bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-200 px-2 py-1 rounded">
-                                    {{ $hardware->contract->contract_number }}
-                                </span>
-                            @endif
+                        </label>
+                    </div>
+                    
+                    {{-- Serial Selection (if hardware is selected and has serials) --}}
+                    @if(in_array($hardware->id, $form['selected_hardware']) && $hardware->serials->isNotEmpty())
+                        <div class="border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/30 p-4">
+                            <p class="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                Select Serial Numbers (Optional):
+                            </p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                @foreach($hardware->serials as $serial)
+                                    <label class="flex items-center p-2 bg-white dark:bg-neutral-800 rounded border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer">
+                                        <input type="checkbox" 
+                                               wire:model="form.hardware_serials.{{ $hardware->id }}" 
+                                               value="{{ $serial->id }}"
+                                               class="mr-2 rounded border-neutral-300 text-sky-600 focus:ring-sky-500">
+                                        <div>
+                                            <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                                {{ $serial->serial }}
+                                            </p>
+                                            @if($serial->notes)
+                                                <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                                                    {{ $serial->notes }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
                         </div>
-                    </label>
+                    @endif
                 </div>
                 @endforeach
             </div>

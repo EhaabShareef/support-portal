@@ -111,6 +111,15 @@
                         <div wire:key="hardware-{{ $hardware->id }}"
                              class="bg-white/10 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-3 shadow-md hover:bg-white/15 transition-all duration-200 relative">
                             
+                            {{-- View Details Button --}}
+                            <div class="absolute top-2 right-2">
+                                <button wire:click="viewHardwareDetails({{ $hardware->id }})"
+                                        class="p-1 text-neutral-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded transition-colors duration-200"
+                                        title="View Details & Related Tickets">
+                                    <x-heroicon-o-eye class="h-4 w-4" />
+                                </button>
+                            </div>
+                            
                             {{-- Hardware Info --}}
                             <div class="mb-3">
                                 <div class="flex items-start justify-between mb-2">
@@ -620,6 +629,117 @@
                         </div>
                     </form>
                 @endif
+            </div>
+        </div>
+    </div>
+
+    {{-- Hardware Details Modal --}}
+    <div x-data="{ open: @entangle('showHardwareDetailsModal') }" 
+         x-show="open" 
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="open" 
+                 x-transition:enter="ease-out duration-300" 
+                 x-transition:enter-start="opacity-0" 
+                 x-transition:enter-end="opacity-100" 
+                 x-transition:leave="ease-in duration-200" 
+                 x-transition:leave-start="opacity-100" 
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                 wire:click="closeHardwareDetailsModal"></div>
+
+            <div x-show="open" 
+                 x-transition:enter="ease-out duration-300" 
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave="ease-in duration-200" 
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                
+                <div class="bg-white dark:bg-neutral-800 px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                            Hardware Details
+                        </h3>
+                        <button wire:click="closeHardwareDetailsModal" 
+                                class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+                            <x-heroicon-o-x-mark class="h-6 w-6" />
+                        </button>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4">
+                    @if($selectedHardware)
+                        {{-- Hardware Information --}}
+                        <div class="mb-6">
+                            <h4 class="text-md font-semibold text-neutral-800 dark:text-neutral-200 mb-3">
+                                {{ $selectedHardware->brand }} {{ $selectedHardware->model }}
+                            </h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="font-medium text-neutral-700 dark:text-neutral-300">Type:</span>
+                                    <span class="ml-2 text-neutral-600 dark:text-neutral-400">
+                                        {{ $selectedHardware->type?->name ?? ucfirst($selectedHardware->hardware_type) }}
+                                    </span>
+                                </div>
+                                
+                                <div>
+                                    <span class="font-medium text-neutral-700 dark:text-neutral-300">Quantity:</span>
+                                    <span class="ml-2 text-neutral-600 dark:text-neutral-400">{{ $selectedHardware->quantity }}</span>
+                                </div>
+                                
+                                @if($selectedHardware->serial_number)
+                                    <div>
+                                        <span class="font-medium text-neutral-700 dark:text-neutral-300">Serial Number:</span>
+                                        <span class="ml-2 text-neutral-600 dark:text-neutral-400 font-mono">{{ $selectedHardware->serial_number }}</span>
+                                    </div>
+                                @endif
+                                
+                                @if($selectedHardware->asset_tag)
+                                    <div>
+                                        <span class="font-medium text-neutral-700 dark:text-neutral-300">Asset Tag:</span>
+                                        <span class="ml-2 text-neutral-600 dark:text-neutral-400">{{ $selectedHardware->asset_tag }}</span>
+                                    </div>
+                                @endif
+                                
+                                @if($selectedHardware->location)
+                                    <div>
+                                        <span class="font-medium text-neutral-700 dark:text-neutral-300">Location:</span>
+                                        <span class="ml-2 text-neutral-600 dark:text-neutral-400">{{ $selectedHardware->location }}</span>
+                                    </div>
+                                @endif
+                                
+                                @if($selectedHardware->purchase_date)
+                                    <div>
+                                        <span class="font-medium text-neutral-700 dark:text-neutral-300">Purchase Date:</span>
+                                        <span class="ml-2 text-neutral-600 dark:text-neutral-400">{{ $selectedHardware->purchase_date->format('M d, Y') }}</span>
+                                    </div>
+                                @endif
+                                
+                                @if($selectedHardware->last_maintenance)
+                                    <div>
+                                        <span class="font-medium text-neutral-700 dark:text-neutral-300">Last Maintenance:</span>
+                                        <span class="ml-2 text-neutral-600 dark:text-neutral-400">{{ $selectedHardware->last_maintenance->format('M d, Y') }}</span>
+                                    </div>
+                                @endif
+                                
+                                @if($selectedHardware->next_maintenance)
+                                    <div>
+                                        <span class="font-medium text-neutral-700 dark:text-neutral-300">Next Maintenance:</span>
+                                        <span class="ml-2 text-neutral-600 dark:text-neutral-400">{{ $selectedHardware->next_maintenance->format('M d, Y') }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Related Tickets Component --}}
+                        <livewire:hardware-related-tickets :hardware="$selectedHardware" />
+                    @endif
+                </div>
             </div>
         </div>
     </div>

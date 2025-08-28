@@ -184,15 +184,8 @@ class Ticket extends Model
     // Linked hardware at hardware level
     public function hardware(): BelongsToMany
     {
-        return $this->belongsToMany(OrganizationHardware::class, 'ticket_organization_hardware')
+        return $this->belongsToMany(OrganizationHardware::class, 'ticket_hardware')
             ->withPivot('maintenance_note')
-            ->withTimestamps();
-    }
-
-    // Linked hardware serials
-    public function serials(): BelongsToMany
-    {
-        return $this->belongsToMany(HardwareSerial::class, 'ticket_hardware_serial')
             ->withTimestamps();
     }
 
@@ -342,6 +335,8 @@ class Ticket extends Model
     {
         return $this->messages()->count();
     }
+
+
 
 
     public static function logEmail(string $message): void
