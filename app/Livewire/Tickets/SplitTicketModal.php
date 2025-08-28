@@ -5,9 +5,10 @@ namespace App\Livewire\Tickets;
 use App\Models\Ticket;
 use App\Services\Tickets\TicketSplitService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Validation\Rule;
+use DomainException;
 use Illuminate\Support\Str;
 use Livewire\Component;
-
 class SplitTicketModal extends Component
 {
     use AuthorizesRequests;
