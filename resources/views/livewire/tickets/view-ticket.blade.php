@@ -36,6 +36,7 @@
     <livewire:tickets.note-form :ticket="$ticket" />
     <livewire:tickets.close-modal :ticket="$ticket" />
     <livewire:tickets.reopen-modal :ticket="$ticket" />
+    <livewire:tickets.split-ticket-modal :ticket="$ticket" />
     <livewire:tickets.merge-tickets-modal :ticket="$ticket" />
     <livewire:attachment-preview-modal wire:ref="attachmentModal" />
 </div>
