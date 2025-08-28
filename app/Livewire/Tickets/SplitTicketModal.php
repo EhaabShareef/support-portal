@@ -48,14 +48,28 @@ class SplitTicketModal extends Component
         $this->authorize('split', $this->ticket);
 
         $this->validate([
-            'startMessageId' => 'required|integer',
+            'startMessageId' => [
+                'required',
+                'integer',
+                Rule::exists('ticket_messages', 'id')->where('ticket_id', $this->ticket->id),
+            ],
         ]);
 
-        $new = $service->split($this->ticket, $this->startMessageId, [
-            'close_original' => $this->closeOriginal,
-            'copy_notes' => $this->copyNotes,
-        ], auth()->user());
-
+        try {
+            $new = $service->split(
+                $this->ticket,
+                $this->startMessageId,
+                [
+                    'close_original' => $this->closeOriginal,
+                    'copy_notes'     => $this->copyNotes,
+                ],
+                auth()->user()
+            );
+        } catch (DomainException $e) {
+            // Surface as a field error instead of a 500.
+            $this->addError('startMessageId', $e->getMessage());
+            return;
+        }
         session()->flash('message', 'Ticket split successfully.');
 
         return redirect()->route('tickets.show', $new);
