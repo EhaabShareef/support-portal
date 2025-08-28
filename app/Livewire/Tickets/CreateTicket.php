@@ -192,38 +192,7 @@ class CreateTicket extends Component
                 
                 $ticket->hardware()->sync($hardwareData);
                 
-                // Create formatted note for display
-                $hardwareNote = "**Hardware Related to This Ticket:**\n\n";
-                foreach ($hardwareItems as $hardware) {
-                    $hardwareNote .= "• **{$hardware->brand} {$hardware->model}**\n";
-                    if ($hardware->type) {
-                        $hardwareNote .= "  - Type: {$hardware->type->name}\n";
-                    }
-                    $hardwareNote .= "  - Quantity: {$hardware->quantity}\n";
-                    if ($hardware->location) {
-                        $hardwareNote .= "  - Location: {$hardware->location}\n";
-                    }
-                    if ($hardware->contract) {
-                        $hardwareNote .= "  - Contract: {$hardware->contract->contract_number}\n";
-                    }
-                    
-                    // Add serial information if available
-                    if ($hardware->serials->isNotEmpty()) {
-                        $hardwareNote .= "  - Serial Numbers: " . $hardware->serials->pluck('serial')->implode(', ') . "\n";
-                    }
-                    
-                    $hardwareNote .= "\n";
-                }
-                
-                // Create internal note
-                \App\Models\TicketNote::create([
-                    'ticket_id' => $ticket->id,
-                    'user_id' => $user->id,
-                    'note' => $hardwareNote,
-                    'is_internal' => true,
-                ]);
-                
-                \Log::info('Hardware linked and note created for ticket: ' . $ticket->id);
+                \Log::info('Hardware linked for ticket: ' . $ticket->id);
             }
             
             \Log::info('Ticket created successfully with ID: ' . $ticket->id);
