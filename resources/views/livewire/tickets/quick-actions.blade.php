@@ -48,7 +48,6 @@
                 </button>
             @endcan
         @endif
-        
         @can('update', $ticket)
             <button wire:click="close" wire:loading.attr="disabled" 
                     class="group relative flex items-center p-2.5 text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-all duration-300 ease-in-out overflow-hidden" 
