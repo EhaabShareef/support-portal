@@ -232,7 +232,7 @@
                 </div>
 
                 {{-- Tab Content - Flexible height container --}}
-                <div class="p-6 flex-1 overflow-y-auto">
+                <div class="p-6 flex-1 overflow-y-auto custom-scrollbar scrollbar-on-hover">
                     @if($activeTab === 'users')
                         @include('livewire.partials.organization.users-tab', ['organization' => $organization])
                     @elseif($activeTab === 'contracts')

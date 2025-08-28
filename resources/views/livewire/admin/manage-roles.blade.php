@@ -87,7 +87,7 @@
                 </div>
 
                 {{-- Scrollable Content --}}
-                <div class="bg-white dark:bg-neutral-800 px-6 py-4 overflow-y-auto max-h-[70vh]">
+                <div class="bg-white dark:bg-neutral-800 px-6 py-4 overflow-y-auto custom-scrollbar scrollbar-on-hover max-h-[70vh]">
                     <div class="w-full space-y-6">
                                     
                                 {{-- Admin Role Warning Banner --}}

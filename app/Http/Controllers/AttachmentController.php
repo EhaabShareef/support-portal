@@ -207,6 +207,8 @@ class AttachmentController extends Controller
                 return true;
             }
         }
+    }
+
     private function canUserAccessTicketMessageAttachment($user, TicketMessageAttachment $attachment): bool
     {
         if (!$user) {
@@ -243,12 +245,7 @@ class AttachmentController extends Controller
 
         return false;
     }
-            return $ticket->department_id === $user->department_id;
-        }
-
-        return false;
-    }
-
+    
     private function canUserDeleteAttachment($user, Attachment $attachment): bool
     {
         if (!$user) {

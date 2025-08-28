@@ -67,10 +67,36 @@ class TicketStatus extends Model
     public static function optionsForDepartmentGroup(int $departmentGroupId): array
     {
         return static::active()
-            ->forDepartmentGroupOrUngrouped($departmentGroupId)
+            ->forDepartmentGroup($departmentGroupId)
             ->ordered()
             ->pluck('name', 'key')
             ->toArray();
+    }
+
+    public static function validationRule(?int $departmentGroupId = null): string
+    {
+        $validStatuses = $departmentGroupId 
+            ? array_keys(self::optionsForDepartmentGroup($departmentGroupId))
+            : array_keys(self::options());
+            
+        return 'required|in:' . implode(',', $validStatuses);
+    }
+
+    public static function isValidKey(string $value): bool
+    {
+        return static::where('key', $value)->active()->exists();
+    }
+
+    public static function getColorForKey(string $key): string
+    {
+        $statusModel = static::where('key', $key)->first();
+        return $statusModel ? $statusModel->color : '#6b7280';
+    }
+
+    public static function getNameForKey(string $key): string
+    {
+        $statusModel = static::where('key', $key)->first();
+        return $statusModel ? $statusModel->name : ucfirst(str_replace('_', ' ', $key));
     }
 
     public function scopeForDepartmentGroupOrUngrouped(Builder $query, int $departmentGroupId): Builder

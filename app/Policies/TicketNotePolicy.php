@@ -54,6 +54,37 @@ class TicketNotePolicy
     }
 
     /**
+     * Determine whether the user can create notes for a specific ticket.
+     */
+    public function createForTicket(User $user, $ticket): bool
+    {
+        // First check if user can create notes in general
+        if (!$this->create($user)) {
+            return false;
+        }
+
+        // Admin can create notes for any ticket
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // Support can create notes for tickets in their department or department group
+        if ($user->hasRole('support')) {
+            // Check if same department
+            if ($user->department_id === $ticket->department_id) {
+                return true;
+            }
+            // Check if same department group
+            if ($user->department?->department_group_id && 
+                $user->department->department_group_id === $ticket->department?->department_group_id) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Determine whether the user can update the model.
      */
     public function update(User $user, TicketNote $ticketNote): bool

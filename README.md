@@ -313,7 +313,87 @@ The Support Portal features a powerful admin-only reporting system that provides
 
 ## Recent Updates
 
-### 🚀 **v5.0.0 - Advanced Ticket System with Rules & Controls** (Latest)
+### 🚀 **v5.1.0 - Enhanced Action Buttons & Table Management** (Latest)
+
+#### 🎯 **Advanced Action Button System**
+
+- ✅ **Dual Action Components**: Separate action systems for different contexts
+  - **Table Actions** (`table-actions.blade.php`): Compact icon-only actions for data tables with tooltips
+  - **Quick Actions** (`quick-actions.blade.php`): Full-featured actions for ticket view with hover expansion effects
+  - **Context-Aware Display**: Different action sets based on user location and permissions
+
+- ✅ **Smart Action Visibility**: Intelligent button display based on ticket state and user permissions
+  - **Assign to Me Logic**: Button hidden when ticket is already assigned to current user
+  - **Closed Ticket Handling**: Only "Reopen" action shown for closed tickets
+  - **Permission-Based Display**: Actions filtered by user roles and ticket permissions
+  - **Route-Based Logic**: Different actions shown in manage tickets vs ticket view
+
+#### 🎨 **Enhanced User Experience**
+
+- ✅ **Hover Expansion Effects**: Modern interaction design for quick actions
+  - **Icon-Only Default**: Compact button layout showing only icons initially
+  - **Smooth Text Expansion**: Labels slide in from left on hover with smooth transitions
+  - **Responsive Spacing**: Dynamic gap management between buttons during expansion
+  - **Professional Animations**: 300ms transitions with ease-in-out timing
+
+- ✅ **Table Action Optimization**: Streamlined interface for data tables
+  - **Tooltip-Based Help**: Hover tooltips instead of expanding labels for space efficiency
+  - **Compact Design**: Smaller icons (h-4 w-4) with reduced padding for dense layouts
+  - **Color-Coded Actions**: Consistent color scheme (sky for view, red for close, purple for assign, blue for reopen)
+  - **Loading States**: Proper disabled states during action execution
+
+#### 🔧 **Technical Implementation**
+
+- ✅ **Component Architecture**: Clean separation of concerns
+  - **Table Actions Component**: `resources/views/components/tickets/table-actions.blade.php`
+  - **Quick Actions Component**: `resources/views/livewire/tickets/quick-actions.blade.php`
+  - **ManageTickets Integration**: Updated to use new table actions component
+  - **ViewTicket Integration**: Enhanced quick actions with improved hover effects
+
+- ✅ **Event Handling**: Robust action execution system
+  - **Direct Method Calls**: `wire:click="assignToMe({{ $ticket->id }})"` for immediate execution
+  - **Modal Integration**: `wire:click="openCloseConfirmModal({{ $ticket->id }})"` for confirmation dialogs
+  - **Permission Checks**: `@can('assign', $ticket)` and `@can('update', $ticket)` for security
+  - **Loading States**: `wire:loading.attr="disabled"` for proper user feedback
+
+#### 🎯 **Action Button Features**
+
+- ✅ **View Action**: Universal ticket viewing with route-based navigation
+- ✅ **Close Action**: Confirmation modal with detailed ticket information
+- ✅ **Assign to Me**: Smart visibility (hidden when already assigned to user)
+- ✅ **Reopen Action**: Only shown for closed tickets with proper authorization
+- ✅ **Back to Tickets**: Navigation button in ticket view (hidden in manage tickets)
+
+#### 🛡️ **Security & Performance**
+
+- ✅ **Permission Enforcement**: Multi-layer security with policy-based authorization
+- ✅ **Role-Based Access**: Different action sets for admin, support, and client roles
+- ✅ **Department Isolation**: Support staff limited to their department's tickets
+- ✅ **Optimized Queries**: Efficient database access with proper eager loading
+
+#### 🎨 **Visual Design System**
+
+- ✅ **Consistent Color Scheme**:
+  - **Sky Blue**: View actions and navigation
+  - **Red**: Close and destructive actions
+  - **Purple**: Assignment and user-related actions
+  - **Blue**: Reopen and positive actions
+  - **Amber**: Note and documentation actions
+  - **Emerald**: Edit and modification actions
+  - **Indigo**: Advanced features (merge, when implemented)
+
+- ✅ **Responsive Design**: Works seamlessly across desktop, tablet, and mobile devices
+- ✅ **Dark Mode Support**: Full compatibility with light and dark themes
+- ✅ **Accessibility**: Proper ARIA labels, keyboard navigation, and screen reader support
+
+#### 🚀 **Future-Ready Architecture**
+
+- ✅ **Modular Design**: Easy to add new actions without affecting existing functionality
+- ✅ **Event System**: Prepared for advanced features like merge functionality
+- ✅ **Component Reusability**: Table actions can be used in other data tables
+- ✅ **Consistent Patterns**: Standardized approach for all action button implementations
+
+### 🚀 **v5.0.0 - Advanced Ticket System with Rules & Controls** (Previous)
 
 #### 🎫 **Phase 3: Ticket Rules and Settings Implementation**
 

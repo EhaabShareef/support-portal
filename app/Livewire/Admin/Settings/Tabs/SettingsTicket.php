@@ -4,7 +4,6 @@ namespace App\Livewire\Admin\Settings\Tabs;
 
 use App\Contracts\SettingsRepositoryInterface;
 use App\Services\TicketColorService;
-use App\Enums\TicketStatus;
 use App\Enums\TicketPriority;
 use App\Models\TicketStatus as TicketStatusModel;
 use Livewire\Attributes\Computed;
