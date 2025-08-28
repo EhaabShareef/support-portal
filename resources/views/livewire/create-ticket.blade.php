@@ -1,240 +1,416 @@
 <div class="space-y-6">
     {{-- Header --}}
-    <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 shadow-md">
+        <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-neutral-800 dark:text-neutral-100 flex items-center gap-3">
-                    <x-heroicon-o-ticket class="h-8 w-8" />
+                <h1 class="text-2xl font-bold text-neutral-800 dark:text-neutral-100">
                     Create Support Ticket
                 </h1>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">Create a new support ticket</p>
+                <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                    Step {{ $currentStep }} of {{ $this->isHardwareDepartment() ? '3' : '2' }}: 
+                    @if($currentStep === 1)
+                        Basic Information
+                    @elseif($currentStep === 2 && $this->isHardwareDepartment())
+                        Hardware Selection
+                    @else
+                        Issue Details
+                    @endif
+                </p>
             </div>
-
             <a href="{{ route('tickets.index') }}" 
-               class="inline-flex items-center px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-sm text-neutral-800 dark:text-neutral-100 rounded-md transition-all duration-200">
-                <x-heroicon-o-arrow-left class="h-4 w-4 mr-1" />
+               class="px-4 py-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-100 rounded-md">
                 Back
             </a>
         </div>
     </div>
 
-    {{-- Flash Message --}}
+    {{-- Progress Bar --}}
+    <div class="bg-white dark:bg-neutral-800 rounded-lg p-4 shadow-md">
+        <div class="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+            <div class="bg-sky-600 h-2 rounded-full transition-all duration-300" style="width: {{ ($currentStep / ($this->isHardwareDepartment() ? 3 : 2)) * 100 }}%"></div>
+        </div>
+        <div class="flex justify-between mt-2 text-xs text-neutral-500">
+            <span class="{{ $currentStep >= 1 ? 'text-sky-600 font-medium' : '' }}">Basic Information</span>
+            @if($this->isHardwareDepartment())
+                <span class="{{ $currentStep >= 2 ? 'text-sky-600 font-medium' : '' }}">Hardware Selection</span>
+                <span class="{{ $currentStep >= 3 ? 'text-sky-600 font-medium' : '' }}">Issue Details</span>
+            @else
+                <span class="{{ $currentStep >= 2 ? 'text-sky-600 font-medium' : '' }}">Issue Details</span>
+            @endif
+        </div>
+        <!-- Debug: Current step: {{ $currentStep }}, Is hardware: {{ $this->isHardwareDepartment() ? 'true' : 'false' }} -->
+    </div>
+
+    {{-- Flash Messages --}}
     @if (session()->has('message'))
-        <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" 
-             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-2" 
-             x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" 
-             x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform translate-y-2"
-             class="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-4 rounded-lg shadow">
-            <div class="flex items-center">
-                <x-heroicon-o-check-circle class="h-5 w-5 mr-2" />
-                {{ session('message') }}
-            </div>
+        <div class="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 p-4 rounded-lg">
+            {{ session('message') }}
         </div>
     @endif
 
-    {{-- Ticket Form --}}
-    <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="col-span-2">
-                <label for="subject" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Subject</label>
+    @if (session()->has('error'))
+        <div class="bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 p-4 rounded-lg">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    {{-- Step 1: Basic Information --}}
+    @if($currentStep === 1)
+    <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 shadow-md">
+        <h2 class="text-lg font-semibold mb-4">Step 1: Basic Information</h2>
+        
+        <div class="space-y-4">
+            {{-- Subject --}}
+            <div>
+                <label class="block text-sm font-medium mb-1">Subject *</label>
                 <input type="text" 
-                       wire:model.defer="form.subject" 
-                       id="subject"
-                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" />
+                       wire:model="form.subject" 
+                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" 
+                       placeholder="Brief description of your issue">
                 @error('form.subject') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                    <span class="text-red-500 text-xs">{{ $message }}</span> 
                 @enderror
             </div>
 
-            <div class="col-span-2">
-                <label for="description" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description *</label>
-                <textarea wire:model.defer="form.description" 
-                          id="description"
-                          rows="4"
-                          class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
-                          placeholder="Please provide detailed information about your issue or request..."></textarea>
-                @error('form.description') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                @enderror
-            </div>
-
-            {{-- Client Selection (for Admins/Agents only) --}}
-            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('support'))
+            {{-- Organization (hidden for clients) --}}
+            @if(!$this->isClientUser())
             <div>
-                <label for="client" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Client</label>
-                <select wire:model.defer="form.client_id" 
-                        id="client"
-                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                    <option value="">Select Client</option>
-                    @foreach($clients as $client)
-                        <option value="{{ $client->id }}">{{ $client->name }} ({{ $client->organization?->name }})</option>
-                    @endforeach
-                </select>
-                @error('form.client_id') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                @enderror
-            </div>
-            @endif
-
-            {{-- Organization Selection (hidden for clients as it's auto-set) --}}
-            @if(!auth()->user()->hasRole('client'))
-            <div>
-                <label for="organization" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Organization</label>
-                <select wire:model.defer="form.organization_id" 
-                        id="organization"
-                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+                <label class="block text-sm font-medium mb-1">Organization *</label>
+                <select wire:model.live="form.organization_id" 
+                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                     <option value="">Select Organization</option>
                     @foreach($organizations as $org)
                         <option value="{{ $org->id }}">{{ $org->name }}</option>
                     @endforeach
                 </select>
                 @error('form.organization_id') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                    <span class="text-red-500 text-xs">{{ $message }}</span> 
                 @enderror
             </div>
             @endif
 
+            {{-- User (for admins/support only) --}}
+            @if(!$this->isClientUser())
             <div>
-                <label for="department" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Department</label>
-                <select wire:model.defer="form.department_id" 
-                        id="department"
-                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+                <label class="block text-sm font-medium mb-1">User *</label>
+                <select wire:model="form.client_id" 
+                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+                        {{ empty($form['organization_id']) ? 'disabled' : '' }}>
+                    <option value="">{{ empty($form['organization_id']) ? 'Select Organization first' : 'Select User' }}</option>
+                    @foreach($this->availableClients as $client)
+                        <option value="{{ $client->id }}">{{ $client->name }}</option>
+                    @endforeach
+                    {{-- Debug info --}}
+                    @if($this->availableClients->isEmpty())
+                        <option disabled>No users found for this organization</option>
+                    @endif
+                </select>
+                @error('form.client_id') 
+                    <span class="text-red-500 text-xs">{{ $message }}</span> 
+                @enderror
+            </div>
+            @endif
+
+            {{-- Department --}}
+            <div>
+                <label class="block text-sm font-medium mb-1">Department *</label>
+                <select wire:model="form.department_id" 
+                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                     <option value="">Select Department</option>
                     @foreach($departments as $dept)
                         <option value="{{ $dept->id }}">{{ $dept->name }}</option>
                     @endforeach
                 </select>
                 @error('form.department_id') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                    <span class="text-red-500 text-xs">{{ $message }}</span> 
                 @enderror
             </div>
 
-            {{-- Owner Selection (only for admin/support users) --}}
-            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('support'))
+            {{-- Priority --}}
             <div>
-                <label for="owner_id" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Owner</label>
-                <select wire:model.defer="form.owner_id"
-                        id="owner_id"
-                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
-                    <option value="">No Owner</option>
-                    @foreach($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }}</option>
-                    @endforeach
-                </select>
-                @error('form.owner_id')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                @enderror
-            </div>
-            @endif
-
-            <div>
-                <label for="priority" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Priority</label>
-                <select wire:model.defer="form.priority" 
-                        id="priority"
-                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+                <label class="block text-sm font-medium mb-1">Priority</label>
+                <select wire:model="form.priority" 
+                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
                     @foreach($priorityOptions as $value => $label)
                         <option value="{{ $value }}">{{ $label }}</option>
                     @endforeach
                 </select>
                 @error('form.priority') 
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                    <span class="text-red-500 text-xs">{{ $message }}</span> 
                 @enderror
             </div>
         </div>
 
-        {{-- Submit --}}
-        <div class="pt-6 border-t border-neutral-200 dark:border-neutral-700 flex justify-end">
-            <div class="relative">
-                {{-- Normal Submit Button --}}
-                <button wire:click="submit" 
-                        wire:loading.remove 
-                        wire:target="submit"
-                        class="inline-flex items-center px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
-                    <x-heroicon-o-check class="w-5 h-5 mr-2" />
-                    Submit Ticket
-                </button>
+        {{-- Next Step Button --}}
+        <div class="mt-6 flex justify-end">
+            <button wire:click="nextStep" 
+                    class="px-6 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md">
+                Next Step
+            </button>
+        </div>
+    </div>
+    @endif
 
-                {{-- Loading State with Quirky Messages --}}
-                <div wire:loading 
-                     wire:target="submit"
-                     class="inline-flex items-center px-6 py-3 bg-sky-500 text-white text-sm font-medium rounded-md shadow-sm cursor-not-allowed">
-                    
-                    {{-- Animated Thinking Dots --}}
-                    <div class="flex space-x-1 mr-3">
-                        <div class="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-                        <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                        <div class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+    {{-- Step 2: Hardware Selection (only for hardware departments) --}}
+    @if($currentStep === 2 && $this->isHardwareDepartment())
+    {{-- Debug info --}}
+    <!-- Current step: {{ $currentStep }}, Is hardware: {{ $this->isHardwareDepartment() ? 'true' : 'false' }} -->
+    <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 shadow-md">
+        <h2 class="text-lg font-semibold mb-4">Step 2: Hardware Selection (Optional)</h2>
+        
+        <div class="mb-4">
+            <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                Select the hardware items related to this ticket. This helps us better understand and resolve your issue.
+            </p>
+        </div>
+
+        @if($this->availableHardware->isEmpty())
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <div class="flex items-center">
+                    <x-heroicon-o-exclamation-triangle class="w-5 h-5 text-yellow-500 mr-3" />
+                    <div>
+                        <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                            No hardware found
+                        </p>
+                        <p class="text-sm text-yellow-700 dark:text-yellow-300">
+                            No hardware items are registered for this organization. You can continue without selecting hardware.
+                        </p>
                     </div>
+                </div>
+            </div>
+        @else
+            <div class="space-y-3">
+                @foreach($this->availableHardware as $hardware)
+                <div class="flex items-center p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
+                    <input type="checkbox" 
+                           wire:model="form.selected_hardware" 
+                           value="{{ $hardware->id }}"
+                           id="hardware-{{ $hardware->id }}"
+                           class="mr-3 rounded border-neutral-300 text-sky-600 focus:ring-sky-500">
+                    
+                    <label for="hardware-{{ $hardware->id }}" class="flex-1 cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-neutral-900 dark:text-neutral-100">
+                                    {{ $hardware->brand }} {{ $hardware->model }}
+                                </p>
+                                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                                    @if($hardware->type)
+                                        {{ $hardware->type->name }} • 
+                                    @endif
+                                    Quantity: {{ $hardware->quantity }}
+                                </p>
+                                @if($hardware->location)
+                                    <p class="text-xs text-neutral-500 dark:text-neutral-500">
+                                        Location: {{ $hardware->location }}
+                                    </p>
+                                @endif
+                            </div>
+                            @if($hardware->contract)
+                                <span class="text-xs bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-200 px-2 py-1 rounded">
+                                    {{ $hardware->contract->contract_number }}
+                                </span>
+                            @endif
+                        </div>
+                    </label>
+                </div>
+                @endforeach
+            </div>
+        @endif
 
-                    {{-- Cycling Through Quirky Messages --}}
-                    <div x-data="{ 
-                        messages: [
-                            '🤔 Hmm, let me think about this...',
-                            '📝 Organizing your thoughts...',
-                            '🧠 Processing the situation...',
-                            '⚡ Adding some urgency...',
-                            '🎯 Finding the right department...',
-                            '🚀 Almost there...',
-                            '✨ Making it perfect...'
-                        ],
-                        currentIndex: 0,
-                        currentMessage: '🤔 Hmm, let me think about this...'
-                    }"
-                    x-init="
-                        const interval = setInterval(() => {
-                            currentIndex = (currentIndex + 1) % messages.length;
-                            currentMessage = messages[currentIndex];
-                        }, 800);
+        {{-- Navigation Buttons --}}
+        <div class="mt-6 flex justify-between">
+            <button wire:click="previousStep" 
+                    class="px-6 py-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-100 rounded-md">
+                Previous Step
+            </button>
+
+            <button wire:click="nextStepFromHardware" 
+                    class="px-6 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md">
+                Next Step
+            </button>
+        </div>
+    </div>
+    @endif
+
+    {{-- Step 3: Issue Details (or Step 2 for non-hardware departments) --}}
+    @if($currentStep === 3 || ($currentStep === 2 && !$this->isHardwareDepartment()))
+    <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 shadow-md">
+        <h2 class="text-lg font-semibold mb-4">
+            @if($this->isHardwareDepartment())
+                Step 3: Issue Details
+            @else
+                Step 2: Issue Details
+            @endif
+        </h2>
+        
+        <div class="space-y-4">
+            {{-- Description --}}
+            <div>
+                <label class="block text-sm font-medium mb-1">Description *</label>
+                <textarea wire:model="form.description" 
+                          rows="6"
+                          class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+                          placeholder="Please provide detailed information about your issue..."></textarea>
+                @error('form.description') 
+                    <span class="text-red-500 text-xs">{{ $message }}</span> 
+                @enderror
+            </div>
+
+            {{-- File Attachments --}}
+            <div>
+                <label class="block text-sm font-medium mb-1">Attachments (Optional)</label>
+                <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg p-6 text-center transition-colors"
+                     x-data="{ dragOver: false }"
+                     x-on:dragover.prevent="dragOver = true"
+                     x-on:dragleave.prevent="dragOver = false"
+                     x-on:drop.prevent="dragOver = false; $wire.upload('attachments', $event.dataTransfer.files)">
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-center">
+                            <x-heroicon-o-cloud-arrow-up class="w-8 h-8 text-neutral-400" />
+                        </div>
                         
-                        // Clean up interval when element is removed
-                        $el.addEventListener('removed', () => clearInterval(interval));
-                    "
-                    class="transition-all duration-300 ease-in-out">
-                        <span x-text="currentMessage" class="min-w-0 truncate"></span>
+                        <div>
+                            <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                                Drag and drop files here, or 
+                                <label for="file-upload" class="text-sky-600 hover:text-sky-500 cursor-pointer">
+                                    browse files
+                                </label>
+                            </p>
+                            <p class="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
+                                Maximum 10MB per file. Supported: Images, PDFs, Documents
+                            </p>
+                        </div>
+                        
+                        <input id="file-upload" 
+                               type="file" 
+                               wire:model="attachments" 
+                               multiple
+                               class="hidden"
+                               accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx">
+                    </div>
+                </div>
+
+                {{-- File List --}}
+                @if(!empty($attachments))
+                <div class="mt-4 space-y-2">
+                    <h4 class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Selected Files:</h4>
+                    @foreach($attachments as $index => $attachment)
+                    <div class="flex items-center justify-between bg-neutral-50 dark:bg-neutral-700 rounded-lg p-3">
+                        <div class="flex items-center space-x-3">
+                            <x-heroicon-o-document class="w-5 h-5 text-neutral-400" />
+                            <div>
+                                <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                    {{ $attachment->getClientOriginalName() }}
+                                </p>
+                                <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                                    {{ number_format($attachment->getSize() / 1024, 1) }} KB
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" 
+                                wire:click="removeAttachment({{ $index }})"
+                                class="text-red-500 hover:text-red-700 dark:hover:text-red-400">
+                            <x-heroicon-o-x-mark class="w-4 h-4" />
+                        </button>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+
+                @error('attachments.*') 
+                    <span class="text-red-500 text-xs mt-2 block">{{ $message }}</span> 
+                @enderror
+            </div>
+
+            {{-- Summary --}}
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h3 class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-3">Ticket Summary</h3>
+                <div class="space-y-2 text-sm">
+                    <div>
+                        <span class="text-blue-700 dark:text-blue-300 font-medium">Subject:</span>
+                        <span class="text-blue-800 dark:text-blue-200 ml-2">{{ $form['subject'] ?: 'Not specified' }}</span>
+                    </div>
+                    <div>
+                        <span class="text-blue-700 dark:text-blue-300 font-medium">Department:</span>
+                        <span class="text-blue-800 dark:text-blue-200 ml-2">
+                            @if($form['department_id'])
+                                @php $dept = $departments->firstWhere('id', $form['department_id']) @endphp
+                                {{ $dept ? $dept->name : 'Not specified' }}
+                            @else
+                                Not specified
+                            @endif
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-blue-700 dark:text-blue-300 font-medium">Priority:</span>
+                        <span class="text-blue-800 dark:text-blue-200 ml-2">
+                            @if($form['priority'])
+                                {{ $priorityOptions[$form['priority']] ?? $form['priority'] }}
+                            @else
+                                Not specified
+                            @endif
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
+
+        {{-- Navigation Buttons --}}
+        <div class="mt-6 flex justify-between">
+            <button wire:click="previousStep" 
+                    class="px-6 py-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-100 rounded-md">
+                Previous Step
+            </button>
+
+            <button wire:click="submit" 
+                    class="px-6 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md">
+                Create Ticket
+            </button>
+        </div>
     </div>
+    @endif
 
     {{-- Critical Priority Confirmation Modal --}}
     @if($showCriticalConfirmation)
-    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" x-data="" x-transition>
-        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 max-w-md w-full mx-4">
             <div class="flex items-center mb-4">
-                <x-heroicon-o-exclamation-triangle class="h-8 w-8 text-red-500 mr-3" />
-                <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Critical Priority Confirmation</h3>
+                <x-heroicon-o-exclamation-triangle class="w-6 h-6 text-red-500 mr-3" />
+                <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    High Priority Ticket
+                </h3>
             </div>
             
-            <div class="mb-6">
-                <p class="text-sm text-neutral-700 dark:text-neutral-300 mb-3">
-                    You have marked this ticket as <strong class="text-red-600">CRITICAL</strong> priority. 
-                    This designation is reserved for urgent issues that severely impact operations.
+            <div class="mb-4">
+                <p class="text-neutral-700 dark:text-neutral-300 mb-3">
+                    You're creating a <strong class="text-red-600">{{ ucfirst($form['priority']) }}</strong> priority ticket. 
+                    For urgent issues, please consider calling the hotline for immediate assistance.
                 </p>
                 
-                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-3 mb-3">
-                    <p class="text-sm text-red-800 dark:text-red-300 font-medium">
-                        📞 <strong>IMMEDIATE ACTION REQUIRED:</strong>
-                    </p>
-                    <p class="text-sm text-red-700 dark:text-red-400 mt-1">
-                        Please contact our technical hotline at <strong>[HOTLINE_NUMBER]</strong> immediately after submitting this ticket. 
-                        Remain available for immediate assistance.
-                    </p>
+                <div class="flex items-start">
+                    <input type="checkbox" 
+                           wire:model.live="criticalConfirmed" 
+                           id="critical-confirmed"
+                           class="mt-1 mr-3 rounded border-neutral-300 text-sky-600 focus:ring-sky-500">
+                    <label for="critical-confirmed" class="text-sm text-neutral-700 dark:text-neutral-300">
+                        I understand this is a high priority ticket and will call the hotline if needed
+                    </label>
                 </div>
-                
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">
-                    Do you confirm that this issue requires critical priority and immediate attention?
-                </p>
             </div>
             
             <div class="flex justify-end space-x-3">
-                <button wire:click="cancelCriticalConfirmation" 
-                        class="px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 text-sm font-medium rounded-md transition-colors">
-                    Cancel (Change to High)
+                <button type="button" 
+                        wire:click="cancelCriticalConfirmation"
+                        class="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors">
+                    Cancel
                 </button>
-                <button wire:click="confirmCriticalPriority" 
-                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors">
-                    Confirm Critical Priority
+                <button type="button" 
+                        wire:click="confirmCriticalAndContinue"
+                        @if(!$criticalConfirmed) disabled @endif
+                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Continue
                 </button>
             </div>
         </div>

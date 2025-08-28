@@ -3,8 +3,7 @@
         <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             {{-- Backdrop --}}
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
-                 wire:click="closePreview"
-                 onclick="console.log('Backdrop clicked');"></div>
+                 wire:click="closePreview"></div>
 
             {{-- Modal Content --}}
             <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -24,34 +23,16 @@
                                     <x-heroicon-o-arrow-down-tray class="h-4 w-4 mr-1" />
                                     Download
                                 </button>
-                                {{-- Test Button --}}
-                                <button type="button" 
-                                        wire:click="closePreview"
-                                        onclick="console.log('Test close button clicked');"
-                                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors mr-2">
-                                    Test Close
-                                </button>
                                 {{-- Close Button --}}
                                 <button type="button" 
                                         wire:click="closePreview"
-                                        onclick="console.log('Close button clicked');"
                                         class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
                                     <x-heroicon-o-x-mark class="h-6 w-6" />
                                 </button>
                             </div>
                         </div>
 
-                        {{-- Debug Info --}}
-                        <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                            <div class="text-sm text-yellow-800 dark:text-yellow-200">
-                                <div class="font-medium">DEBUG INFO:</div>
-                                <div class="text-xs">
-                                    Show: {{ $show ? 'TRUE' : 'FALSE' }} | 
-                                    Attachment ID: {{ $attachment ? $attachment->id : 'NULL' }} | 
-                                    Name: {{ $attachment ? $attachment->original_name : 'NULL' }}
-                                </div>
-                            </div>
-                        </div>
+
 
                         {{-- File Info --}}
                         <div class="mb-4 p-3 bg-neutral-50 dark:bg-neutral-700/50 rounded-lg">

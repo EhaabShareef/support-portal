@@ -7,170 +7,317 @@ use App\Models\Department;
 use App\Models\Organization;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
-use App\Models\TicketNote;
 use App\Models\User;
-use App\Services\HotlineService;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class CreateTicket extends Component
 {
+    use WithFileUploads;
+    
+    public int $currentStep = 1;
     public bool $showCriticalConfirmation = false;
     public bool $criticalConfirmed = false;
-
-    public function mount(): void
-    {
-        // Check permissions before allowing access to ticket creation
-        $user = auth()->user();
-        if (!$user || !$user->can('tickets.create')) {
-            abort(403, 'Insufficient permissions to create tickets.');
-        }
-    }
-
+    public $attachments = [];
+    
     public array $form = [
-        'subject'   => '',
+        'subject' => '',
         'description' => '',
         'organization_id' => '',
         'client_id' => '',
         'department_id' => '',
-        'status'    => 'in progress',
-        'priority'  => 'normal',
-        'owner_id' => '',
+        'priority' => 'normal',
+        'selected_hardware' => [],
     ];
 
-    public function rules(): array
+    public function mount(): void
     {
         $user = auth()->user();
+        if (!$user || !$user->can('tickets.create')) {
+            abort(403, 'Insufficient permissions to create tickets.');
+        }
         
-        return [
-            'form.subject'   => 'required|string|max:255',
-            'form.description' => 'required|string|max:2000',
-            'form.organization_id' => 'required|exists:organizations,id',
-            // Clients cannot select client, Admins/Agents can select on behalf of clients
-            'form.client_id' => $user->hasRole('client') ? 'nullable' : 'required|exists:users,id',
-            'form.department_id' => 'required|exists:departments,id',
-            'form.priority'  => TicketPriority::validationRule(),
-            'form.owner_id' => 'nullable|exists:users,id',
-        ];
-    }
-
-    protected $messages = [
-        'form.subject.required' => 'Please enter a subject for your ticket.',
-        'form.subject.max' => 'Subject must not exceed 255 characters.',
-        'form.description.required' => 'Please enter a description for your ticket.',
-        'form.description.max' => 'Description must not exceed 2000 characters.',
-        'form.organization_id.required' => 'Please select an organization.',
-        'form.organization_id.exists' => 'The selected organization is invalid.',
-        'form.client_id.required' => 'Please select a client for this ticket.',
-        'form.client_id.exists' => 'The selected client is invalid.',
-        'form.department_id.required' => 'Please select a department.',
-        'form.department_id.exists' => 'The selected department is invalid.',
-        'form.priority.required' => 'Please select a priority level.',
-        'form.owner_id.exists' => 'The selected owner is invalid.',
-    ];
-
-    public function submit()
-    {
-        try {
-            $user = auth()->user();
-            $validated = $this->validate()['form'];
-            
-            // Check for critical priority confirmation
-            if ($validated['priority'] === 'critical' && !$this->criticalConfirmed) {
-                $this->showCriticalConfirmation = true;
-                return;
-            }
-            
-            // Override security-sensitive fields
-            $validated['status'] = 'open';
-            $validated['critical_confirmed'] = $this->criticalConfirmed;
-            
-            // For clients, force their organization and set them as the client
-            if ($user->hasRole('client')) {
-                $validated['organization_id'] = $user->organization_id;
-                $validated['client_id'] = $user->id;
-            }
-            // For Admins/Agents, validate client selection
-            elseif (!$user->hasRole('client') && empty($validated['client_id'])) {
-                $this->addError('form.client_id', 'Please select a client for this ticket.');
-                return;
-            }
-
-            if (empty($validated['owner_id'])) {
-                $validated['owner_id'] = null;
-            }
-
-            $ticket = Ticket::create(collect($validated)->except('description')->toArray());
-            
-            // Create first message with the description
-            TicketMessage::create([
-                'ticket_id' => $ticket->id,
-                'sender_id' => $ticket->client_id,
-                'message' => $validated['description'],
-            ]);
-
-            // Add hotline note only for critical and urgent tickets
-            if (in_array($validated['priority'], ['critical', 'urgent'])) {
-                $hotlineService = app(HotlineService::class);
-                $hotlineText = $hotlineService->getHotlinesText();
-                
-                TicketNote::create([
-                    'ticket_id' => $ticket->id,
-                    'user_id' => auth()->id(),
-                    'is_internal' => false,
-                    'color' => 'red',
-                    'note' => 'PRIORITY ALERT: This ticket has been marked as ' . strtoupper($validated['priority']) . '. For immediate assistance, please contact:\n\n' . $hotlineText . '\n\nOur team is available to provide additional guidance and ensure timely resolution of your request.',
-                ]);
-            }
-
-            session()->flash('message', 'Ticket created successfully.');
-
-            return redirect()->route('tickets.show', $ticket);
-            
-        } catch (\Exception $e) {
-            logger()->error('Failed to create ticket', [
-                'user_id' => auth()->id(),
-                'form_data' => $this->form,
-                'error' => $e->getMessage()
-            ]);
-            
-            session()->flash('error', 'Failed to create ticket. Please try again or contact support if the problem persists.');
-            return;
+        // Auto-set organization for clients
+        if ($user->hasRole('client')) {
+            $this->form['organization_id'] = $user->organization_id;
+            $this->form['client_id'] = $user->id;
         }
     }
 
-    public function confirmCriticalPriority()
+    public function nextStep()
     {
-        $this->criticalConfirmed = true;
-        $this->showCriticalConfirmation = false;
-        $this->submit(); // Retry submission
+        $this->validate([
+            'form.subject' => 'required|string|max:255',
+            'form.organization_id' => 'required|exists:organizations,id',
+            'form.department_id' => 'required|exists:departments,id',
+            'form.priority' => 'required|in:low,normal,high,urgent,critical',
+        ]);
+
+        if (!$this->isClientUser()) {
+            $this->validate([
+                'form.client_id' => 'required|exists:users,id',
+            ]);
+        }
+
+        // Check if priority is critical or urgent
+        if (in_array($this->form['priority'], ['critical', 'urgent'])) {
+            $this->showCriticalConfirmation = true;
+            return;
+        }
+
+        // Check if this is a hardware department
+        $isHardware = $this->isHardwareDepartment();
+        \Log::info('Is hardware department: ' . ($isHardware ? 'true' : 'false') . ', Setting step to: ' . ($isHardware ? '2' : '3'));
+        
+        if ($isHardware) {
+            $this->currentStep = 2;
+        } else {
+            $this->currentStep = 3; // Skip hardware step for non-hardware departments
+        }
+    }
+
+    public function confirmCriticalAndContinue()
+    {
+        \Log::info('confirmCriticalAndContinue called, criticalConfirmed: ' . ($this->criticalConfirmed ? 'true' : 'false'));
+        
+        if ($this->criticalConfirmed) {
+            $this->showCriticalConfirmation = false;
+            $this->criticalConfirmed = false;
+            
+            // Check if this is a hardware department
+            if ($this->isHardwareDepartment()) {
+                $this->currentStep = 2;
+            } else {
+                $this->currentStep = 3; // Skip hardware step for non-hardware departments
+            }
+        }
     }
 
     public function cancelCriticalConfirmation()
     {
         $this->showCriticalConfirmation = false;
         $this->criticalConfirmed = false;
-        // Reset priority to high
-        $this->form['priority'] = 'high';
     }
 
-    public function render()
+    public function updatedCriticalConfirmed()
     {
-        $user = auth()->user();
-        
-        // Get available clients for Admin/Agent ticket creation
-        $clients = collect();
-        if ($user->hasRole('admin') || $user->hasRole('support')) {
-            $clients = User::whereHas('roles', function ($q) {
-                $q->where('name', 'client');
-            })->orderBy('name')->get();
+        \Log::info('Checkbox changed to: ' . ($this->criticalConfirmed ? 'true' : 'false'));
+    }
+
+    public function removeAttachment($index)
+    {
+        if (isset($this->attachments[$index])) {
+            unset($this->attachments[$index]);
+            $this->attachments = array_values($this->attachments); // Re-index array
         }
+    }
+
+    public function previousStep()
+    {
+        if ($this->currentStep === 3) {
+            // If we're on step 3 (description), go back to step 2 (hardware) if it's a hardware department
+            if ($this->isHardwareDepartment()) {
+                $this->currentStep = 2;
+            } else {
+                $this->currentStep = 1; // Skip hardware step for non-hardware departments
+            }
+        } elseif ($this->currentStep === 2) {
+            $this->currentStep = 1;
+        }
+    }
+
+    public function nextStepFromHardware()
+    {
+        $this->currentStep = 3;
+    }
+
+    public function isHardwareDepartment()
+    {
+        if (empty($this->form['department_id'])) {
+            return false;
+        }
+
+        $department = \App\Models\Department::with('departmentGroup')->find($this->form['department_id']);
+        if (!$department) {
+            return false;
+        }
+
+        \Log::info('Department: ' . $department->name . ', Group: ' . ($department->departmentGroup ? $department->departmentGroup->name : 'null'));
         
+        // Check if department belongs to Hardware group
+        return $department->departmentGroup && $department->departmentGroup->name === 'Hardware';
+    }
+
+    public function submit()
+    {
+        $this->validate([
+            'form.description' => 'required|string|max:2000',
+            'attachments.*' => 'nullable|file|max:10240', // 10MB max per file
+        ]);
+
+        try {
+            $user = auth()->user();
+            
+            \Log::info('Creating ticket with data: ' . json_encode($this->form));
+            
+            // Create ticket
+            $ticket = Ticket::create([
+                'subject' => $this->form['subject'],
+                'organization_id' => $this->form['organization_id'],
+                'client_id' => $this->form['client_id'],
+                'department_id' => $this->form['department_id'],
+                'priority' => $this->form['priority'],
+                'status' => 'open',
+                'owner_id' => null,
+                // uuid and ticket_number will be auto-generated by the model
+            ]);
+
+            // Handle hardware selection
+            if (!empty($this->form['selected_hardware'])) {
+                \Log::info('Selected hardware: ' . json_encode($this->form['selected_hardware']));
+                
+                // Get hardware details
+                $hardwareItems = \App\Models\OrganizationHardware::with(['type', 'contract'])
+                    ->whereIn('id', $this->form['selected_hardware'])
+                    ->get();
+                
+                // Create formatted note
+                $hardwareNote = "**Hardware Related to This Ticket:**\n\n";
+                foreach ($hardwareItems as $hardware) {
+                    $hardwareNote .= "• **{$hardware->brand} {$hardware->model}**\n";
+                    if ($hardware->type) {
+                        $hardwareNote .= "  - Type: {$hardware->type->name}\n";
+                    }
+                    $hardwareNote .= "  - Quantity: {$hardware->quantity}\n";
+                    if ($hardware->location) {
+                        $hardwareNote .= "  - Location: {$hardware->location}\n";
+                    }
+                    if ($hardware->contract) {
+                        $hardwareNote .= "  - Contract: {$hardware->contract->contract_number}\n";
+                    }
+                    $hardwareNote .= "\n";
+                }
+                
+                // Create internal note
+                \App\Models\TicketNote::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $user->id,
+                    'note' => $hardwareNote,
+                    'is_internal' => true,
+                ]);
+                
+                \Log::info('Hardware note created for ticket: ' . $ticket->id);
+            }
+            
+            \Log::info('Ticket created successfully with ID: ' . $ticket->id);
+            
+            // Create first message
+            $message = TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'sender_id' => $ticket->client_id,
+                'message' => $this->form['description'],
+            ]);
+            
+            \Log::info('Message created successfully with ID: ' . $message->id);
+
+            // Handle file attachments
+            if (!empty($this->attachments)) {
+                \Log::info('Processing ' . count($this->attachments) . ' attachments');
+                foreach ($this->attachments as $index => $attachment) {
+                    if ($attachment) {
+                        \Log::info('Processing attachment ' . ($index + 1) . ': ' . $attachment->getClientOriginalName());
+                        
+                        // Use the same path structure as reply attachments
+                        $year = now()->format('Y');
+                        $month = now()->format('m');
+                        $path = $attachment->store("tickets/{$ticket->id}/attachments/{$year}/{$month}", 'local');
+                        
+                        // Create attachment record
+                        $attachmentRecord = \App\Models\TicketMessageAttachment::create([
+                            'ticket_message_id' => $message->id,
+                            'disk' => 'local',
+                            'path' => $path,
+                            'original_name' => $attachment->getClientOriginalName(),
+                            'mime_type' => $attachment->getMimeType(),
+                            'size' => $attachment->getSize(),
+                        ]);
+                        
+                        \Log::info('Attachment record created with ID: ' . $attachmentRecord->id);
+                    }
+                }
+            }
+
+            \Log::info('Ticket creation completed successfully, redirecting to ticket view');
+            session()->flash('message', 'Ticket created successfully.');
+            return redirect()->route('tickets.show', $ticket);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to create ticket: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            session()->flash('error', 'Failed to create ticket. Please try again.');
+        }
+    }
+
+    public function updatedFormOrganizationId()
+    {
+        $this->form['client_id'] = '';
+        
+        // Debug: Log when organization changes
+        \Log::info('Organization changed to: ' . $this->form['organization_id']);
+        
+        // Check if there are any users for this organization
+        $clientCount = User::where('organization_id', $this->form['organization_id'])
+            ->where('is_active', true)
+            ->count();
+        
+        \Log::info('User count for org ' . $this->form['organization_id'] . ': ' . $clientCount);
+    }
+
+    public function isClientUser(): bool
+    {
+        return auth()->user()->hasRole('client');
+    }
+
+    public function getAvailableClientsProperty()
+    {
+        if (empty($this->form['organization_id'])) {
+            return collect();
+        }
+
+        return User::where('organization_id', $this->form['organization_id'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function getAvailableHardwareProperty()
+    {
+        if (empty($this->form['organization_id'])) {
+            return collect();
+        }
+
+        return \App\Models\OrganizationHardware::where('organization_id', $this->form['organization_id'])
+            ->with(['type', 'contract'])
+            ->orderBy('brand')
+            ->orderBy('model')
+            ->get();
+    }
+
+        public function render()
+    {
         return view('livewire.create-ticket', [
-            'organizations' => Organization::all(),
-            'departments' => Department::all(),
-            'users' => User::all(),
-            'clients' => $clients,
-            'priorityOptions' => TicketPriority::options(),
+            'organizations' => Organization::where('is_active', true)->get(),
+            'departments' => Department::where('is_active', true)->get(),
+            'users' => User::where('is_active', true)->get(),
+            'clients' => $this->availableClients,
+            'hardware' => $this->availableHardware,
+            'priorityOptions' => [
+                'low' => 'Low',
+                'normal' => 'Normal',
+                'high' => 'High',
+                'urgent' => 'Urgent',
+                'critical' => 'Critical',
+            ],
         ]);
     }
 }

@@ -88,11 +88,14 @@ Route::middleware('auth')->group(function () {
     // Ticket Routes (Protected by permissions)
     Route::middleware(['can:tickets.read'])->group(function () {
         Route::get('/tickets/manage', ManageTickets::class)->name('tickets.index');
-        Route::get('/tickets/{ticket}', ViewTicket::class)->name('tickets.show');
     });
     
     Route::middleware(['can:tickets.create'])->group(function () {
         Route::get('/tickets/create', CreateTicket::class)->name('tickets.create');
+    });
+    
+    Route::middleware(['can:tickets.read'])->group(function () {
+        Route::get('/tickets/{ticket}', ViewTicket::class)->name('tickets.show');
     });
 
     // Profile Routes

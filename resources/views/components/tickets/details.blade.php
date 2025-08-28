@@ -87,14 +87,6 @@
                                 </span>
                             </div>
                         </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Department</label>
-                            <div class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
-                                <div>{{ $ticket->department->departmentGroup->name ?? 'N/A' }}</div>
-                                <div class="text-neutral-600 dark:text-neutral-400">{{ $ticket->department->name ?? 'N/A' }}</div>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="space-y-3">
@@ -113,25 +105,90 @@
                         </div>
 
                         <div>
+                            <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Client Contact</label>
+                            <div class="mt-1 text-sm text-neutral-800 dark:text-neutral-200 space-y-1">
+                                @if($ticket->client->email)
+                                    <div class="flex items-center gap-2">
+                                        <x-heroicon-o-envelope class="h-3 w-3 text-neutral-400" />
+                                        <a href="mailto:{{ $ticket->client->email }}" class="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 truncate" title="{{ $ticket->client->email }}">
+                                            {{ $ticket->client->email }}
+                                        </a>
+                                    </div>
+                                @endif
+                                @if($ticket->client->phone)
+                                    <div class="flex items-center gap-2">
+                                        <x-heroicon-o-phone class="h-3 w-3 text-neutral-400" />
+                                        <a href="tel:{{ $ticket->client->phone }}" class="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 truncate" title="{{ $ticket->client->phone }}">
+                                            {{ $ticket->client->phone }}
+                                        </a>
+                                    </div>
+                                @endif
+                                @if(!$ticket->client->email && !$ticket->client->phone)
+                                    <span class="text-neutral-500 dark:text-neutral-400">No contact information</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div>
                             <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Owner</label>
                             <div class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
                                 <span class="truncate" title="{{ $ticket->owner->name ?? 'Unassigned' }}">{{ $ticket->owner->name ?? 'Unassigned' }}</span>
                             </div>
                         </div>
 
-                        {{-- Active Contract --}}
-                        @if($ticket->organization && $ticket->organization->contracts && $ticket->organization->contracts->count() > 0)
-                            @php $contract = $ticket->organization->contracts->first(); @endphp
-                            <div>
-                                <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Contract</label>
-                                <div class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
-                                    <div><span class="truncate" title="{{ $contract->contract_number }}">{{ $contract->contract_number }}</span></div>
-                                    <div class="text-neutral-600 dark:text-neutral-400">
-                                        <span class="truncate" title="{{ $contract->type }}">{{ $contract->type }}</span>
+                    </div>
+                </div>
+
+                {{-- Contract Information - Full Width with Border --}}
+                <div class="pt-4 mt-4 border-t border-neutral-200 dark:border-neutral-700">
+                    @php
+                        $departmentContracts = $ticket->organization->contracts->where('department_id', $ticket->department_id);
+                        $hasActiveContracts = $departmentContracts->where('status', 'active')->count() > 0;
+                    @endphp
+                    
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Contract Status</label>
+                            <div class="mt-1">
+                                @if($hasActiveContracts)
+                                    @foreach($departmentContracts->where('status', 'active') as $contract)
+                                        <div class="text-sm text-neutral-800 dark:text-neutral-200 mb-1">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-neutral-600 dark:text-neutral-400">{{ $contract->type }}</span>
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200">
+                                                    Active
+                                                </span>
+                                            </div>
+                                            @if($contract->csi_number)
+                                                <div class="text-sky-600 dark:text-sky-400 text-xs font-medium">
+                                                    CSI: {{ $contract->csi_number }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="text-sm text-neutral-800 dark:text-neutral-200">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-neutral-600 dark:text-neutral-400">No active contract</span>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200">
+                                                Warning
+                                            </span>
+                                        </div>
+                                        <div class="text-neutral-500 dark:text-neutral-500 text-xs">
+                                            {{ $ticket->department->name }} department
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
                             </div>
-                        @endif
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Department</label>
+                            <div class="mt-1 text-sm text-neutral-800 dark:text-neutral-200">
+                                <div>{{ $ticket->department->departmentGroup->name ?? 'N/A' }}</div>
+                                <div class="text-neutral-600 dark:text-neutral-400">{{ $ticket->department->name ?? 'N/A' }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

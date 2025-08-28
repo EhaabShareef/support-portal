@@ -78,17 +78,25 @@ class AttachmentPreviewModal extends Component
             return null;
         }
 
-        // Create a temporary signed URL for secure access
-        $url = Storage::disk($this->attachment->disk)->temporaryUrl(
-            $this->attachment->path,
-            now()->addMinutes(5),
-            [
-                'ResponseContentType' => $this->attachment->mime_type,
-                'ResponseContentDisposition' => 'inline; filename="' . $this->attachment->original_name . '"',
-            ]
-        );
+        // For public disk, use direct URL
+        if ($this->attachment->disk === 'public') {
+            return Storage::disk('public')->url($this->attachment->path);
+        }
 
-        return $url;
+        // For other disks, create a temporary signed URL for secure access
+        try {
+            return Storage::disk($this->attachment->disk)->temporaryUrl(
+                $this->attachment->path,
+                now()->addMinutes(5),
+                [
+                    'ResponseContentType' => $this->attachment->mime_type,
+                    'ResponseContentDisposition' => 'inline; filename="' . $this->attachment->original_name . '"',
+                ]
+            );
+        } catch (\Exception $e) {
+            // Fallback to direct URL if temporary URL is not supported
+            return Storage::disk($this->attachment->disk)->url($this->attachment->path);
+        }
     }
 
     public function canPreview()

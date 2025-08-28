@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use App\Models\User;
@@ -161,10 +161,10 @@ class Ticket extends Model
         return $this->belongsTo(Ticket::class, 'merged_into_ticket_id');
     }
 
-    // Attachments
-    public function attachments(): MorphMany
+    // Attachments (through messages)
+    public function attachments(): HasManyThrough
     {
-        return $this->morphMany(Attachment::class, 'attachable');
+        return $this->hasManyThrough(TicketMessageAttachment::class, TicketMessage::class);
     }
 
     // Department Group (via Department) - using accessor for simplicity

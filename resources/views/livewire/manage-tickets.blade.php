@@ -11,11 +11,11 @@
             </div>
 
             @if($this->canCreate)
-            <button wire:click="openCreateModal" 
+            <a href="{{ route('tickets.create') }}" 
                 class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
                 <x-heroicon-o-plus class="h-4 w-4 mr-2" />
                 New Ticket
-            </button>
+            </a>
             @endif
         </div>
     </div>
@@ -401,142 +401,7 @@
     </div>
     @endif
 
-    {{-- Create/Edit Modal --}}
-    @if($showCreateModal)
-    <div class="fixed inset-0 z-50 overflow-y-auto" x-data="{ show: @entangle('showCreateModal') }" x-show="show" x-cloak>
-        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" x-show="show" 
-                 x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" 
-                 x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" 
-                 x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                 wire:click="closeModal"></div>
 
-            <div class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
-                 x-show="show" x-transition:enter="ease-out duration-300" 
-                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
-                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
-                 x-transition:leave="ease-in duration-200" 
-                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
-                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-                
-                <form wire:submit="save">
-                    <div class="bg-white dark:bg-neutral-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-medium text-neutral-900 dark:text-neutral-100">
-                                Create New Ticket
-                            </h3>
-                            <button type="button" wire:click="closeModal" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
-                                <x-heroicon-o-x-mark class="h-6 w-6" />
-                            </button>
-                        </div>
-
-                        <div class="space-y-4">
-                            {{-- Subject --}}
-                            <div>
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Subject *</label>
-                                <input type="text" wire:model="form.subject" 
-                                       class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                                       placeholder="Brief description of the issue or request">
-                                @error('form.subject') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div class="grid grid-cols-1 gap-4">
-                                {{-- Priority --}}
-                                <div>
-                                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Priority *</label>
-                                    <select wire:model="form.priority"
-                                            class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                                        @foreach($priorityOptions as $value => $label)
-                                            <option value="{{ $value }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('form.priority') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-
-                            {{-- Department --}}
-                            <div>
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Department *</label>
-                                <select wire:model="form.department_id" 
-                                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                                    <option value="">Select Department</option>
-                                    @foreach($departments as $dept)
-                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('form.department_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                            </div>
-
-                            {{-- Organization (Only for Agents/Admins) --}}
-                            @if(!auth()->user()->hasRole('client'))
-                            <div>
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Organization *</label>
-                                <select wire:model.live="form.organization_id" 
-                                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                                    <option value="">Select Organization</option>
-                                    @foreach($organizations as $org)
-                                        <option value="{{ $org->id }}">{{ $org->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('form.organization_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                            </div>
-
-                            {{-- Client (Dependent on Organization) --}}
-                            <div>
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Client *</label>
-                                <select wire:model="form.client_id" 
-                                        class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                                    <option value="">{{ $form['organization_id'] ? 'Select Client' : 'Select Organization first' }}</option>
-                                    @foreach($this->availableClients as $client)
-                                        <option value="{{ $client->id }}">{{ $client->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('form.client_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                            </div>
-                            @else
-                            {{-- Show organization name for clients (read-only) --}}
-                            <div>
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Organization</label>
-                                <div class="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-md text-neutral-700 dark:text-neutral-300">
-                                    {{ auth()->user()->organization->name }}
-                                </div>
-                            </div>
-                            @endif
-
-                            {{-- Description --}}
-                            <div>
-                                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description</label>
-                                <textarea wire:model="form.description" rows="4"
-                                          class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                                          placeholder="Provide detailed information about the issue or request..."></textarea>
-                                @error('form.description') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                            </div>
-
-                            {{-- Note about assignment --}}
-                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                                <p class="text-sm text-blue-800 dark:text-blue-200">
-                                    <x-heroicon-o-information-circle class="h-4 w-4 inline mr-1" />
-                                    New tickets will be created as "Open" and unassigned. An agent will be assigned once the ticket is reviewed.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-gray-50 dark:bg-neutral-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit" 
-                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            Create Ticket
-                        </button>
-                        <button type="button" wire:click="closeModal"
-                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-neutral-600 shadow-sm px-4 py-2 bg-white dark:bg-neutral-800 text-base font-medium text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:mt-0 sm:w-auto sm:text-sm">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    @endif
 
     {{-- Reopen Ticket Modal --}}
     @if($showReopenModal)
