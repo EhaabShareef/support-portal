@@ -250,8 +250,8 @@
 
                             {{-- Status --}}
                             <div class="col-span-1">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="{{ $ticket->getStatusCssClass() }}">
-                                    {{ $ticket->status_label }}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium max-w-full truncate" style="{{ $ticket->getStatusCssClass() }}" title="{{ $ticket->status_label }}">
+                                    {{ Str::limit($ticket->status_label, 12) }}
                                 </span>
                             </div>
 
@@ -344,8 +344,8 @@
 
                             {{-- Status and Priority Badges --}}
                             <div class="flex items-center gap-2 flex-wrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="{{ $ticket->getStatusCssClass() }}">
-                                    {{ $ticket->status_label }}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium max-w-full truncate" style="{{ $ticket->getStatusCssClass() }}" title="{{ $ticket->status_label }}">
+                                    {{ Str::limit($ticket->status_label, 12) }}
                                 </span>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ \App\Enums\TicketPriority::from($ticket->priority)->cssClass() }}">
                                     <x-dynamic-component :component="\App\Enums\TicketPriority::from($ticket->priority)->icon()" class="h-3 w-3 mr-1" />
