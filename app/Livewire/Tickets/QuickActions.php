@@ -59,7 +59,7 @@ class QuickActions extends Component
             redirect()->route('tickets.show', $this->ticket);
         } else {
             // If we're already in the ticket view, dispatch the edit event
-            $this->dispatch('edit:toggle')->to('view-ticket');
+            $this->dispatch('edit:toggle')->to('tickets.view-ticket');
         }
     }
 
