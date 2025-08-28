@@ -9,7 +9,7 @@
         @if($editMode)
             {{-- Edit Form --}}
             <form class="space-y-4" onsubmit="return confirmTicketUpdate(event, '{{ $ticket->priority }}')">
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Priority</label>
                         <select wire:model="form.priority" id="prioritySelect"
@@ -31,7 +31,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Owner</label>
                         <select wire:model="form.owner_id"
@@ -68,7 +68,7 @@
         @else
             {{-- Display Mode --}}
             <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div class="space-y-3">
                         <div>
                             <label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Priority</label>

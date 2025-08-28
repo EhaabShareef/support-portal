@@ -60,22 +60,26 @@
     {{-- Message Content --}}
     <div class="flex-1 min-w-0">
         {{-- Header --}}
-        <div class="flex items-center gap-2 mb-1">
-            <span class="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                {{ $senderName }}
-            </span>
-            <span class="text-xs text-neutral-500 dark:text-neutral-400">
-                {{ $item->created_at->format('M d, Y \a\t H:i') }}
-            </span>
-            @if($messageType !== 'default')
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200">
-                    {{ ucfirst($messageType) }}
+        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+            <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                    {{ $senderName }}
                 </span>
-            @elseif($isPublicNote)
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
-                    Note
+                <span class="text-xs text-neutral-500 dark:text-neutral-400">
+                    {{ $item->created_at->format('M d, Y \a\t H:i') }}
                 </span>
-            @endif
+            </div>
+            <div class="flex items-center gap-1">
+                @if($messageType !== 'default')
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200">
+                        {{ ucfirst($messageType) }}
+                    </span>
+                @elseif($isPublicNote)
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
+                        Note
+                    </span>
+                @endif
+            </div>
         </div>
         
         {{-- Message Body --}}

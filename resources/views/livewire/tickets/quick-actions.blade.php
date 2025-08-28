@@ -1,4 +1,4 @@
-<div class="flex items-center gap-2">
+<div class="flex flex-wrap items-center gap-2">
     {{-- Back to Tickets button (only show when not in manage-tickets view) --}}
     @if(!request()->routeIs('tickets.index'))
         <a href="{{ route('tickets.index') }}" 

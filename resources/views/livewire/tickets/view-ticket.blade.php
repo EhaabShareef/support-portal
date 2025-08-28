@@ -3,14 +3,14 @@
     <x-tickets.header :ticket="$ticket" />
     
     {{-- Main body grid: conversation (left) + details/notes (right) --}}
-    <div class="grid grid-cols-12 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {{-- Left column: Conversation thread --}}
-        <div class="col-span-8">
+        <div class="lg:col-span-8 order-2 lg:order-1">
             <livewire:tickets.conversation-thread :ticket="$ticket" />
         </div>
         
         {{-- Right column: Details, organization notes, internal notes --}}
-        <div class="col-span-4 space-y-4">
+        <div class="lg:col-span-4 space-y-4 order-1 lg:order-2">
             {{-- Ticket Details --}}
             <x-tickets.details 
                 :ticket="$ticket" 
