@@ -229,6 +229,11 @@
                                                         Asset: {{ $hardware->asset_tag }}
                                                     </p>
                                                 @endif
+                                                @if($hardware->pivot->quantity && $hardware->pivot->quantity > 1)
+                                                    <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                                                        Quantity: {{ $hardware->pivot->quantity }}
+                                                    </p>
+                                                @endif
                                                 @if($hardware->location)
                                                     <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                                                         📍 {{ $hardware->location }}

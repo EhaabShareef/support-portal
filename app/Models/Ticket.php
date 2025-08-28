@@ -185,7 +185,7 @@ class Ticket extends Model
     public function hardware(): BelongsToMany
     {
         return $this->belongsToMany(OrganizationHardware::class, 'ticket_hardware')
-            ->withPivot('maintenance_note')
+            ->withPivot('maintenance_note', 'quantity')
             ->withTimestamps();
     }
 

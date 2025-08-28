@@ -19,8 +19,11 @@ class LinkHardwareModal extends Component
     public ?int $selectedHardwareId = null;
     public ?int $selectedSerialId = null;
     public string $maintenanceNote = '';
+    public int $quantity = 1;
     public array $availableHardware = [];
     public array $availableSerials = [];
+    public array $linkedHardwareNotes = [];
+    public array $linkedHardwareQuantities = [];
 
     protected $listeners = ['link-hardware:toggle' => 'toggle'];
 
@@ -42,6 +45,7 @@ class LinkHardwareModal extends Component
         
         if ($this->show) {
             $this->loadAvailableHardware();
+            $this->loadLinkedHardwareData();
         } else {
             $this->resetForm();
         }
@@ -49,8 +53,12 @@ class LinkHardwareModal extends Component
 
     public function loadAvailableHardware(): void
     {
+        // Get IDs of already linked hardware
+        $linkedHardwareIds = $this->ticket->hardware->pluck('id')->toArray();
+
         $query = OrganizationHardware::where('organization_id', $this->ticket->organization_id)
-            ->whereNull('deleted_at');
+            ->whereNull('deleted_at')
+            ->whereNotIn('id', $linkedHardwareIds); // Exclude already linked hardware
 
         if (!empty($this->search)) {
             $query->where(function ($q) {
@@ -68,6 +76,15 @@ class LinkHardwareModal extends Component
             ->toArray();
     }
 
+    public function loadLinkedHardwareData(): void
+    {
+        // Load existing maintenance notes and quantities for linked hardware
+        foreach ($this->ticket->hardware as $hardware) {
+            $this->linkedHardwareNotes[$hardware->id] = $hardware->pivot->maintenance_note ?? '';
+            $this->linkedHardwareQuantities[$hardware->id] = $hardware->pivot->quantity ?? 1;
+        }
+    }
+
     public function updatedSearch(): void
     {
         $this->loadAvailableHardware();
@@ -77,6 +94,8 @@ class LinkHardwareModal extends Component
     {
         $this->selectedHardwareId = $hardwareId;
         $this->selectedSerialId = null;
+        $this->maintenanceNote = '';
+        $this->quantity = 1;
         $this->loadSerialsForHardware($hardwareId);
     }
 
@@ -98,7 +117,7 @@ class LinkHardwareModal extends Component
         $this->selectedSerialId = $serialId;
     }
 
-    public function linkHardware(): void
+    public function addToTicket(): void
     {
         $this->authorize('update', $this->ticket);
 
@@ -119,14 +138,21 @@ class LinkHardwareModal extends Component
             return;
         }
 
+        // Validate quantity
+        if ($this->quantity < 1 || $this->quantity > $hardware->quantity) {
+            session()->flash('error', "Quantity must be between 1 and {$hardware->quantity}.");
+            return;
+        }
+
         // Link hardware to ticket
         $this->ticket->hardware()->syncWithoutDetaching([
             $this->selectedHardwareId => [
-                'maintenance_note' => $this->maintenanceNote
+                'maintenance_note' => $this->maintenanceNote,
+                'quantity' => $this->quantity
             ]
         ]);
 
-        // Update maintenance timestamps on hardware
+        // Update maintenance timestamps on hardware if note is provided
         if (!empty($this->maintenanceNote)) {
             $hardware->update([
                 'last_maintenance' => now(),
@@ -134,21 +160,19 @@ class LinkHardwareModal extends Component
             ]);
         }
 
-        session()->flash('message', 'Hardware linked successfully!');
+        session()->flash('message', 'Hardware added to ticket successfully!');
         $this->dispatch('ticket:refresh');
-        $this->toggle();
+        
+        // Reset selection and reload data
+        $this->selectedHardwareId = null;
+        $this->selectedSerialId = null;
+        $this->maintenanceNote = '';
+        $this->quantity = 1;
+        $this->loadAvailableHardware();
+        $this->loadLinkedHardwareData();
     }
 
-    public function unlinkHardware($hardwareId): void
-    {
-        $this->authorize('update', $this->ticket);
-
-        $this->ticket->hardware()->detach($hardwareId);
-        session()->flash('message', 'Hardware unlinked successfully!');
-        $this->dispatch('ticket:refresh');
-    }
-
-    public function updateMaintenanceNote($hardwareId, $note): void
+    public function updateLinkedHardware($hardwareId): void
     {
         $this->authorize('update', $this->ticket);
 
@@ -158,9 +182,19 @@ class LinkHardwareModal extends Component
             return;
         }
 
-        // Update the maintenance note
+        $quantity = $this->linkedHardwareQuantities[$hardwareId] ?? 1;
+        $note = $this->linkedHardwareNotes[$hardwareId] ?? '';
+
+        // Validate quantity
+        if ($quantity < 1 || $quantity > $hardware->quantity) {
+            session()->flash('error', "Quantity must be between 1 and {$hardware->quantity}.");
+            return;
+        }
+
+        // Update the hardware link
         $this->ticket->hardware()->updateExistingPivot($hardwareId, [
-            'maintenance_note' => $note
+            'maintenance_note' => $note,
+            'quantity' => $quantity
         ]);
 
         // Update maintenance timestamps if note is provided
@@ -171,8 +205,21 @@ class LinkHardwareModal extends Component
             ]);
         }
 
-        session()->flash('message', 'Maintenance note updated successfully!');
+        session()->flash('message', 'Hardware details updated successfully!');
         $this->dispatch('ticket:refresh');
+    }
+
+    public function unlinkHardware($hardwareId): void
+    {
+        $this->authorize('update', $this->ticket);
+
+        $this->ticket->hardware()->detach($hardwareId);
+        session()->flash('message', 'Hardware removed from ticket successfully!');
+        $this->dispatch('ticket:refresh');
+        
+        // Reload data after unlinking
+        $this->loadAvailableHardware();
+        $this->loadLinkedHardwareData();
     }
 
     public function resetForm(): void
@@ -181,8 +228,11 @@ class LinkHardwareModal extends Component
         $this->selectedHardwareId = null;
         $this->selectedSerialId = null;
         $this->maintenanceNote = '';
+        $this->quantity = 1;
         $this->availableHardware = [];
         $this->availableSerials = [];
+        $this->linkedHardwareNotes = [];
+        $this->linkedHardwareQuantities = [];
     }
 
     public function render()
