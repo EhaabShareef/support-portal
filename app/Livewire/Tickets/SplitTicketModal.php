@@ -29,12 +29,13 @@ class SplitTicketModal extends Component
         $this->ticket = $ticket;
         $this->messagesList = $ticket->messages()
             ->where('is_log', false)
+            ->where('is_system_message', false)
             ->latest()
             ->take(100)
             ->get()
             ->map(fn ($m) => [
                 'id' => $m->id,
-                'preview' => '#'.$m->id.' • '.($m->sender?->name ?? 'System').' • '.$m->created_at->format('Y-m-d H:i').' • '.Str::limit(strip_tags($m->message), 48),
+                'preview' => '#'.$m->id.' • '.($m->sender?->name ?? 'Unknown').' • '.$m->created_at->format('Y-m-d H:i').' • '.Str::limit(strip_tags($m->message), 48),
             ])->toArray();
     }
 

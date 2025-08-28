@@ -11,9 +11,11 @@ return new class extends Migration
         Schema::table('tickets', function (Blueprint $t) {
             $t->foreignId('split_from_ticket_id')
                 ->nullable()
-                ->constrained('tickets')
-                ->nullOnDelete()
-                ->index();
+                ->after('owner_id')
+                ->constrained('tickets', 'id')
+                ->nullOnDelete();
+            
+            $t->index('split_from_ticket_id');
         });
     }
 
