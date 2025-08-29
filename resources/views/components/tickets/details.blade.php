@@ -46,11 +46,17 @@
                     <div>
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Department</label>
                         <select wire:model="form.department_id"
-                                class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                @if($ticket->hardware->count() > 0) disabled @endif
+                                class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500 @if($ticket->hardware->count() > 0) opacity-50 cursor-not-allowed @endif">
                             @foreach($departments as $department)
                                 <option value="{{ $department->id }}">{{ $department->name }}</option>
                             @endforeach
                         </select>
+                        @if($ticket->hardware->count() > 0)
+                            <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                ⚠️ Department cannot be changed while hardware is linked. Remove hardware links or create a new ticket.
+                            </p>
+                        @endif
                     </div>
                 </div>
 
@@ -232,6 +238,13 @@
                                                 @if($hardware->pivot->quantity && $hardware->pivot->quantity > 1)
                                                     <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                                                         Quantity: {{ $hardware->pivot->quantity }}
+                                                        @if($hardware->pivot->fixed > 0)
+                                                            <span class="text-green-600 dark:text-green-400">({{ $hardware->pivot->fixed }} fixed)</span>
+                                                        @endif
+                                                    </p>
+                                                @elseif($hardware->pivot->fixed > 0)
+                                                    <p class="text-xs text-green-600 dark:text-green-400 mt-1">
+                                                        Fixed: {{ $hardware->pivot->fixed }}
                                                     </p>
                                                 @endif
                                                 @if($hardware->location)

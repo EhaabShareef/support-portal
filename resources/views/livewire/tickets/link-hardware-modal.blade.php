@@ -10,7 +10,7 @@
              wire:click="toggle"></div>
 
         {{-- Modal --}}
-        <div class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
+        <div class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full"
              x-show="show" x-transition:enter="ease-out duration-300" 
              x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
              x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
@@ -34,7 +34,7 @@
             </div>
 
             {{-- Content --}}
-            <div class="px-6 py-4 max-h-96 overflow-y-auto">
+            <div class="px-6 py-4 max-h-[600px] overflow-y-auto custom-scrollbar scrollbar-on-hover">
                 {{-- Search and Selection Section --}}
                 <div class="mb-6">
                     <h4 class="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
@@ -68,9 +68,9 @@
                             </p>
                         </div>
                     @else
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-32 overflow-y-auto mb-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-y-auto custom-scrollbar scrollbar-on-hover mb-4">
                             @foreach($availableHardware as $hardware)
-                                <div class="border border-neutral-200 dark:border-neutral-700 rounded-lg p-3 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors cursor-pointer {{ $selectedHardwareId == $hardware['id'] ? 'ring-2 ring-sky-500 bg-sky-50 dark:bg-sky-900/20' : '' }}"
+                                <div class="border border-neutral-200 dark:border-neutral-700 rounded-lg p-2 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors cursor-pointer {{ $selectedHardwareId == $hardware['id'] ? 'ring-2 ring-sky-500 bg-sky-50 dark:bg-sky-900/20' : '' }}"
                                      wire:click="selectHardware({{ $hardware['id'] }})">
                                     <div class="flex items-start justify-between">
                                         <div class="flex-1 min-w-0">
@@ -187,9 +187,9 @@
                         <h4 class="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
                             Linked Hardware
                         </h4>
-                        <div class="space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             @foreach($ticket->hardware as $linkedHardware)
-                                <div class="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                                <div class="border border-neutral-200 dark:border-neutral-700 rounded-lg p-3">
                                     <div class="flex items-start justify-between mb-3">
                                         <div class="flex-1 min-w-0">
                                             <h5 class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -218,15 +218,28 @@
                                         </button>
                                     </div>
                                     
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                         {{-- Quantity --}}
                                         <div>
                                             <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                                                Quantity
+                                                Linked Qty
                                             </label>
                                             <select wire:model="linkedHardwareQuantities.{{ $linkedHardware->id }}" 
                                                     class="w-full px-2 py-1 border border-neutral-300 dark:border-neutral-600 rounded text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-sky-500">
                                                 @for($i = 1; $i <= $linkedHardware->quantity; $i++)
+                                                    <option value="{{ $i }}">{{ $i }}</option>
+                                                @endfor
+                                            </select>
+                                        </div>
+                                        
+                                        {{-- Fixed Quantity --}}
+                                        <div>
+                                            <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                                                Fixed Qty
+                                            </label>
+                                            <select wire:model="linkedHardwareFixed.{{ $linkedHardware->id }}" 
+                                                    class="w-full px-2 py-1 border border-neutral-300 dark:border-neutral-600 rounded text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-sky-500">
+                                                @for($i = 0; $i <= ($linkedHardwareQuantities[$linkedHardware->id] ?? 1); $i++)
                                                     <option value="{{ $i }}">{{ $i }}</option>
                                                 @endfor
                                             </select>
@@ -258,13 +271,7 @@
                 </div>
             </div>
 
-            {{-- Footer --}}
-            <div class="bg-gray-50 dark:bg-neutral-700 px-6 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button wire:click="toggle"
-                        class="w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-neutral-600 shadow-sm px-4 py-2 bg-white dark:bg-neutral-800 text-base font-medium text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 sm:w-auto sm:text-sm">
-                    Close
-                </button>
-            </div>
+
         </div>
     </div>
 </div>

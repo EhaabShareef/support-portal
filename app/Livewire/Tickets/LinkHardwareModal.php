@@ -24,6 +24,7 @@ class LinkHardwareModal extends Component
     public array $availableSerials = [];
     public array $linkedHardwareNotes = [];
     public array $linkedHardwareQuantities = [];
+    public array $linkedHardwareFixed = [];
 
     protected $listeners = ['link-hardware:toggle' => 'toggle'];
 
@@ -82,6 +83,7 @@ class LinkHardwareModal extends Component
         foreach ($this->ticket->hardware as $hardware) {
             $this->linkedHardwareNotes[$hardware->id] = $hardware->pivot->maintenance_note ?? '';
             $this->linkedHardwareQuantities[$hardware->id] = $hardware->pivot->quantity ?? 1;
+            $this->linkedHardwareFixed[$hardware->id] = $hardware->pivot->fixed ?? 0;
         }
     }
 
@@ -184,6 +186,7 @@ class LinkHardwareModal extends Component
 
         $quantity = $this->linkedHardwareQuantities[$hardwareId] ?? 1;
         $note = $this->linkedHardwareNotes[$hardwareId] ?? '';
+        $fixed = $this->linkedHardwareFixed[$hardwareId] ?? 0;
 
         // Validate quantity
         if ($quantity < 1 || $quantity > $hardware->quantity) {
@@ -191,10 +194,17 @@ class LinkHardwareModal extends Component
             return;
         }
 
+        // Validate fixed quantity
+        if ($fixed < 0 || $fixed > $quantity) {
+            session()->flash('error', "Fixed quantity must be between 0 and {$quantity}.");
+            return;
+        }
+
         // Update the hardware link
         $this->ticket->hardware()->updateExistingPivot($hardwareId, [
             'maintenance_note' => $note,
-            'quantity' => $quantity
+            'quantity' => $quantity,
+            'fixed' => $fixed
         ]);
 
         // Update maintenance timestamps if note is provided
@@ -233,6 +243,7 @@ class LinkHardwareModal extends Component
         $this->availableSerials = [];
         $this->linkedHardwareNotes = [];
         $this->linkedHardwareQuantities = [];
+        $this->linkedHardwareFixed = [];
     }
 
     public function render()

@@ -185,7 +185,7 @@ class Ticket extends Model
     public function hardware(): BelongsToMany
     {
         return $this->belongsToMany(OrganizationHardware::class, 'ticket_hardware')
-            ->withPivot('maintenance_note', 'quantity')
+            ->withPivot('maintenance_note', 'quantity', 'fixed')
             ->withTimestamps();
     }
 
@@ -274,6 +274,26 @@ class Ticket extends Model
         }
 
         return sprintf('%s-%s%s-%04d', $prefix, $year, $month, $sequence);
+    }
+
+    // Hardware Progress
+    public function getHardwareProgressAttribute(): array
+    {
+        if (!$this->hardware->count()) {
+            return ['fixed' => 0, 'pending' => 0, 'total' => 0, 'percentage' => 0];
+        }
+
+        $fixed = $this->hardware->where('pivot.fixed', true)->sum('pivot.quantity');
+        $total = $this->hardware->sum('pivot.quantity');
+        $pending = $total - $fixed;
+        $percentage = $total > 0 ? round(($fixed / $total) * 100) : 0;
+
+        return [
+            'fixed' => $fixed,
+            'pending' => $pending,
+            'total' => $total,
+            'percentage' => $percentage
+        ];
     }
 
     // Scopes
