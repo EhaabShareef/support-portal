@@ -41,7 +41,7 @@
                             🎉 New Features Available!
                         </h3>
                         <p class="text-sm text-blue-800 dark:text-blue-200 mt-1">
-                            <strong>🎯 Ticket Splitting:</strong> Split tickets from any conversation message with beautiful modal interface • <strong>Enhanced Action Buttons:</strong> Smart hover expansion effects and context-aware actions • <strong>Table Management:</strong> Compact icon-only actions for data tables with tooltips • <strong>Smart Visibility:</strong> Actions automatically hide when not applicable • <strong>Improved UX:</strong> Professional animations and responsive design across all devices
+                            <strong>🔧 Hardware Ticket Management:</strong> Complete hardware linking system with progress tracking • <strong>Smart Progress Tracking:</strong> Visual progress bars and real-time hardware fix status • <strong>Intuitive Hardware Modal:</strong> Easy hardware selection with quantity and maintenance note management • <strong>Department Protection:</strong> Prevents department changes when hardware is linked • <strong>Progress Visualization:</strong> Beautiful progress graphs in conversation threads • <strong>Flexible Fixing:</strong> Mark partial quantities as fixed with validation
                         </p>
                     </div>
                 </div>
