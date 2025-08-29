@@ -140,6 +140,24 @@ class DashboardWidgetSeeder extends Seeder
                 'show_trends' => true,
             ],
         ]);
+        
+        DashboardWidget::create([
+            'name' => 'Hardware Progress',
+            'description' => 'Hardware ticket progress tracking with visual analytics',
+            'category' => 'admin',
+            'base_component' => 'admin.hardware-progress',
+            'available_sizes' => ['1x1', '2x1', '3x2'],
+            'default_size' => '2x1',
+            'sort_order' => 7,
+            'is_active' => true,
+            'is_default_visible' => true,
+            'permissions' => ['dashboard.admin'],
+            'options' => [
+                'cache_ttl' => 300,
+                'show_organization_breakdown' => true,
+                'exclude_closed_tickets' => true,
+            ],
+        ]);
     }
     
     private function createSupportWidgets(): void

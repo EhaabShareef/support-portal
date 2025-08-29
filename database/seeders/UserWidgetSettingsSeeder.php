@@ -19,7 +19,7 @@ class UserWidgetSettingsSeeder extends Seeder
 
         // Get all users with their roles
         $users = User::with('roles')->get();
-        $widgets = DashboardWidget::all()->keyBy('key');
+        $widgets = DashboardWidget::all()->keyBy('base_component');
 
         $settingsCount = 0;
 
@@ -75,11 +75,13 @@ class UserWidgetSettingsSeeder extends Seeder
         switch ($role) {
             case 'admin':
                 return [
-                    'admin_metrics',
-                    'ticket_trends_chart',
-                    'department_activity',
-                    'contract_alerts',
-                    'hardware_alerts',
+                    'admin.metrics',
+                    'admin.system-health',
+                    'admin.ticket-analytics',
+                    'admin.organization-management',
+                    'admin.user-activity',
+                    'admin.department-performance',
+                    'admin.hardware-progress',
                 ];
 
             case 'support':
