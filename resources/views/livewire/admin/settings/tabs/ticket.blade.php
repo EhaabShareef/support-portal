@@ -1,4 +1,14 @@
 <div class="space-y-6">
+    {{-- Debug Info --}}
+    @if(app()->environment('local'))
+        <div class="bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg p-3 text-xs">
+            <strong>Debug Info:</strong><br>
+            Department Groups Count: {{ count($departmentGroupsList) }}<br>
+            Show Modal: {{ $showDepartmentGroupAccess ? 'true' : 'false' }}<br>
+            Selected Status: {{ $selectedStatusKey }}
+        </div>
+    @endif
+    
     {{-- Header --}}
     <div class="flex items-center justify-between">
         <div>
@@ -354,7 +364,8 @@
                                 <div class="flex items-center space-x-1">
                                     <button wire:click="showDepartmentGroupAccess('{{ $key }}')" 
                                         class="text-neutral-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors p-1" 
-                                        title="Manage Department Access">
+                                        title="Manage Department Access"
+                                        onclick="console.log('Button clicked for status: {{ $key }}')">
                                         <x-heroicon-o-users class="h-4 w-4" />
                                     </button>
                                     @if(!$status['is_protected'])
@@ -393,7 +404,7 @@
                                 <div class="mt-2">
                                     <div class="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Department Groups:</div>
                                     <div class="flex flex-wrap gap-1">
-                                        @foreach($departmentGroups as $group)
+                                        @foreach($departmentGroupsList as $group)
                                             @if(in_array($group['id'], $status['department_groups']))
                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium" 
                                                       style="background-color: {{ $group['color'] }}20; color: {{ $group['color'] }};">
@@ -431,6 +442,8 @@
 
     {{-- Department Group Access Modal --}}
     @if($showDepartmentGroupAccess)
+        <!-- Debug: Modal should be visible -->
+        <script>console.log('Modal should be visible, showDepartmentGroupAccess: {{ $showDepartmentGroupAccess }}');</script>
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white dark:bg-neutral-900 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
                 <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
@@ -455,7 +468,7 @@
                 
                 <div class="p-6">
                     <div class="space-y-3">
-                        @foreach($departmentGroups as $group)
+                        @foreach($departmentGroupsList as $group)
                             <label class="flex items-center p-3 border border-neutral-200 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
                                 <input type="checkbox" 
                                        wire:model.live="statusDepartmentGroups" 

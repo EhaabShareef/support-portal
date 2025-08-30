@@ -46,7 +46,7 @@ class SettingsTicket extends Component
     ];
     
     // Department Group Access Management
-    public array $departmentGroups = [];
+    public array $departmentGroupsList = [];
     public bool $showDepartmentGroupAccess = false;
     public string $selectedStatusKey = '';
     public array $statusDepartmentGroups = [];
@@ -94,7 +94,7 @@ class SettingsTicket extends Component
             })->toArray();
             
             // Load department groups for access management
-            $this->departmentGroups = \App\Models\DepartmentGroup::active()->ordered()->get()->map(function($group) {
+            $this->departmentGroupsList = \App\Models\DepartmentGroup::active()->ordered()->get()->map(function($group) {
                 return [
                     'id' => $group->id,
                     'name' => $group->name,
@@ -545,6 +545,14 @@ class SettingsTicket extends Component
         $this->selectedStatusKey = $statusKey;
         $this->statusDepartmentGroups = $status['department_groups'];
         $this->showDepartmentGroupAccess = true;
+        
+        // Debug: Log the data being loaded
+        \Log::info('Department Group Access Modal Opened', [
+            'statusKey' => $statusKey,
+            'status' => $status,
+            'departmentGroupsList' => $this->departmentGroupsList,
+            'statusDepartmentGroups' => $this->statusDepartmentGroups
+        ]);
     }
 
     public function closeDepartmentGroupAccess()
