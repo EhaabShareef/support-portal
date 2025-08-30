@@ -42,20 +42,17 @@ class Shell extends Component
         }
     }
 
-    #[On('saved')]
-    public function handleSaved(string $message): void
+    public function handleSaved($message = ''): void
     {
         session()->flash('message', $message);
     }
 
-    #[On('error')]
-    public function handleError(string $message): void
+    public function handleError($message = ''): void
     {
         session()->flash('error', $message);
     }
 
-    #[On('reset')]
-    public function handleReset(string $message): void
+    public function handleReset($message = ''): void
     {
         session()->flash('message', $message);
     }
