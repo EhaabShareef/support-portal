@@ -352,6 +352,11 @@
                                     <p class="text-xs text-neutral-600 dark:text-neutral-400 font-mono mt-1">{{ $status['key'] }}</p>
                                 </div>
                                 <div class="flex items-center space-x-1">
+                                    <button wire:click="showDepartmentGroupAccess('{{ $key }}')" 
+                                        class="text-neutral-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors p-1" 
+                                        title="Manage Department Access">
+                                        <x-heroicon-o-users class="h-4 w-4" />
+                                    </button>
                                     @if(!$status['is_protected'])
                                         <button wire:click="startEditStatus('{{ $key }}')" 
                                             class="text-neutral-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors p-1" 
@@ -383,6 +388,27 @@
                                 <p class="text-xs text-neutral-600 dark:text-neutral-400">{{ $status['description'] }}</p>
                             @endif
                             
+                            {{-- Department Groups Access --}}
+                            @if(count($status['department_groups']) > 0)
+                                <div class="mt-2">
+                                    <div class="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Department Groups:</div>
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($departmentGroups as $group)
+                                            @if(in_array($group['id'], $status['department_groups']))
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium" 
+                                                      style="background-color: {{ $group['color'] }}20; color: {{ $group['color'] }};">
+                                                    {{ $group['name'] }}
+                                                </span>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @else
+                                <div class="mt-2">
+                                    <span class="text-xs text-neutral-400 dark:text-neutral-500">No department groups assigned</span>
+                                </div>
+                            @endif
+                            
                             <div class="flex items-center justify-between mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-600">
                                 <span class="text-xs text-neutral-500 dark:text-neutral-400">Sort: {{ $status['sort_order'] }}</span>
                                 <span class="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{{ $status['color'] }}</span>
@@ -402,6 +428,70 @@
             </div>
         </div>
     </div>
+
+    {{-- Department Group Access Modal --}}
+    @if($showDepartmentGroupAccess)
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-neutral-900 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+                <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-neutral-800 dark:text-neutral-100">
+                            Department Group Access
+                        </h3>
+                        <button wire:click="closeDepartmentGroupAccess" 
+                                class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+                            <x-heroicon-o-x-mark class="h-5 w-5" />
+                        </button>
+                    </div>
+                    @if($selectedStatusKey && isset($ticketStatusesArray[$selectedStatusKey]))
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                            Configure which department groups can use the 
+                            <span class="font-medium" style="color: {{ $ticketStatusesArray[$selectedStatusKey]['color'] }};">
+                                {{ $ticketStatusesArray[$selectedStatusKey]['name'] }}
+                            </span> status
+                        </p>
+                    @endif
+                </div>
+                
+                <div class="p-6">
+                    <div class="space-y-3">
+                        @foreach($departmentGroups as $group)
+                            <label class="flex items-center p-3 border border-neutral-200 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
+                                <input type="checkbox" 
+                                       wire:model.live="statusDepartmentGroups" 
+                                       value="{{ $group['id'] }}"
+                                       class="h-4 w-4 text-sky-600 focus:ring-sky-500 border-neutral-300 rounded">
+                                <div class="ml-3 flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 rounded-full" style="background-color: {{ $group['color'] }}"></div>
+                                        <span class="text-sm font-medium text-neutral-800 dark:text-neutral-100">
+                                            {{ $group['name'] }}
+                                        </span>
+                                    </div>
+                                    @if($group['description'])
+                                        <p class="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                                            {{ $group['description'] }}
+                                        </p>
+                                    @endif
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+                    
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                        <button wire:click="saveDepartmentGroupAccess" 
+                                class="flex-1 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors">
+                            Save Changes
+                        </button>
+                        <button wire:click="closeDepartmentGroupAccess" 
+                                class="flex-1 bg-neutral-500 hover:bg-neutral-600 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 
 

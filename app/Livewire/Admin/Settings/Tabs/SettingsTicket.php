@@ -44,6 +44,12 @@ class SettingsTicket extends Component
         'color' => '#3b82f6',
         'department_groups' => [],
     ];
+    
+    // Department Group Access Management
+    public array $departmentGroups = [];
+    public bool $showDepartmentGroupAccess = false;
+    public string $selectedStatusKey = '';
+    public array $statusDepartmentGroups = [];
 
     public bool $hasUnsavedChanges = false;
 
@@ -84,6 +90,16 @@ class SettingsTicket extends Component
                     'is_active' => $status->is_active,
                     'is_protected' => $status->is_protected,
                     'department_groups' => $status->departmentGroups->pluck('id')->toArray(),
+                ];
+            })->toArray();
+            
+            // Load department groups for access management
+            $this->departmentGroups = \App\Models\DepartmentGroup::active()->ordered()->get()->map(function($group) {
+                return [
+                    'id' => $group->id,
+                    'name' => $group->name,
+                    'description' => $group->description,
+                    'color' => $group->color,
                 ];
             })->toArray();
 
@@ -349,6 +365,11 @@ class SettingsTicket extends Component
             
             $status = TicketStatusModel::create($statusData);
 
+            // Sync department groups if any are selected
+            if (!empty($this->newStatusForm['department_groups'])) {
+                $status->departmentGroups()->sync($this->newStatusForm['department_groups']);
+            }
+
             // Update the color service with the new color
             $colorService = app(TicketColorService::class);
             $colorService->setStatusColor($this->newStatusForm['key'], $this->newStatusForm['color']);
@@ -384,6 +405,7 @@ class SettingsTicket extends Component
             'key' => $status['key'],
             'description' => $status['description'],
             'color' => $status['color'],
+            'department_groups' => $status['department_groups'],
         ];
     }
 
@@ -432,6 +454,11 @@ class SettingsTicket extends Component
         try {
             $status = TicketStatusModel::findOrFail($this->ticketStatusesArray[$this->editingStatusKey]['id']);
             $status->update($this->editStatusForm);
+
+            // Sync department groups if any are selected
+            if (!empty($this->editStatusForm['department_groups'])) {
+                $status->departmentGroups()->sync($this->editStatusForm['department_groups']);
+            }
 
             // Update the color service with the new color
             $colorService = app(TicketColorService::class);
@@ -501,6 +528,61 @@ class SettingsTicket extends Component
             
         } catch (\Exception $e) {
             $this->dispatch('error', 'Failed to update ticket status: ' . $e->getMessage());
+        }
+    }
+
+    // Department Group Access Management Methods
+    public function showDepartmentGroupAccess($statusKey)
+    {
+        $this->checkPermission('settings.update');
+        
+        $status = $this->ticketStatusesArray[$statusKey] ?? null;
+        if (!$status) {
+            $this->dispatch('error', 'Status not found.');
+            return;
+        }
+
+        $this->selectedStatusKey = $statusKey;
+        $this->statusDepartmentGroups = $status['department_groups'];
+        $this->showDepartmentGroupAccess = true;
+    }
+
+    public function closeDepartmentGroupAccess()
+    {
+        $this->showDepartmentGroupAccess = false;
+        $this->selectedStatusKey = '';
+        $this->statusDepartmentGroups = [];
+    }
+
+    public function toggleDepartmentGroupAccess($groupId)
+    {
+        if (in_array($groupId, $this->statusDepartmentGroups)) {
+            $this->statusDepartmentGroups = array_diff($this->statusDepartmentGroups, [$groupId]);
+        } else {
+            $this->statusDepartmentGroups[] = $groupId;
+        }
+    }
+
+    public function saveDepartmentGroupAccess()
+    {
+        $this->checkPermission('settings.update');
+        
+        try {
+            $status = $this->ticketStatusesArray[$this->selectedStatusKey] ?? null;
+            if (!$status) {
+                $this->dispatch('error', 'Status not found.');
+                return;
+            }
+
+            $statusModel = TicketStatusModel::findOrFail($status['id']);
+            $statusModel->departmentGroups()->sync($this->statusDepartmentGroups);
+            
+            $this->dispatch('saved', 'Department group access updated successfully.');
+            $this->closeDepartmentGroupAccess();
+            $this->refreshData();
+            
+        } catch (\Exception $e) {
+            $this->dispatch('error', 'Failed to update department group access: ' . $e->getMessage());
         }
     }
 
