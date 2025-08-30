@@ -70,7 +70,7 @@ class Shell extends Component
                 'label' => 'Ticket',
                 'description' => 'Ticket workflow, colors, and statuses',
                 'icon' => 'heroicon-o-ticket',
-                'component' => 'admin.settings.tabs.settings-ticket'
+                'component' => 'admin.settings.modules.ticket-settings'
             ],
             'organization' => [
                 'label' => 'Organization',
