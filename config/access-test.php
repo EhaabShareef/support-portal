@@ -81,7 +81,7 @@ return [
         ],
         [
             'name' => 'System Settings',
-            'route' => 'admin.settings',
+            'route' => 'settings',
             'role_requirement' => 'admin',
             'permission_requirement' => 'settings.read',
             'description' => 'System configuration settings',

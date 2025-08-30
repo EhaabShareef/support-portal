@@ -131,7 +131,7 @@ class QuickRoleAccessTest
             [
                 'name' => 'Settings',
                 'role_requirement' => 'admin',
-                'route' => 'admin.settings',
+                'route' => 'settings',
                 'description' => 'System settings',
             ],
         ];
