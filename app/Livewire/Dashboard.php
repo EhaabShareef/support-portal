@@ -142,7 +142,7 @@ class Dashboard extends Component
                 ['label' => 'Manage Users', 'route' => 'admin.users.index', 'icon' => 'users', 'color' => 'blue'],
                 ['label' => 'Manage Roles', 'route' => 'admin.roles.index', 'icon' => 'shield-check', 'color' => 'purple'],
                 ['label' => 'Organizations', 'route' => 'organizations.index', 'icon' => 'building-office-2', 'color' => 'green'],
-                ['label' => 'Settings', 'route' => 'admin.settings', 'icon' => 'cog-6-tooth', 'color' => 'gray'],
+                ['label' => 'Settings', 'route' => 'settings', 'icon' => 'cog-6-tooth', 'color' => 'gray'],
             ],
         ];
     }

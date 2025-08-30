@@ -67,8 +67,8 @@
                 </a>
                 
                 {{-- Admin Settings (only for admins) --}}
-                <a href="{{ route('admin.settings') }}"
-                   class="nav-link {{ request()->routeIs('admin.settings') ? 'nav-link-active' : '' }}">
+                <a href="{{ route('settings') }}"
+                   class="nav-link {{ request()->routeIs('settings') ? 'nav-link-active' : '' }}">
                     <x-heroicon-o-cog-6-tooth class="h-4 w-4" />
                     <span>Settings</span>
                 </a>
@@ -225,8 +225,8 @@
                 </a>
                 
                 {{-- Mobile Admin Settings --}}
-                <a href="{{ route('admin.settings') }}"
-                   class="mobile-nav-link {{ request()->routeIs('admin.settings') ? 'mobile-nav-link-active' : '' }}"
+                <a href="{{ route('settings') }}"
+                   class="mobile-nav-link {{ request()->routeIs('settings') ? 'mobile-nav-link-active' : '' }}"
                    @click="mobileMenuOpen = false">
                     <x-heroicon-o-cog-6-tooth class="h-5 w-5" />
                     <span>Settings</span>

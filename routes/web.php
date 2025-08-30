@@ -20,7 +20,6 @@ use App\Livewire\UserProfile;
 use App\Livewire\Admin\ManageUsers as AdminManageUsers;
 use App\Livewire\Admin\ViewUser;
 use App\Livewire\Admin\ManageRoles;
-use App\Livewire\Admin\Settings\Shell;
 use App\Livewire\Admin\UsersRoles;
 use App\Livewire\ScheduleCalendar;
 use App\Livewire\Admin\Reports\ReportsDashboard;
@@ -117,6 +116,22 @@ Route::middleware('auth')->group(function () {
     Route::get('/attachments/{uuid}/view', [AttachmentController::class, 'view'])->name('attachments.view');
     Route::delete('/attachments/{uuid}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
 
+    // Settings Routes
+    Route::middleware(['auth', 'role:admin'])->group(function () {
+        Route::get('/settings', \App\Livewire\Settings\Index::class)->name('settings');
+        Route::get('/settings/general', \App\Livewire\Settings\General\Index::class)->name('settings.general');
+        Route::get('/settings/tickets', \App\Livewire\Settings\Tickets\Index::class)->name('settings.tickets');
+        Route::get('/settings/tickets/workflow', \App\Livewire\Settings\Tickets\Workflow::class)->name('settings.tickets.workflow');
+        Route::get('/settings/tickets/attachments', \App\Livewire\Settings\Tickets\Attachments::class)->name('settings.tickets.attachments');
+        Route::get('/settings/tickets/priority', \App\Livewire\Settings\Tickets\Priority::class)->name('settings.tickets.priority');
+        Route::get('/settings/tickets/status', \App\Livewire\Settings\Tickets\Status::class)->name('settings.tickets.status');
+        Route::get('/settings/organization', \App\Livewire\Settings\Organization\Index::class)->name('settings.organization');
+        Route::get('/settings/contracts', \App\Livewire\Settings\Contracts\Index::class)->name('settings.contracts');
+        Route::get('/settings/hardware', \App\Livewire\Settings\Hardware\Index::class)->name('settings.hardware');
+        Route::get('/settings/schedule', \App\Livewire\Settings\Schedule\Index::class)->name('settings.schedule');
+        Route::get('/settings/users', \App\Livewire\Settings\Users\Index::class)->name('settings.users');
+    });
+
     // Admin Routes (only for admin role)
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         // Combined Users & Roles page
@@ -129,7 +144,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/roles', fn() => redirect()->route('admin.users-roles.index', ['tab' => 'roles']))
             ->name('roles.index');
         
-        Route::get('/settings', Shell::class)->name('settings');
+        Route::get('/settings', fn () => redirect()->route('settings'))->name('settings');
         Route::get('/reports', ReportsDashboard::class)->name('reports.dashboard');
         Route::get('/reports/ticket-volume', TicketVolumeReport::class)->name('reports.ticket-volume');
         Route::get('/reports/organization-summary', OrganizationSummaryReport::class)->name('reports.organization-summary');
