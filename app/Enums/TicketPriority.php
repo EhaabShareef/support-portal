@@ -83,13 +83,6 @@ enum TicketPriority: string
         };
     }
 
-    /**
-     * Compare two priorities.
-     * Returns:
-     *  - negative if $priority1 < $priority2
-     *  - 0 if $priority1 == $priority2
-     *  - positive if $priority1 > $priority2
-     */
     public static function compare(string $priority1, string $priority2): int
     {
         $p1Value = self::from($priority1)->getValue();
