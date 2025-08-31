@@ -10,39 +10,6 @@ use Illuminate\Support\Facades\Cache;
 class TicketColorService
 {
     /**
-     * Available color palette mapping simple names to Tailwind classes
-     */
-    private const COLOR_PALETTE = [
-        'red' => ['bg' => 'bg-red-100', 'text' => 'text-red-700', 'dark_bg' => 'dark:bg-red-900/40', 'dark_text' => 'dark:text-red-300'],
-        'blue' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-700', 'dark_bg' => 'dark:bg-blue-900/40', 'dark_text' => 'dark:text-blue-300'],
-        'green' => ['bg' => 'bg-green-100', 'text' => 'text-green-700', 'dark_bg' => 'dark:bg-green-900/40', 'dark_text' => 'dark:text-green-300'],
-        'yellow' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'dark_bg' => 'dark:bg-yellow-900/40', 'dark_text' => 'dark:text-yellow-200'],
-        'orange' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-800', 'dark_bg' => 'dark:bg-orange-900/40', 'dark_text' => 'dark:text-orange-200'],
-        'purple' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-800', 'dark_bg' => 'dark:bg-purple-900/40', 'dark_text' => 'dark:text-purple-200'],
-        'pink' => ['bg' => 'bg-pink-100', 'text' => 'text-pink-800', 'dark_bg' => 'dark:bg-pink-900/40', 'dark_text' => 'dark:text-pink-100'],
-        'gray' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'dark_bg' => 'dark:bg-gray-900/40', 'dark_text' => 'dark:text-gray-200'],
-        'teal' => ['bg' => 'bg-teal-100', 'text' => 'text-teal-800', 'dark_bg' => 'dark:bg-teal-900/40', 'dark_text' => 'dark:text-teal-200'],
-        'cyan' => ['bg' => 'bg-cyan-100', 'text' => 'text-cyan-800', 'dark_bg' => 'dark:bg-cyan-900/40', 'dark_text' => 'dark:text-cyan-100'],
-        'lime' => ['bg' => 'bg-lime-100', 'text' => 'text-lime-800', 'dark_bg' => 'dark:bg-lime-900/40', 'dark_text' => 'dark:text-lime-100'],
-        'emerald' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-800', 'dark_bg' => 'dark:bg-emerald-900/40', 'dark_text' => 'dark:text-emerald-900'],
-    ];
-
-    /**
-     * Default status color mappings
-     */
-    private const DEFAULT_STATUS_COLORS = [
-        'open' => 'lime',
-        'in_progress' => 'blue',
-        'awaiting_customer_response' => 'yellow',
-        'awaiting_case_closure' => 'cyan',
-        'sales_engagement' => 'pink',
-        'monitoring' => 'teal',
-        'solution_provided' => 'emerald',
-        'closed' => 'red',
-        'on_hold' => 'gray',
-    ];
-
-    /**
      * Default priority color mappings
      */
     private const DEFAULT_PRIORITY_COLORS = [
