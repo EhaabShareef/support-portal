@@ -7,6 +7,7 @@ use Livewire\Component;
 class Index extends Component
 {
     public string $section = 'workflow';
+    public bool $showMobileNav = false;
 
     public function setSection(string $section): void
     {
