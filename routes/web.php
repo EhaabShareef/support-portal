@@ -144,7 +144,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/roles', fn() => redirect()->route('admin.users-roles.index', ['tab' => 'roles']))
             ->name('roles.index');
         
-        Route::get('/settings', fn () => redirect()->route('settings'))->name('settings');
+        // Route::get('/settings', fn () => redirect()->route('settings'))->name('settings');
         Route::get('/reports', ReportsDashboard::class)->name('reports.dashboard');
         Route::get('/reports/ticket-volume', TicketVolumeReport::class)->name('reports.ticket-volume');
         Route::get('/reports/organization-summary', OrganizationSummaryReport::class)->name('reports.organization-summary');

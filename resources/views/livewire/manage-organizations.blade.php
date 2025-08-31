@@ -1,19 +1,24 @@
 <div class="space-y-6">
 
     {{-- Header --}}
-    <div class="flex justify-between items-center">
-        <div class="flex items-center space-x-2">
-            <x-heroicon-o-building-office-2 class="h-6 w-6 text-neutral-800 dark:text-white" />
-            <h1 class="text-2xl font-semibold text-neutral-800 dark:text-white">Organizations</h1>
-        </div>
+    <div class="bg-white/5 backdrop-blur-md border border-neutral-200 dark:border-neutral-200/20 rounded-lg p-6 shadow-md">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-neutral-800 dark:text-neutral-100 flex items-center gap-3">
+                    <x-heroicon-o-building-office-2 class="h-8 w-8" />
+                    Organizations
+                </h1>
+                <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">Manage and track client organizations</p>
+            </div>
 
-        @if($this->canCreate)
-            <button wire:click="create"
-                class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
-                <x-heroicon-o-plus class="h-5 w-5 mr-2" />
-                New Organization
-            </button>
-        @endif
+            @if($this->canCreate)
+                <button wire:click="create"
+                    class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
+                    <x-heroicon-o-plus class="h-4 w-4 mr-2" />
+                    New Organization
+                </button>
+            @endif
+        </div>
     </div>
 
     <div class="flex flex-col space-y-6" x-data="{ showForm: @entangle('showForm') }">
