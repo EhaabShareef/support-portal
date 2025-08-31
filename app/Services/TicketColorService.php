@@ -10,15 +10,108 @@ use Illuminate\Support\Facades\Cache;
 class TicketColorService
 {
     /**
-     * Default priority color mappings
+     * Default status color mappings with background and text colors
+     */
+    private const DEFAULT_STATUS_COLORS = [
+        'open' => ['bg' => '#dbeafe', 'text' => '#1e40af'],
+        'in_progress' => ['bg' => '#fed7aa', 'text' => '#c2410c'],
+        'waiting' => ['bg' => '#fef3c7', 'text' => '#a16207'],
+        'resolved' => ['bg' => '#dcfce7', 'text' => '#166534'],
+        'closed' => ['bg' => '#f3f4f6', 'text' => '#374151'],
+        'cancelled' => ['bg' => '#fecaca', 'text' => '#dc2626'],
+    ];
+
+    /**
+     * Default priority color mappings with background and text colors
      */
     private const DEFAULT_PRIORITY_COLORS = [
-        'low' => 'gray',
-        'normal' => 'blue',
-        'high' => 'orange',
-        'urgent' => 'red',
-        'critical' => 'red',
+        'low' => ['bg' => '#f3f4f6', 'text' => '#374151'],
+        'normal' => ['bg' => '#dbeafe', 'text' => '#1e40af'],
+        'high' => ['bg' => '#fed7aa', 'text' => '#c2410c'],
+        'urgent' => ['bg' => '#fecaca', 'text' => '#dc2626'],
+        'critical' => ['bg' => '#fef2f2', 'text' => '#991b1b'],
     ];
+
+    /**
+     * Default hex color palette
+     */
+    private const DEFAULT_COLOR_PALETTE = [
+        '#6b7280', // gray
+        '#ef4444', // red
+        '#f97316', // orange
+        '#eab308', // yellow
+        '#22c55e', // green
+        '#3b82f6', // blue
+        '#6366f1', // indigo
+        '#a855f7', // purple
+        '#ec4899', // pink
+        '#0ea5e9', // sky
+        '#14b8a6', // teal
+        '#10b981', // emerald
+        '#84cc16', // lime
+        '#f59e0b', // amber
+        '#f43f5e', // rose
+        '#8b5cf6', // violet
+        '#d946ef', // fuchsia
+        '#06b6d4', // cyan
+        '#475569', // slate
+        '#71717a', // zinc
+        '#52525b', // neutral
+        '#78716c', // stone
+    ];
+
+    /**
+     * Generate CSS classes from background and text colors
+     */
+    private function generateCssClasses(array $colors): array
+    {
+        $bgColor = $colors['bg'] ?? '#f3f4f6';
+        $textColor = $colors['text'] ?? '#374151';
+        
+        return [
+            'bg' => "background-color: {$bgColor};",
+            'text' => "color: {$textColor};",
+            'dark_bg' => "background-color: {$bgColor};",
+            'dark_text' => "color: {$textColor};",
+            'bg_hex' => $bgColor,
+            'text_hex' => $textColor
+        ];
+    }
+
+    /**
+     * Convert hex color to RGB
+     */
+    private function hexToRgb(string $hex): array
+    {
+        $hex = ltrim($hex, '#');
+        return [
+            'r' => hexdec(substr($hex, 0, 2)),
+            'g' => hexdec(substr($hex, 2, 2)),
+            'b' => hexdec(substr($hex, 4, 2))
+        ];
+    }
+
+    /**
+     * Check if color is light
+     */
+    private function isLightColor(array $rgb): bool
+    {
+        $brightness = ($rgb['r'] * 299 + $rgb['g'] * 587 + $rgb['b'] * 114) / 1000;
+        return $brightness > 128;
+    }
+
+    /**
+     * Adjust color brightness
+     */
+    private function adjustBrightness(string $hex, float $factor): string
+    {
+        $rgb = $this->hexToRgb($hex);
+        $rgb['r'] = max(0, min(255, round($rgb['r'] * $factor)));
+        $rgb['g'] = max(0, min(255, round($rgb['g'] * $factor)));
+        $rgb['b'] = max(0, min(255, round($rgb['b'] * $factor)));
+        
+        return sprintf("#%02x%02x%02x", $rgb['r'], $rgb['g'], $rgb['b']);
+    }
 
     /**
      * Get CSS classes for a ticket status
@@ -140,7 +233,7 @@ class TicketColorService
      */
     public function getColorPalette(): array
     {
-        return array_keys(self::COLOR_PALETTE);
+        return self::DEFAULT_COLOR_PALETTE;
     }
 
     /**
@@ -148,42 +241,57 @@ class TicketColorService
      */
     public function getColorPaletteWithValues(): array
     {
-        return array_combine(
-            array_keys(self::COLOR_PALETTE),
-            array_keys(self::COLOR_PALETTE)
-        );
+        $palette = [];
+        foreach (self::DEFAULT_COLOR_PALETTE as $hex) {
+            $palette[$hex] = $hex;
+        }
+        return $palette;
     }
 
     /**
-     * Get color details for a specific color name
+     * Get color details for a specific color configuration
      */
-    public function getColorDetails(string $colorName): array
+    public function getColorDetails($colors): array
     {
-        return self::COLOR_PALETTE[$colorName] ?? self::COLOR_PALETTE['gray'];
+        if (is_string($colors)) {
+            // Backward compatibility: convert single hex to array format
+            $colors = ['bg' => $colors, 'text' => $this->getContrastColor($colors)];
+        }
+        return $this->generateCssClasses($colors);
+    }
+
+    /**
+     * Get contrasting text color for a background color
+     */
+    public function getContrastColor(string $bgColor): string
+    {
+        $rgb = $this->hexToRgb($bgColor);
+        $brightness = ($rgb['r'] * 299 + $rgb['g'] * 587 + $rgb['b'] * 114) / 1000;
+        return $brightness > 128 ? '#1f2937' : '#f9fafb';
     }
 
     /**
      * Get default status color
      */
-    private function getDefaultStatusColor(string $status): string
+    private function getDefaultStatusColor(string $status): array
     {
-        return self::DEFAULT_STATUS_COLORS[$status] ?? 'gray';
+        return self::DEFAULT_STATUS_COLORS[$status] ?? ['bg' => '#f3f4f6', 'text' => '#374151'];
     }
 
     /**
      * Get default priority color
      */
-    private function getDefaultPriorityColor(string $priority): string
+    private function getDefaultPriorityColor(string $priority): array
     {
-        return self::DEFAULT_PRIORITY_COLORS[$priority] ?? 'gray';
+        return self::DEFAULT_PRIORITY_COLORS[$priority] ?? ['bg' => '#f3f4f6', 'text' => '#374151'];
     }
 
     /**
-     * Build CSS classes string from color name
+     * Build CSS classes string from color configuration
      */
-    private function buildCssClasses(string $colorName): string
+    private function buildCssClasses($colors): string
     {
-        $colorDetails = $this->getColorDetails($colorName);
+        $colorDetails = $this->getColorDetails($colors);
         
         return implode(' ', [
             $colorDetails['bg'],
@@ -196,9 +304,9 @@ class TicketColorService
     /**
      * Get preview classes for admin interface (without dark mode classes)
      */
-    public function getPreviewClasses(string $colorName): string
+    public function getPreviewClasses($colors): string
     {
-        $colorDetails = $this->getColorDetails($colorName);
+        $colorDetails = $this->getColorDetails($colors);
         
         return $colorDetails['bg'] . ' ' . $colorDetails['text'];
     }
