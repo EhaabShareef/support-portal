@@ -1,4 +1,21 @@
 <div class="space-y-6">
+    {{-- Custom CSS for progress bar --}}
+    <style>
+        .progress-bar-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            transition: width 0.3s ease;
+            max-width: 100% !important;
+        }
+    </style>
+
     {{-- Header --}}
     <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 shadow-md">
         <div class="flex items-center justify-between">
@@ -7,7 +24,11 @@
                     Create Support Ticket
                 </h1>
                 <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                    Step {{ $currentStep }} of {{ $this->isHardwareDepartment() ? '3' : '2' }}: 
+                    @php
+                        $totalSteps = $this->isHardwareDepartment() ? 3 : 2;
+                        $displayStep = $this->isHardwareDepartment() ? $currentStep : ($currentStep === 3 ? 2 : $currentStep);
+                    @endphp
+                    Step {{ $displayStep }} of {{ $totalSteps }}: 
                     @if($currentStep === 1)
                         Basic Information
                     @elseif($currentStep === 2 && $this->isHardwareDepartment())
@@ -26,19 +47,24 @@
 
     {{-- Progress Bar --}}
     <div class="bg-white dark:bg-neutral-800 rounded-lg p-4 shadow-md">
-        <div class="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
-            <div class="bg-sky-600 h-2 rounded-full transition-all duration-300" style="width: {{ ($currentStep / ($this->isHardwareDepartment() ? 3 : 2)) * 100 }}%"></div>
+        <div class="progress-bar-container w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+            @php
+                $totalSteps = $this->isHardwareDepartment() ? 3 : 2;
+                $progressPercentage = min(max(($currentStep / $totalSteps) * 100, 0), 100);
+            @endphp
+            <div class="progress-bar-fill bg-sky-600 rounded-full" 
+                 style="width: {{ $progressPercentage }}%;"></div>
         </div>
         <div class="flex justify-between mt-2 text-xs text-neutral-500">
-            <span class="{{ $currentStep >= 1 ? 'text-sky-600 font-medium' : '' }}">Basic Information</span>
+            <span class="{{ $currentStep >= 1 ? 'text-sky-600 font-medium' : '' }} flex-shrink-0">Basic Information</span>
             @if($this->isHardwareDepartment())
-                <span class="{{ $currentStep >= 2 ? 'text-sky-600 font-medium' : '' }}">Hardware Selection</span>
-                <span class="{{ $currentStep >= 3 ? 'text-sky-600 font-medium' : '' }}">Issue Details</span>
+                <span class="{{ $currentStep >= 2 ? 'text-sky-600 font-medium' : '' }} flex-shrink-0 px-2">Hardware Selection</span>
+                <span class="{{ $currentStep >= 3 ? 'text-sky-600 font-medium' : '' }} flex-shrink-0">Issue Details</span>
             @else
-                <span class="{{ $currentStep >= 2 ? 'text-sky-600 font-medium' : '' }}">Issue Details</span>
+                <span class="{{ $currentStep >= 2 ? 'text-sky-600 font-medium' : '' }} flex-shrink-0 ml-auto">Issue Details</span>
             @endif
         </div>
-        <!-- Debug: Current step: {{ $currentStep }}, Is hardware: {{ $this->isHardwareDepartment() ? 'true' : 'false' }} -->
+        <!-- Debug: Current step: {{ $currentStep }}, Is hardware: {{ $this->isHardwareDepartment() ? 'true' : 'false' }}, Progress: {{ $progressPercentage }}% -->
     </div>
 
     {{-- Flash Messages --}}
@@ -156,7 +182,7 @@
     {{-- Debug info --}}
     <!-- Current step: {{ $currentStep }}, Is hardware: {{ $this->isHardwareDepartment() ? 'true' : 'false' }} -->
     <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 shadow-md">
-        <h2 class="text-lg font-semibold mb-4">Step 2: Hardware Selection (Optional)</h2>
+        <h2 class="text-lg font-semibold mb-4">Step 2: Hardware Selection</h2>
         
         <div class="mb-4">
             <p class="text-sm text-neutral-600 dark:text-neutral-400">

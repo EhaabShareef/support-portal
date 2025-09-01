@@ -9,6 +9,18 @@
         @if($editMode)
             {{-- Edit Form --}}
             <form class="space-y-4" onsubmit="return confirmTicketUpdate(event, '{{ $ticket->priority }}')">
+                {{-- Subject Field - Full Width --}}
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Subject</label>
+                    <input type="text" 
+                           wire:model="form.subject" 
+                           class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white/60 dark:bg-neutral-900/50 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                           placeholder="Enter ticket subject">
+                    @error('form.subject') 
+                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                    @enderror
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Priority</label>

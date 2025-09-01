@@ -13,10 +13,11 @@ class TicketMergeService
 {
     /**
      * @param array<int> $ticketIds - First ID is the target ticket, others are source tickets
+     * @param array<string, mixed> $mergeOptions - Options for how to handle the merge
      */
-    public function merge(array $ticketIds, int $actorId): Ticket
+    public function merge(array $ticketIds, int $actorId, array $mergeOptions = []): Ticket
     {
-        return DB::transaction(function () use ($ticketIds, $actorId) {
+        return DB::transaction(function () use ($ticketIds, $actorId, $mergeOptions) {
             // Select and lock the target tickets with deterministic ordering to prevent deadlocks
             $tickets = Ticket::whereIn('id', $ticketIds)
                 ->lockForUpdate()
@@ -36,31 +37,26 @@ class TicketMergeService
                 throw new DomainException("Target ticket #{$targetTicketId} not found in provided tickets");
             }
 
-            // Check if target ticket is already merged into another ticket (but allow merge masters as targets)
-            if ($targetTicket->is_merged && !$targetTicket->is_merged_master) {
-                throw new DomainException("Cannot merge into ticket #{$targetTicketId}: This ticket has already been merged into another ticket.");
-            }
-
             // Get source tickets (all except the target)
             $sourceTickets = $tickets->where('id', '!=', $targetTicketId);
 
             // Validate organization consistency
             $orgId = $targetTicket->organization_id;
             if ($tickets->pluck('organization_id')->unique()->count() > 1) {
-                throw new DomainException('Tickets must belong to the same organization');
+                throw new DomainException('Tickets must belong to the same organization. Cross-organization merging is not allowed.');
             }
 
-            // Check source tickets for merge restrictions
+            // Check source tickets for basic restrictions (only closed status check)
             foreach ($sourceTickets as $sourceTicket) {
-                if ($sourceTicket->is_merged) {
-                    throw new DomainException("Cannot merge ticket #{$sourceTicket->id}: This ticket has already been merged into another ticket.");
-                }
                 if ($sourceTicket->status === 'closed') {
                     throw new DomainException("Cannot merge ticket #{$sourceTicket->id}: This ticket is closed.");
                 }
             }
             
             $actor = User::findOrFail($actorId);
+
+            // Handle attribute merging based on options
+            $this->mergeTicketAttributes($targetTicket, $sourceTickets, $mergeOptions);
 
             // Merge all source tickets into the target ticket
             foreach ($sourceTickets as $sourceTicket) {
@@ -103,5 +99,113 @@ class TicketMergeService
             // Refresh and return the target ticket
             return $targetTicket->fresh();
         });
+    }
+
+    /**
+     * Merge ticket attributes based on user preferences
+     */
+    private function mergeTicketAttributes(Ticket $targetTicket, $sourceTickets, array $options): void
+    {
+        $preservePriority = $options['preserve_priority'] ?? false;
+        $preserveStatus = $options['preserve_status'] ?? false;
+        $combineSubjects = $options['combine_subjects'] ?? false;
+        $preserveOwner = $options['preserve_owner'] ?? false;
+
+        // Handle priority merging
+        if (!$preservePriority) {
+            $highestPriority = $this->getHighestPriority($targetTicket, $sourceTickets);
+            if ($highestPriority !== $targetTicket->priority) {
+                $targetTicket->priority = $highestPriority;
+            }
+        }
+
+        // Handle status merging
+        if (!$preserveStatus) {
+            $bestStatus = $this->getBestStatus($targetTicket, $sourceTickets);
+            if ($bestStatus !== $targetTicket->status) {
+                $targetTicket->status = $bestStatus;
+            }
+        }
+
+        // Handle subject combining
+        if ($combineSubjects) {
+            $combinedSubject = $this->combineSubjects($targetTicket, $sourceTickets);
+            $targetTicket->subject = $combinedSubject;
+        }
+
+        // Handle owner preservation
+        if (!$preserveOwner && !$targetTicket->owner_id) {
+            $firstOwner = $sourceTickets->firstWhere('owner_id', '!=', null);
+            if ($firstOwner) {
+                $targetTicket->owner_id = $firstOwner->owner_id;
+            }
+        }
+
+        // Save the updated attributes
+        $targetTicket->save();
+    }
+
+    /**
+     * Get the highest priority from all tickets
+     */
+    private function getHighestPriority(Ticket $targetTicket, $sourceTickets): string
+    {
+        $priorities = collect([$targetTicket->priority])
+            ->merge($sourceTickets->pluck('priority'))
+            ->filter();
+
+        $priorityOrder = ['low' => 1, 'normal' => 2, 'high' => 3, 'urgent' => 4, 'critical' => 5];
+        
+        $highestPriority = $priorities->sortBy(function ($priority) use ($priorityOrder) {
+            return $priorityOrder[$priority] ?? 0;
+        })->last();
+
+        return $highestPriority ?: 'normal';
+    }
+
+    /**
+     * Get the best status from all tickets
+     */
+    private function getBestStatus(Ticket $targetTicket, $sourceTickets): string
+    {
+        $statuses = collect([$targetTicket->status])
+            ->merge($sourceTickets->pluck('status'))
+            ->filter();
+
+        // Priority: open > in_progress > resolved > closed
+        $statusOrder = ['closed' => 1, 'resolved' => 2, 'in_progress' => 3, 'open' => 4];
+        
+        $bestStatus = $statuses->sortBy(function ($status) use ($statusOrder) {
+            return $statusOrder[$status] ?? 0;
+        })->last();
+
+        return $bestStatus ?: 'open';
+    }
+
+    /**
+     * Combine subjects intelligently
+     */
+    private function combineSubjects(Ticket $targetTicket, $sourceTickets): string
+    {
+        $subjects = collect([$targetTicket->subject])
+            ->merge($sourceTickets->pluck('subject'))
+            ->filter()
+            ->unique();
+
+        if ($subjects->count() === 1) {
+            return $subjects->first();
+        }
+
+        // If subjects are different, combine them
+        $mainSubject = $targetTicket->subject;
+        $additionalSubjects = $subjects->where('subject', '!=', $mainSubject)->take(2);
+        
+        if ($additionalSubjects->isNotEmpty()) {
+            $combined = $mainSubject . ' (Merged with: ' . $additionalSubjects->implode(', ') . ')';
+            // Limit length to avoid database issues
+            return substr($combined, 0, 255);
+        }
+
+        return $mainSubject;
     }
 }

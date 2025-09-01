@@ -259,6 +259,42 @@ class CreateTicket extends Component
         \Log::info('User count for org ' . $this->form['organization_id'] . ': ' . $clientCount);
     }
 
+    public function updatedFormDepartmentId()
+    {
+        // Reset hardware selection when department changes
+        $this->form['selected_hardware'] = [];
+        $this->form['hardware_serials'] = [];
+        
+        // Ensure current step is valid for the new department
+        $this->validateCurrentStep();
+    }
+
+    /**
+     * Ensure the current step is valid for the current department
+     */
+    private function validateCurrentStep(): void
+    {
+        $isHardware = $this->isHardwareDepartment();
+        $maxSteps = $isHardware ? 3 : 2;
+        
+        // If we're on step 2 and it's not a hardware department, skip to step 3
+        if ($this->currentStep === 2 && !$isHardware) {
+            $this->currentStep = 3;
+        }
+        
+        // If we're on step 3 and it's a hardware department but we haven't completed step 2, go back to step 2
+        if ($this->currentStep === 3 && $isHardware && empty($this->form['selected_hardware'])) {
+            $this->currentStep = 2;
+        }
+        
+        // Ensure step is within valid range
+        if ($this->currentStep > $maxSteps) {
+            $this->currentStep = $maxSteps;
+        }
+        
+        \Log::info("Step validated: Current step {$this->currentStep}, Max steps {$maxSteps}, Is hardware: " . ($isHardware ? 'true' : 'false'));
+    }
+
     public function isClientUser(): bool
     {
         return auth()->user()->hasRole('client');

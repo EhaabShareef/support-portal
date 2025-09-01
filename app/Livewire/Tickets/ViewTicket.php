@@ -291,6 +291,7 @@ class ViewTicket extends Component
             $user = auth()->user();
 
             $this->validate([
+                'form.subject' => 'required|string|max:255',
                 'form.status' => TicketStatusModel::validationRule(),
                 'form.priority' => TicketPriority::validationRule(),
                 'form.owner_id' => 'nullable|exists:users,id',
@@ -326,13 +327,23 @@ class ViewTicket extends Component
             }
             
             $previousStatus = $this->ticket->status;
+            $previousSubject = $this->ticket->subject;
 
-            // Remove subject and description from update to prevent modification
+            // Update ticket with form data (including subject)
             $updateData = $this->form;
-            unset($updateData['subject'], $updateData['description']);
+            unset($updateData['description']); // Only exclude description, allow subject updates
             
             $this->ticket->update($updateData);
 
+            // Log subject changes
+            if ($previousSubject !== $this->form['subject']) {
+                ActivityLog::record('ticket.subject_changed', $this->ticket->id, $this->ticket, [
+                    'description' => "Subject changed from '{$previousSubject}' to '{$this->form['subject']}'",
+                    'old_subject' => $previousSubject,
+                    'new_subject' => $this->form['subject']
+                ]);
+            }
+            
             // Log priority escalation if it's an increase
             if (TicketPriority::compare($this->form['priority'], $previousPriority) > 0) {
                 ActivityLog::record('ticket.priority_escalated', $this->ticket->id, $this->ticket, [

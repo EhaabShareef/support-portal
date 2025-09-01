@@ -11,7 +11,7 @@
                      wire:click="toggle"></div>
 
                 {{-- Modal Content --}}
-                <div class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
+                <div class="inline-block align-bottom bg-white dark:bg-neutral-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
                      x-show="show" x-transition:enter="ease-out duration-300" 
                      x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
                      x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
@@ -31,12 +31,25 @@
                         </div>
 
                         {{-- Current Ticket Info --}}
+                        @if($ticket)
                         <div class="mb-4 p-3 bg-neutral-50 dark:bg-neutral-700/50 rounded-lg">
                             <div class="text-sm text-neutral-600 dark:text-neutral-400">
                                 <div class="font-medium">Current Ticket #{{ $ticket->ticket_number }}</div>
                                 <div class="truncate">{{ $ticket->subject }}</div>
+                                <div class="text-xs mt-1">
+                                    <span class="px-2 py-1 rounded-full text-xs {{ $ticket->status === 'open' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' }}">
+                                        {{ ucfirst($ticket->status) }}
+                                    </span>
+                                    <span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 ml-2">
+                                        {{ ucfirst($ticket->priority) }}
+                                    </span>
+                                    @if($ticket->owner)
+                                        <span class="ml-2 text-neutral-500">Owner: {{ $ticket->owner->name }}</span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
+                        @endif
 
                         {{-- Form Fields --}}
                         <div class="space-y-4">
@@ -72,34 +85,97 @@
 
                             {{-- Found Tickets Preview --}}
                             @if(!empty($foundTickets))
-                                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:bg-green-800 rounded-lg p-3">
                                     <div class="flex">
                                         <x-heroicon-o-check-circle class="h-5 w-5 text-green-400 mr-2 flex-shrink-0 mt-0.5" />
                                         <div class="text-sm text-green-800 dark:text-green-200">
                                             <p class="font-medium mb-2">Tickets to be merged:</p>
                                             <div class="space-y-2">
-                                                @foreach($foundTickets as $ticket)
+                                                @foreach($foundTickets as $foundTicket)
                                                     <div class="bg-white dark:bg-neutral-800 rounded p-2">
                                                         <div class="flex items-center justify-between">
                                                             <div class="flex-1">
-                                                                <div class="font-medium">#{{ $ticket['ticket_number'] }}</div>
-                                                                <div class="text-xs text-neutral-500 dark:text-neutral-400 truncate">{{ $ticket['subject'] }}</div>
+                                                                <div class="font-medium">#{{ $foundTicket['ticket_number'] }}</div>
+                                                                <div class="text-xs text-neutral-500 dark:text-neutral-400 truncate">{{ $foundTicket['subject'] }}</div>
+                                                                @if($foundTicket['is_merged'])
+                                                                    <div class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                                                        Previously merged into #{{ $foundTicket['merged_into'] }}
+                                                                    </div>
+                                                                @endif
                                                             </div>
                                                             <div class="text-xs text-neutral-500 dark:text-neutral-400 ml-2">
                                                                 <div class="flex items-center space-x-2">
-                                                                    <span class="px-2 py-1 rounded-full text-xs {{ $ticket['status'] === 'open' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' }}">
-                                                                        {{ ucfirst($ticket['status']) }}
+                                                                    <span class="px-2 py-1 rounded-full text-xs {{ $foundTicket['status'] === 'open' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' }}">
+                                                                        {{ ucfirst($foundTicket['status']) }}
                                                                     </span>
                                                                     <span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                                                        {{ ucfirst($ticket['priority']) }}
+                                                                        {{ ucfirst($foundTicket['priority']) }}
                                                                     </span>
                                                                 </div>
-                                                                <div class="text-xs mt-1">{{ $ticket['created_at'] }}</div>
+                                                                <div class="text-xs mt-1">{{ $foundTicket['created_at'] }}</div>
+                                                                <div class="text-xs mt-1">Owner: {{ $foundTicket['owner_name'] }}</div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 @endforeach
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Merge Options --}}
+                                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200">Merge Options</h4>
+                                        <button type="button" wire:click="$toggle('showAdvancedOptions')" class="text-blue-600 dark:text-blue-400 text-xs hover:underline">
+                                            {{ $showAdvancedOptions ? 'Hide' : 'Show' }} Advanced Options
+                                        </button>
+                                    </div>
+                                    
+                                    @if($showAdvancedOptions)
+                                        <div class="space-y-3">
+                                            <div class="flex items-center">
+                                                <input type="checkbox" wire:model="preservePriority" id="preservePriority" class="rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500">
+                                                <label for="preservePriority" class="ml-2 text-sm text-blue-700 dark:text-blue-300">
+                                                    Preserve current ticket's priority (otherwise use highest priority)
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input type="checkbox" wire:model="preserveStatus" id="preserveStatus" class="rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500">
+                                                <label for="preserveStatus" class="ml-2 text-sm text-blue-700 dark:text-blue-300">
+                                                    Preserve current ticket's status (otherwise use best status)
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input type="checkbox" wire:model="combineSubjects" id="combineSubjects" class="rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500">
+                                                <label for="combineSubjects" class="ml-2 text-sm text-blue-700 dark:text-blue-300">
+                                                    Combine subjects intelligently
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input type="checkbox" wire:model="preserveOwner" id="preserveOwner" class="rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500">
+                                                <label for="preserveOwner" class="ml-2 text-sm text-blue-700 dark:text-blue-300">
+                                                    Preserve current ticket's owner (otherwise assign from merged tickets)
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+
+                            {{-- Merge History (always show when applicable) --}}
+                            @if($ticket && ($ticket->is_merged_master || $ticket->is_merged))
+                                <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                                    <div class="flex">
+                                        <x-heroicon-o-information-circle class="h-5 w-5 text-amber-400 mr-2 flex-shrink-0 mt-0.5" />
+                                        <div class="text-sm text-amber-800 dark:text-amber-200">
+                                            <p class="font-medium mb-2">Merge History:</p>
+                                            @if($ticket->is_merged_master)
+                                                <p class="text-xs">This ticket is a merge master and can receive more merges.</p>
+                                            @endif
+                                            @if($ticket->is_merged)
+                                                <p class="text-xs">This ticket was previously merged into #{{ $ticket->merged_into?->ticket_number ?? 'Unknown' }}.</p>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -121,7 +197,7 @@
                     {{-- Modal Footer --}}
                     <div class="bg-gray-50 dark:bg-neutral-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                         <button wire:click="merge" 
-                                @if(empty($foundTickets) || !empty($validationErrors)) disabled @endif
+                                @if(!$ticket || empty($foundTickets) || !empty($validationErrors)) disabled @endif
                                 class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                             <x-heroicon-o-arrows-right-left class="h-4 w-4 mr-2" />
                             Merge Tickets

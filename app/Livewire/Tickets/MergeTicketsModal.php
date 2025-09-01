@@ -18,6 +18,13 @@ class MergeTicketsModal extends Component
     public array $foundTickets = [];
     public array $validationErrors = [];
     
+    // Merge options
+    public bool $preservePriority = false;
+    public bool $preserveStatus = false;
+    public bool $combineSubjects = true;
+    public bool $preserveOwner = false;
+    public bool $showAdvancedOptions = false;
+    
     protected $listeners = ['merge:toggle' => 'toggle'];
 
     protected $rules = [
@@ -28,8 +35,13 @@ class MergeTicketsModal extends Component
     {
         if ($ticket instanceof Ticket) {
             $this->ticket = $ticket;
+            \Log::info('MergeTicketsModal::mount - Ticket set', [
+                'ticketId' => $ticket->id,
+                'ticketNumber' => $ticket->ticket_number
+            ]);
         } else {
             $this->ticket = null;
+            \Log::info('MergeTicketsModal::mount - No ticket provided');
         }
     }
 
@@ -37,13 +49,22 @@ class MergeTicketsModal extends Component
     {
         if ($ticketId && !$this->ticket) {
             $this->ticket = Ticket::find($ticketId);
+            \Log::info('MergeTicketsModal::toggle - Found ticket by ID', [
+                'ticketId' => $ticketId,
+                'ticket' => $this->ticket ? $this->ticket->toArray() : null
+            ]);
         }
         
         $this->show = ! $this->show;
         if ($this->show) {
             $this->reset(['ticketsInput', 'foundTickets', 'validationErrors']);
+            \Log::info('MergeTicketsModal::toggle - Modal opened', [
+                'ticket' => $this->ticket ? $this->ticket->toArray() : null,
+                'show' => $this->show
+            ]);
         } else {
             $this->ticket = null;
+            \Log::info('MergeTicketsModal::toggle - Modal closed, ticket reset to null');
         }
     }
 
@@ -75,47 +96,50 @@ class MergeTicketsModal extends Component
             }
 
             // Find ticket by ticket_number
-            $ticket = Ticket::where('ticket_number', $ticketNumber)->first();
+            $foundTicket = Ticket::where('ticket_number', $ticketNumber)->first();
 
-            if (!$ticket) {
+            if (!$foundTicket) {
                 $this->validationErrors[] = "Ticket #{$ticketNumber} not found.";
                 continue;
             }
 
             // Check if ticket is closed
-            if ($ticket->status === 'closed') {
+            if ($foundTicket->status === 'closed') {
                 $this->validationErrors[] = "Ticket #{$ticketNumber} is closed and cannot be merged.";
                 continue;
             }
 
             // Check if it's the same ticket
-            if ($ticket->id === $this->ticket->id) {
+            if ($foundTicket->id === $this->ticket->id) {
                 $this->validationErrors[] = "Cannot merge ticket with itself (#{$ticketNumber}).";
                 continue;
             }
 
-            // Check if ticket is already merged into another ticket
-            if ($ticket->is_merged) {
-                $this->validationErrors[] = "Ticket #{$ticketNumber} has already been merged into another ticket and cannot be merged again.";
+            // Check organization consistency
+            if ($foundTicket->organization_id !== $this->ticket->organization_id) {
+                $this->validationErrors[] = "Ticket #{$ticketNumber} belongs to a different organization and cannot be merged.";
                 continue;
             }
 
             // Check authorization
             try {
-                $this->authorize('update', $ticket);
+                $this->authorize('update', $foundTicket);
             } catch (\Exception $e) {
                 $this->validationErrors[] = "You don't have permission to merge ticket #{$ticketNumber}.";
                 continue;
             }
 
-            // Add to found tickets
+            // Add to found tickets with more details
             $this->foundTickets[] = [
-                'id' => $ticket->id,
-                'ticket_number' => $ticket->ticket_number,
-                'subject' => $ticket->subject,
-                'status' => $ticket->status,
-                'priority' => $ticket->priority,
-                'created_at' => $ticket->created_at->format('M j, Y'),
+                'id' => $foundTicket->id,
+                'ticket_number' => $foundTicket->ticket_number,
+                'subject' => $foundTicket->subject,
+                'status' => $foundTicket->status,
+                'priority' => $foundTicket->priority,
+                'owner_name' => $foundTicket->owner?->name ?? 'Unassigned',
+                'created_at' => $foundTicket->created_at->format('M j, Y'),
+                'is_merged' => $foundTicket->is_merged,
+                'merged_into' => $foundTicket->merged_into?->ticket_number ?? null,
             ];
         }
     }
@@ -125,7 +149,8 @@ class MergeTicketsModal extends Component
         logger()->info('=== MergeTicketsModal::merge called ===', [
             'ticketsInput' => $this->ticketsInput,
             'foundTickets' => $this->foundTickets,
-            'validationErrors' => $this->validationErrors
+            'validationErrors' => $this->validationErrors,
+            'mergeOptions' => $this->getMergeOptions()
         ]);
 
         if (!$this->ticket) {
@@ -160,12 +185,13 @@ class MergeTicketsModal extends Component
         logger()->info('=== About to merge tickets ===', [
             'ticketIds' => $ticketIds,
             'currentTicketId' => $this->ticket->id,
-            'foundTicketIds' => array_column($this->foundTickets, 'id')
+            'foundTicketIds' => array_column($this->foundTickets, 'id'),
+            'mergeOptions' => $this->getMergeOptions()
         ]);
 
         try {
-            // Perform the merge operation
-            $mergedTicket = $service->merge($ticketIds, auth()->id());
+            // Perform the merge operation with options
+            $mergedTicket = $service->merge($ticketIds, auth()->id(), $this->getMergeOptions());
             
             logger()->info('=== Merge successful ===', [
                 'mergedTicketId' => $mergedTicket->id,
@@ -192,6 +218,16 @@ class MergeTicketsModal extends Component
             session()->flash('error', 'An unexpected error occurred during merge: ' . $e->getMessage());
             return;
         }
+    }
+
+    private function getMergeOptions(): array
+    {
+        return [
+            'preserve_priority' => $this->preservePriority,
+            'preserve_status' => $this->preserveStatus,
+            'combine_subjects' => $this->combineSubjects,
+            'preserve_owner' => $this->preserveOwner,
+        ];
     }
 
     public function render()
