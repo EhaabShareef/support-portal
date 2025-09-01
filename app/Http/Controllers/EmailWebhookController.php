@@ -29,10 +29,13 @@ class EmailWebhookController extends Controller
         } catch (\Exception $e) {
             Log::error('Email webhook error', [
                 'error' => $e->getMessage(),
-                'request_data' => $request->all(),
+                'safe_context' => [
+                    'message_id' => $request->input('message_id'),
+                    'from'       => $request->input('from'),
+                    'to'         => $request->input('to'),
+                ],
             ]);
             return response()->json(['error' => 'Internal server error'], 500);
-        }
     }
 
     private function verifyWebhookSignature(Request $request): bool
