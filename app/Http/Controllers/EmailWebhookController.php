@@ -57,16 +57,30 @@ class EmailWebhookController extends Controller
 
     private function parseWebhookData(Request $request): array
     {
+        // Normalize headers into array if sent as JSON string
+        $headers = $request->input('headers');
+        if (is_string($headers)) {
+            $decoded = json_decode($headers, true);
+            $headers = is_array($decoded) ? $decoded : [];
+        }
+
+        // Normalize attachments into array if sent as JSON string
+        $attachments = $request->input('attachments', []);
+        if (is_string($attachments)) {
+            $decoded = json_decode($attachments, true);
+            $attachments = is_array($decoded) ? $decoded : [];
+        }
+
         return [
-            'message_id' => $request->input('message_id'),
-            'from' => $request->input('from'),
-            'to' => $request->input('to'),
-            'subject' => $request->input('subject'),
-            'body' => $request->input('body'),
+            'message_id'  => $request->input('message_id'),
+            'from'        => $request->input('from'),
+            'to'          => $request->input('to'),
+            'subject'     => $request->input('subject'),
+            'body'        => $request->input('body'),
             'in_reply_to' => $request->input('in_reply_to'),
-            'references' => $request->input('references'),
-            'headers' => $request->input('headers'),
-            'attachments' => $request->input('attachments', []),
+            'references'  => $request->input('references'),
+            'headers'     => $headers,
+            'attachments' => $attachments,
         ];
     }
 }
