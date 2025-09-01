@@ -130,6 +130,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/settings/hardware', \App\Livewire\Settings\Hardware\Index::class)->name('settings.hardware');
         Route::get('/settings/schedule', \App\Livewire\Settings\Schedule\Index::class)->name('settings.schedule');
         Route::get('/settings/users', \App\Livewire\Settings\Users\Index::class)->name('settings.users');
+        Route::get('/settings/users/department-groups', \App\Livewire\Settings\Users\DepartmentGroups::class)->name('settings.users.department-groups');
+        Route::get('/settings/users/departments', \App\Livewire\Settings\Users\Departments::class)->name('settings.users.departments');
     });
 
     // Admin Routes (only for admin role)
