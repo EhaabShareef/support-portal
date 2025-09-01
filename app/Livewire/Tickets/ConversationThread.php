@@ -43,7 +43,7 @@ class ConversationThread extends Component
         $conversation = $messages->concat($publicNotes)->sortByDesc('created_at')->values();
         
         // Filter out system messages if configured to hide them (except close/reopen)
-        if (config('app.hide_system_messages', false)) {
+        if (config('app.hide_system_messages', true)) {
             $conversation = $conversation->filter(function ($item) {
                 if (!$item->is_system_message) {
                     return true; // Keep non-system messages
