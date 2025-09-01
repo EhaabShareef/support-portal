@@ -24,12 +24,11 @@
         <div style="background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h3>Reply to this ticket:</h3>
             <p>Simply reply to this email to add a message to the ticket. Your reply will be automatically added to the conversation.</p>
-            <p><strong>Reply Address:</strong> {{ $replyAddress }}</p>
+            <p><strong>Reply Address:</strong> <a href="mailto:{{ $replyAddress }}">{{ $replyAddress }}</a></p>
         </div>
 
         <div style="text-align: center; margin: 30px 0; color: #666;">
-            <p>This is an automated message from your support system.</p>
-            <p>Do not reply to this email address directly.</p>
+            <p>This is an automated message from your support system. Replies to this email will be added to the ticket.</p>
         </div>
     </div>
 </body>
