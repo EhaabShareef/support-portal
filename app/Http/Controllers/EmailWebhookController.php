@@ -37,7 +37,19 @@ class EmailWebhookController extends Controller
 
     private function verifyWebhookSignature(Request $request): bool
     {
-        return true;
+        $secret = config('mail.email_parser.webhook_secret');
+        $signature = $request->header('X-Email-Signature');
+        $timestamp = $request->header('X-Email-Timestamp');
+        if (!$secret || !$signature || !$timestamp) {
+            return false;
+        }
+        // Prevent replay
+        if (abs(time() - (int)$timestamp) > 300) {
+            return false;
+        }
+        $payload = $timestamp . '.' . $request->getContent();
+        $expected = hash_hmac('sha256', $payload, $secret);
+        return hash_equals($expected, $signature);
     }
 
     private function parseWebhookData(Request $request): array
