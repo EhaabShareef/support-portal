@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\OrganizationHardware;
 use App\Models\HardwareSerial;
+use App\Services\EmailReplyService;
 
 /**
  * App\Models\Ticket
@@ -71,6 +72,8 @@ class Ticket extends Model
         'merged_into_ticket_id',
         'is_merged_master',
         'split_from_ticket_id',
+        'email_thread_id',
+        'email_reply_address',
     ];
 
     protected $casts = [
@@ -376,5 +379,15 @@ class Ticket extends Model
         $priority = TicketPriority::tryFrom($this->priority);
 
         return $priority ? $priority->label() : ucfirst($this->priority);
+    }
+
+    public function getEmailReplyAddressAttribute(): string
+    {
+        if (!isset($this->attributes['email_reply_address']) || !$this->attributes['email_reply_address']) {
+            $this->attributes['email_reply_address'] = app(EmailReplyService::class)->generateReplyAddress($this);
+            $this->save();
+        }
+
+        return $this->attributes['email_reply_address'];
     }
 }

@@ -12,6 +12,7 @@ use App\Models\TicketNote;
 use App\Models\User;
 use App\Models\TicketStatus as TicketStatusModel;
 use Illuminate\Support\Facades\Auth;
+use App\Services\EmailReplyService;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -43,6 +44,7 @@ class ViewTicket extends Component
     public string $noteColor = 'sky';
     public bool $noteInternal = true;
     public ?int $editingNoteId = null;
+    public string $emailReplyAddress = '';
     
     // Form state management
     public string $activeInput = '';
@@ -86,6 +88,8 @@ class ViewTicket extends Component
             'department_id' => $ticket->department_id,
             'description' => $ticket->description,
         ];
+
+        $this->emailReplyAddress = app(EmailReplyService::class)->generateReplyAddress($ticket);
     }
 
     private function loadConversation(): void
@@ -117,6 +121,16 @@ class ViewTicket extends Component
         $conversation = $messages->concat($publicNotes)->sortByDesc('created_at')->values();
         
         $this->ticket->setRelation('conversation', $conversation);
+    }
+
+    public function sendEmailNotification(): void
+    {
+        $latestMessage = $this->ticket->messages()->latest()->first();
+
+        if ($latestMessage) {
+            app(EmailReplyService::class)->sendTicketNotification($this->ticket, $latestMessage);
+            session()->flash('message', 'Email notification sent successfully.');
+        }
     }
 
     private function canAccessTicket($user, $ticket): bool

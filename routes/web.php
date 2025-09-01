@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\EmailWebhookController;
 // Livewire Components
 use App\Livewire\Dashboard;
 use App\Livewire\ManageOrganizations;
@@ -30,6 +31,10 @@ use App\Livewire\Admin\Reports\TicketVolumeReport;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::post('/webhooks/email', [EmailWebhookController::class, 'handleIncomingEmail'])
+    ->name('webhooks.email')
+    ->withoutMiddleware(['auth', \App\Http\Middleware\VerifyCsrfToken::class]);
 
 
 // Authentication
