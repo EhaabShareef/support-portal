@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Contracts\SettingsRepositoryInterface;
 use App\Services\SettingsRepository;
+use App\Helpers\FlysystemAutoloader;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register custom Flysystem autoloader to handle class conflicts
+        FlysystemAutoloader::register();
+        
+        // Log conflict information for debugging
+        if (FlysystemAutoloader::hasConflicts()) {
+            \Log::info('Flysystem class conflicts detected', FlysystemAutoloader::getConflictInfo());
+        }
     }
 }
