@@ -150,7 +150,7 @@ class ClientSampleDataSeeder extends Seeder
                         'username' => $userData['username'],
                         'password' => Hash::make('client123'),
                         'organization_id' => $organization->id,
-                        'department_id' => null, // Client users not assigned to internal departments
+                        // No department_id column in fresh schema; clients are not assigned to internal departments
                         'email_verified_at' => now(),
                         'is_active' => true,
                         'preferences' => json_encode(['title' => $userData['title']])

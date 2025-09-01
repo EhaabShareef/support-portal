@@ -30,6 +30,11 @@ class DepartmentGroup extends Model
         return $this->hasMany(Department::class);
     }
 
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
     public function activeDepartments(): HasMany
     {
         return $this->departments()->where('is_active', true);

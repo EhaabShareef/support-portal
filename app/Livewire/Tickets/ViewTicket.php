@@ -132,11 +132,8 @@ class ViewTicket extends Component
         }
         
         // Support staff can see tickets in their department group
-        if ($user->hasRole('support') && $user->department) {
-            if ($user->department->department_group_id) {
-                return $ticket->department->department_group_id === $user->department->department_group_id;
-            }
-            return $ticket->department_id === $user->department_id;
+        if ($user->hasRole('support') && $user->department_group_id) {
+            return $ticket->department->department_group_id === $user->department_group_id;
         }
         
         return false;
@@ -180,15 +177,11 @@ class ViewTicket extends Component
             return $this->ticket->organization_id === $user->organization_id;
         }
 
-        // Support can reply to tickets in their department or department group
+        // Support can reply to tickets in their department group
         if ($user->hasRole('support')) {
-            // Check same department first
-            if ($this->ticket->department_id === $user->department_id) {
-                return true;
-            }
             // Check same department group
-            if ($user->department?->department_group_id && 
-                $user->department->department_group_id === $this->ticket->department?->department_group_id) {
+            if ($user->department_group_id && 
+                $user->department_group_id === $this->ticket->department?->department_group_id) {
                 return true;
             }
             return false;

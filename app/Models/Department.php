@@ -32,7 +32,8 @@ class Department extends Model
 
     public function users(): HasMany
     {
-        return $this->hasMany(User::class);
+        // Users are associated to department groups, not directly to departments
+        return $this->hasMany(User::class, 'department_group_id', 'department_group_id');
     }
 
     public function tickets(): HasMany

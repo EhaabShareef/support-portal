@@ -20,7 +20,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,        // Clears all data, creates permissions and roles
             BasicDataSeeder::class,             // Creates organization, department groups, and departments
-            UserSeeder::class,                  // Creates users with proper assignments
+            UserSeeder::class,                  // Creates users with proper department group assignments
+            MigrateUsersToDepartmentGroupsSeeder::class, // Migrates any existing data to new structure
             ScheduleEventTypeSeeder::class,     // Creates schedule event types
             ContractTypeSeeder::class,          // Creates contract types lookup data
             ContractStatusSeeder::class,        // Creates contract statuses lookup data

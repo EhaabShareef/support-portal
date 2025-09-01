@@ -19,15 +19,17 @@ return new class extends Migration
             $table->string('email')->unique()->index();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('avatar')->nullable(); // User avatar image
+            $table->string('phone', 32)->nullable(); // Optional phone number
             $table->boolean('is_active')->default(true);
             $table->timestamp('last_login_at')->nullable(); // Track user activity
             $table->string('timezone')->default('UTC'); // User timezone preference
             $table->json('preferences')->nullable(); // Store user preferences
             
             // Foreign keys with proper constraints  
-            $table->foreignId('department_id')
+            $table->foreignId('department_group_id')
                   ->nullable()
-                  ->constrained('departments')
+                  ->constrained('department_groups')
                   ->onDelete('set null'); // Don't cascade delete users
                   
             $table->foreignId('organization_id')
@@ -40,7 +42,7 @@ return new class extends Migration
             $table->softDeletes(); // Soft delete for user data integrity
             
             // Composite indexes for common queries
-            $table->index(['is_active', 'department_id']);
+            $table->index(['is_active', 'department_group_id']);
             $table->index(['is_active', 'organization_id']);
             $table->index('last_login_at');
         });

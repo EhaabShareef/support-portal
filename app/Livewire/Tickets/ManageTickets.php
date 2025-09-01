@@ -350,11 +350,8 @@ class ManageTickets extends Component
         }
         
         // Support staff can access tickets in their department group
-        if ($user->hasRole('support') && $user->department) {
-            if ($user->department->department_group_id) {
-                return $ticket->department->department_group_id === $user->department->department_group_id;
-            }
-            return $ticket->department_id === $user->department_id;
+        if ($user->hasRole('support') && $user->department_group_id) {
+            return $ticket->department->department_group_id === $user->department_group_id;
         }
         
         return false;
@@ -383,24 +380,17 @@ class ManageTickets extends Component
             case 'my_tickets':
                 $query->where('owner_id', $user->id);
                 break;
-            case 'my_department':
-                if ($user->department_id) {
-                    $query->where('department_id', $user->department_id);
-                }
-                break;
             case 'my_department_group':
-                if ($user->department_id && $user->department?->department_group_id) {
-                    $query->forDepartmentGroup($user->department->department_group_id);
+                if ($user->department_group_id) {
+                    $query->forDepartmentGroup($user->department_group_id);
                 }
                 break;
             case 'unassigned':
                 $query->whereNull('owner_id');
                 if ($user->hasRole('support')) {
                     // Allow agents to see unassigned tickets from their department group
-                    if ($user->department?->department_group_id) {
-                        $query->forDepartmentGroup($user->department->department_group_id);
-                    } else {
-                        $query->where('department_id', $user->department_id);
+                    if ($user->department_group_id) {
+                        $query->forDepartmentGroup($user->department_group_id);
                     }
                 } elseif ($user->hasRole('client')) {
                     $query->where('organization_id', $user->organization_id);
@@ -411,10 +401,8 @@ class ManageTickets extends Component
                 // Apply role-based filtering for 'all' tab
                 if ($user->hasRole('support')) {
                     // Agents can see tickets in their department group
-                    if ($user->department?->department_group_id) {
-                        $query->forDepartmentGroup($user->department->department_group_id);
-                    } else {
-                        $query->where('department_id', $user->department_id);
+                    if ($user->department_group_id) {
+                        $query->forDepartmentGroup($user->department_group_id);
                     }
                 } elseif ($user->hasRole('client')) {
                     // Clients can only see tickets from their organization
@@ -476,22 +464,18 @@ class ManageTickets extends Component
             // Agents see all organizations and departments in their group (or just their department)
             $organizations = Organization::orderBy('name')->get();
             
-            if ($user->department?->department_group_id) {
+            if ($user->department_group_id) {
                 // Show all departments in the same group
-                $departments = Department::where('department_group_id', $user->department->department_group_id)
+                $departments = Department::where('department_group_id', $user->department_group_id)
                     ->orderBy('name')->get();
-                $agents = User::whereHas('department', function ($q) use ($user) {
-                    $q->where('department_group_id', $user->department->department_group_id);
-                })->whereHas('roles', function ($q) {
+                $agents = User::where('department_group_id', $user->department_group_id)
+                    ->whereHas('roles', function ($q) {
                     $q->whereIn('name', ['support', 'admin']);
                 })->orderBy('name')->get();
             } else {
-                // Fallback to just their department
-                $departments = Department::where('id', $user->department_id)->get();
-                $agents = User::where('department_id', $user->department_id)
-                    ->whereHas('roles', function ($q) {
-                        $q->whereIn('name', ['support', 'admin']);
-                    })->orderBy('name')->get();
+                // No department group available; leave lists empty
+                $departments = collect();
+                $agents = collect();
             }
         } elseif ($user->hasRole('client')) {
             // Clients see only their organization
@@ -504,8 +488,8 @@ class ManageTickets extends Component
         $statusOptions = [];
         if ($user->hasRole('admin')) {
             $statusOptions = TicketStatusModel::options();
-        } elseif ($user->hasRole('support') && $user->department?->department_group_id) {
-            $statusOptions = TicketStatusModel::optionsForDepartmentGroup($user->department->department_group_id);
+        } elseif ($user->hasRole('support') && $user->department_group_id) {
+            $statusOptions = TicketStatusModel::optionsForDepartmentGroup($user->department_group_id);
         } else {
             $statusOptions = TicketStatusModel::options(); // Fallback to default options
         }

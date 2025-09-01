@@ -149,28 +149,34 @@ class Dashboard extends Component
 
     private function getAgentDashboardData($user)
     {
-        $departmentId = $user->department_id;
+        $departmentGroupId = $user->department_group_id;
         
         return [
             'metrics' => [
                 'my_tickets' => Ticket::where('owner_id', $user->id)->count(),
                 'my_open_tickets' => Ticket::where('owner_id', $user->id)
                     ->where('status', '!=', 'closed')->count(),
-                'department_tickets' => Ticket::where('department_id', $departmentId)->count(),
+                'department_tickets' => Ticket::whereHas('department', function($q) use ($departmentGroupId) {
+                        $q->where('department_group_id', $departmentGroupId);
+                    })->count(),
                 'resolved_today' => Ticket::where('owner_id', $user->id)
                     ->whereDate('resolved_at', today())->count(),
                 'resolved_this_week' => Ticket::where('owner_id', $user->id)
                     ->whereBetween('resolved_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
             ],
             'ticket_breakdown' => [
-                'open' => Ticket::where('department_id', $departmentId)->where('status', 'open')->count(),
-                'in_progress' => Ticket::where('department_id', $departmentId)->where('status', 'in_progress')->count(),
-                'awaiting_customer_response' => Ticket::where('department_id', $departmentId)->where('status', 'awaiting_customer_response')->count(),
-                'solution_provided' => Ticket::where('department_id', $departmentId)->where('status', 'solution_provided')->count(),
+                'open' => Ticket::whereHas('department', fn($q) => $q->where('department_group_id', $departmentGroupId))
+                    ->where('status', 'open')->count(),
+                'in_progress' => Ticket::whereHas('department', fn($q) => $q->where('department_group_id', $departmentGroupId))
+                    ->where('status', 'in_progress')->count(),
+                'awaiting_customer_response' => Ticket::whereHas('department', fn($q) => $q->where('department_group_id', $departmentGroupId))
+                    ->where('status', 'awaiting_customer_response')->count(),
+                'solution_provided' => Ticket::whereHas('department', fn($q) => $q->where('department_group_id', $departmentGroupId))
+                    ->where('status', 'solution_provided')->count(),
             ],
             'contribution_data' => $this->getContributionData($user->id),
             'department_ranking' => $this->getDepartmentRanking($user),
-            'recent_activity' => $this->getRecentActivity($departmentId),
+            'recent_activity' => $this->getRecentActivity($departmentGroupId),
             'quick_actions' => [
                 ['label' => 'Create Ticket', 'route' => 'tickets.create', 'icon' => 'plus-circle', 'color' => 'blue'],
                 ['label' => 'My Tickets', 'route' => 'tickets.index', 'icon' => 'ticket', 'color' => 'green'],
@@ -239,10 +245,10 @@ class Dashboard extends Component
 
         return Department::select('departments.*')
             ->withCount(['users as top_performer_count' => function($query) use ($startOfWeek, $endOfWeek) {
-                $query->withCount(['assignedTickets as resolved_count' => function($q) use ($startOfWeek, $endOfWeek) {
+                $query->whereHas('assignedTickets', function($q) use ($startOfWeek, $endOfWeek) {
                     $q->where('status', 'closed')
                       ->whereBetween('resolved_at', [$startOfWeek, $endOfWeek]);
-                }]);
+                });
             }])
             ->with(['users' => function($query) use ($startOfWeek, $endOfWeek) {
                 $query->withCount(['assignedTickets as resolved_count' => function($q) use ($startOfWeek, $endOfWeek) {
@@ -287,7 +293,7 @@ class Dashboard extends Component
         $startOfWeek = now()->startOfWeek();
         $endOfWeek = now()->endOfWeek();
         
-        $departmentAgents = User::where('department_id', $user->department_id)
+        $departmentAgents = User::where('department_group_id', $user->department_group_id)
             ->whereHas('roles', function($q) {
                 $q->where('name', 'support');
             })
@@ -310,9 +316,11 @@ class Dashboard extends Component
         ];
     }
 
-    private function getRecentActivity($departmentId)
+    private function getRecentActivity($departmentGroupId)
     {
-        return Ticket::where('department_id', $departmentId)
+        return Ticket::whereHas('department', function($q) use ($departmentGroupId) {
+                $q->where('department_group_id', $departmentGroupId);
+            })
             ->whereNotIn('status', ['closed', 'solution_provided']) // Hide closed tickets from recent activity
             ->with(['client', 'owner'])
             ->latest()

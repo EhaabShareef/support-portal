@@ -95,7 +95,18 @@
                 <x-heroicon-o-scissors class="h-5 w-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
             </button>
         @endcan
-        
+
+        @can('update', $ticket)
+            <button wire:click="merge" wire:loading.attr="disabled"
+                    class="group relative flex items-center p-2.5 text-neutral-600 dark:text-neutral-400 hover:text-fuchsia-600 dark:hover:text-fuchsia-400 hover:bg-fuchsia-50 dark:hover:bg-fuchsia-900/30 rounded-md transition-all duration-300 ease-in-out overflow-hidden"
+                    aria-label="Merge Tickets" title="Merge Tickets">
+                <span class="text-sm font-medium w-0 opacity-0 group-hover:w-auto group-hover:opacity-100 group-hover:mr-2 transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden">
+                    Merge
+                </span>
+                <x-heroicon-o-arrows-right-left class="h-5 w-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
+            </button>
+        @endcan
+
 
     @else
         {{-- When ticket is closed, only show reopen button --}}

@@ -28,7 +28,7 @@ return new class extends Migration
                 'critical'
             ])->default('normal')->index(); // Indexed for filtering
             
-            $table->text('description')->nullable()->comment('DEPRECATED: Use ticket_messages table instead'); // Initial ticket description
+            $table->boolean('critical_confirmed')->default(false)->index(); // For critical priority confirmation workflow
             
             // Foreign keys with proper naming and constraints
             $table->foreignId('organization_id')
@@ -48,9 +48,22 @@ return new class extends Migration
                   ->constrained('users')
                   ->onDelete('set null'); // If owner deleted, unassign ticket
 
+            // Split functionality fields
+            $table->foreignId('split_from_ticket_id')->nullable();
+            // Explicitly name self-referencing FK to avoid driver naming issues
+            $table->foreign('split_from_ticket_id', 'fk_tickets_split_from')
+                  ->references('id')
+                  ->on('tickets')
+                  ->nullOnDelete(); // For split ticket tracking
+
             // Merge functionality fields
             $table->boolean('is_merged')->default(false)->index();
-            $table->foreignId('merged_into_ticket_id')->nullable()->constrained('tickets')->nullOnDelete()->index();
+            $table->foreignId('merged_into_ticket_id')->nullable();
+            // Explicitly name self-referencing FK to avoid driver naming issues
+            $table->foreign('merged_into_ticket_id', 'fk_tickets_merged_into')
+                  ->references('id')
+                  ->on('tickets')
+                  ->nullOnDelete();
             $table->boolean('is_merged_master')->default(false)->index();
             
             // Tracking fields
@@ -64,13 +77,23 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes(); // Important for audit trails
             
-            // Composite indexes for common queries
-            $table->index(['organization_id', 'status']);
-            $table->index(['department_id', 'status']);
-            $table->index(['owner_id', 'status']);
-            $table->index(['priority', 'status']);
-            $table->index(['created_at', 'status']);
-            $table->index('ticket_number');
+            // Composite indexes for common queries with named indexes for better management
+            $table->index(['organization_id', 'status'], 'idx_tickets_org_status');
+            $table->index(['department_id', 'status'], 'idx_tickets_dept_status');
+            $table->index(['owner_id', 'status'], 'idx_tickets_owner_status');
+            $table->index(['priority', 'status'], 'idx_tickets_priority_status');
+            $table->index(['created_at', 'status'], 'idx_tickets_created_status');
+            $table->index('ticket_number', 'idx_tickets_number');
+            
+            // Additional composite indexes for common filtering patterns
+            $table->index(['organization_id', 'status', 'created_at'], 'idx_tickets_org_status_created');
+            $table->index(['owner_id', 'department_id'], 'idx_tickets_owner_dept');
+            
+            // Single column indexes for common queries
+            $table->index('status', 'idx_tickets_status');
+            $table->index('priority', 'idx_tickets_priority');
+            $table->index('owner_id', 'idx_tickets_owner_id');
+            $table->index('created_at', 'idx_tickets_created_at');
         });
 
         // Create ticket_messages table
@@ -98,6 +121,7 @@ return new class extends Migration
             $table->foreignId('ticket_id')->constrained('tickets')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->text('note');
+            $table->string('color')->default('sky'); // For note color coding
             $table->boolean('is_internal')->default(true)->index();
             $table->timestamps();
             $table->softDeletes();
@@ -137,6 +161,8 @@ return new class extends Migration
             $table->index(['ticket_message_id', 'created_at']);
             $table->index('uuid'); // For download lookups
         });
+
+        // ticket_hardware pivot table moved to later migration (after organization_hardware exists)
     }
 
     /**
@@ -144,6 +170,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('ticket_hardware');
         Schema::dropIfExists('ticket_message_attachments');
         Schema::dropIfExists('ticket_cc_recipients');
         Schema::dropIfExists('ticket_notes');

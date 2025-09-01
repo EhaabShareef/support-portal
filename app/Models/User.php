@@ -43,11 +43,12 @@ class User extends Authenticatable
         'email_verified_at',
         'password',
         'avatar',
+        'phone',
         'is_active',
         'last_login_at',
         'timezone',
         'preferences',
-        'department_id',
+        'department_group_id',
         'organization_id',
     ];
 
@@ -94,9 +95,9 @@ class User extends Authenticatable
         }
     }
 
-    public function department(): BelongsTo
+    public function departmentGroup(): BelongsTo
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(DepartmentGroup::class);
     }
 
     public function organization(): BelongsTo
@@ -104,10 +105,24 @@ class User extends Authenticatable
         return $this->belongsTo(Organization::class);
     }
 
-    // Department Group (via Department)
-    public function getDepartmentGroupAttribute()
+    // Get departments through department group
+    public function getDepartmentsAttribute()
     {
-        return $this->department?->departmentGroup;
+        return $this->departmentGroup?->departments ?? collect();
+    }
+
+    // Get accessible departments for ticket access
+    public function getAccessibleDepartments()
+    {
+        if ($this->hasRole('admin')) {
+            return Department::all();
+        }
+        
+        if ($this->hasRole('support') && $this->departmentGroup) {
+            return $this->departmentGroup->departments;
+        }
+        
+        return collect();
     }
 
     public function tickets()

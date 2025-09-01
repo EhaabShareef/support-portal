@@ -58,9 +58,9 @@
                     class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ $quickFilter === 'my_tickets' ? 'bg-sky-600 text-white shadow-md' : 'bg-white/60 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300 hover:bg-sky-100 dark:hover:bg-sky-900/30' }}">
                 My Tickets
             </button>
-            @if(auth()->user()->department_id)
-            <button wire:click="setQuickFilter('my_department')" 
-                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ $quickFilter === 'my_department' ? 'bg-sky-600 text-white shadow-md' : 'bg-white/60 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300 hover:bg-sky-100 dark:hover:bg-sky-900/30' }}">
+            @if(auth()->user()->department_group_id)
+            <button wire:click="setQuickFilter('my_department_group')" 
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ $quickFilter === 'my_department_group' ? 'bg-sky-600 text-white shadow-md' : 'bg-white/60 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300 hover:bg-sky-100 dark:hover:bg-sky-900/30' }}">
                 My Department
             </button>
             @endif

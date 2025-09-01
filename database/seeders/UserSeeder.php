@@ -53,7 +53,7 @@ class UserSeeder extends Seeder
                 'email' => 'superadmin@hospitalitytechnology.com.mv',
                 'password' => Hash::make('password'),
                 'organization_id' => $organization->id,
-                'department_id' => null, // Super admin not tied to specific department
+                'department_group_id' => null, // Super admin not tied to specific department group
                 'email_verified_at' => now(),
                 'is_active' => true,
             ]);
@@ -70,10 +70,7 @@ class UserSeeder extends Seeder
             // Determine role based on group
             $role = in_array($group->name, ['Admin', 'Email']) ? $adminRole : $supportRole;
             
-            // Get first department in the group for assignment
-            $department = $group->departments()->first();
-            
-            $user = User::withoutEvents(function () use ($name, $username, $email, $organization, $department) {
+            $user = User::withoutEvents(function () use ($name, $username, $email, $organization, $group) {
                 return User::create([
                     'uuid' => Str::uuid(),
                     'name' => $name,
@@ -81,7 +78,7 @@ class UserSeeder extends Seeder
                     'email' => $email,
                     'password' => Hash::make('password'),
                     'organization_id' => $organization->id,
-                    'department_id' => $department ? $department->id : null,
+                    'department_group_id' => $group->id,
                     'email_verified_at' => now(),
                     'is_active' => true,
                 ]);

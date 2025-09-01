@@ -34,15 +34,11 @@ class TicketPolicy
             return true;
         }
 
-        // Support can view tickets in their department or department group
+        // Support can view tickets in their department group
         if ($user->hasRole('support')) {
-            // Check if same department
-            if ($user->department_id === $ticket->department_id) {
-                return true;
-            }
             // Check if same department group
-            if ($user->department?->department_group_id && 
-                $user->department->department_group_id === $ticket->department?->department_group_id) {
+            if ($user->department_group_id && 
+                $user->department_group_id === $ticket->department?->department_group_id) {
                 return true;
             }
         }
@@ -78,15 +74,11 @@ class TicketPolicy
             return true;
         }
 
-        // Support can update tickets in their department or department group
+        // Support can update tickets in their department group
         if ($user->hasRole('support')) {
-            // Check if same department
-            if ($user->department_id === $ticket->department_id) {
-                return true;
-            }
             // Check if same department group
-            if ($user->department?->department_group_id && 
-                $user->department->department_group_id === $ticket->department?->department_group_id) {
+            if ($user->department_group_id && 
+                $user->department_group_id === $ticket->department?->department_group_id) {
                 return true;
             }
         }
@@ -128,15 +120,11 @@ class TicketPolicy
             return true;
         }
 
-        // Support can assign tickets in their department or department group
+        // Support can assign tickets in their department group
         if ($user->hasRole('support')) {
-            // Check if same department
-            if ($user->department_id === $ticket->department_id) {
-                return true;
-            }
             // Check if same department group
-            if ($user->department?->department_group_id && 
-                $user->department->department_group_id === $ticket->department?->department_group_id) {
+            if ($user->department_group_id && 
+                $user->department_group_id === $ticket->department?->department_group_id) {
                 return true;
             }
         }
@@ -206,8 +194,8 @@ class TicketPolicy
         }
 
         // Support staff can only set statuses allowed for their department group
-        if ($user->hasRole('support') && $user->department?->department_group_id) {
-            $allowedStatuses = array_keys(TicketStatusModel::optionsForDepartmentGroup($user->department->department_group_id));
+        if ($user->hasRole('support') && $user->department_group_id) {
+            $allowedStatuses = array_keys(TicketStatusModel::optionsForDepartmentGroup($user->department_group_id));
             return in_array($status, $allowedStatuses);
         }
 
@@ -239,15 +227,11 @@ class TicketPolicy
             return true;
         }
 
-        // Support can reply to tickets in their department or department group
+        // Support can reply to tickets in their department group
         if ($user->hasRole('support')) {
-            // Check if same department
-            if ($user->department_id === $ticket->department_id) {
-                return true;
-            }
             // Check if same department group
-            if ($user->department?->department_group_id && 
-                $user->department->department_group_id === $ticket->department?->department_group_id) {
+            if ($user->department_group_id && 
+                $user->department_group_id === $ticket->department?->department_group_id) {
                 return true;
             }
         }
@@ -272,15 +256,11 @@ class TicketPolicy
 
         // Only admin and support can add notes
         if ($user->hasRole(['admin', 'support'])) {
-            // Support can add notes to tickets in their department or department group
+            // Support can add notes to tickets in their department group
             if ($user->hasRole('support')) {
-                // Check if same department
-                if ($user->department_id === $ticket->department_id) {
-                    return true;
-                }
                 // Check if same department group
-                if ($user->department?->department_group_id && 
-                    $user->department->department_group_id === $ticket->department?->department_group_id) {
+                if ($user->department_group_id && 
+                    $user->department_group_id === $ticket->department?->department_group_id) {
                     return true;
                 }
                 return false;
