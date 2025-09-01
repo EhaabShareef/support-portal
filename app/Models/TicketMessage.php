@@ -20,6 +20,10 @@ class TicketMessage extends Model
         'is_system_message',
         'is_log',
         'metadata',
+        'email_message_id',
+        'email_in_reply_to',
+        'email_references',
+        'email_headers',
     ];
 
     protected $casts = [
@@ -27,6 +31,7 @@ class TicketMessage extends Model
         'is_system_message' => 'boolean',
         'is_log' => 'boolean',
         'metadata' => 'array',
+        'email_headers' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',

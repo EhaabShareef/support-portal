@@ -112,7 +112,15 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+       'name' => env('MAIL_FROM_NAME', 'Example'),
+    ],
+
+    'email_parser' => [
+        'enabled' => env('EMAIL_PARSER_ENABLED', false),
+        'incoming_mailbox' => env('EMAIL_PARSER_MAILBOX', 'support@example.com'),
+        'reply_prefix' => env('EMAIL_PARSER_REPLY_PREFIX', '[TICKET-'),
+        'max_attachment_size' => env('EMAIL_PARSER_MAX_ATTACHMENT', 10240),
+        'allowed_extensions' => explode(',', env('EMAIL_PARSER_ALLOWED_EXTENSIONS', 'pdf,doc,docx,xls,xlsx,png,jpg,jpeg,gif')),
     ],
 
 ];
