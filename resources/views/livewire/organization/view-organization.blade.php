@@ -22,6 +22,24 @@
         </div>
     </div>
 
+    {{-- Primary User Warning --}}
+    @if(!$organization->hasPrimaryUser())
+        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+                <x-heroicon-o-exclamation-triangle class="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div class="flex-1">
+                    <h3 class="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">
+                        Primary User Not Set
+                    </h3>
+                    <p class="text-sm text-amber-700 dark:text-amber-300">
+                        This organization does not have a primary user set. Primary users provide contact information for their organizations. 
+                        Please set a primary user in the Users tab.
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Flash Messages --}}
     @if (session()->has('message'))
         <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" 
@@ -64,24 +82,92 @@
                 </div>
 
                 <dl class="space-y-4">
-                    @foreach ([
-                                'company_contact' => 'Contact Person',
-                                'email' => 'Email',
-                                'phone' => 'Phone',
-                                'tin_no' => 'TIN Number',
-                            ] as $field => $label)
-                        <div wire:key="field-{{ $field }}-{{ $organization->id }}">
-                            <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">{{ $label }}</dt>
+                    {{-- Company Contact --}}
+                    <div wire:key="field-company_contact-{{ $organization->id }}">
+                        <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Contact Person</dt>
+                        <dd class="mt-1 text-sm">
+                            @if ($editMode)
+                                <input type="text" wire:model.defer="form.company_contact"
+                                    class="w-full px-3 py-2 rounded-md bg-white/60 dark:bg-neutral-900/50 text-sm border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
+                            @else
+                                <span class="text-neutral-800 dark:text-neutral-200">{{ $organization->company_contact ?: 'Not provided' }}</span>
+                            @endif
+                        </dd>
+                    </div>
+
+                    {{-- Primary User Contact Info --}}
+                    @if($organization->hasPrimaryUser())
+                        <div wire:key="field-primary-user-{{ $organization->id }}">
+                            <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Primary User</dt>
                             <dd class="mt-1 text-sm">
-                                @if ($editMode)
-                                    <input type="text" wire:model.defer="form.{{ $field }}"
-                                        class="w-full px-3 py-2 rounded-md bg-white/60 dark:bg-neutral-900/50 text-sm border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
-                                @else
-                                    <span class="text-neutral-800 dark:text-neutral-200">{{ $organization->$field ?: 'Not provided' }}</span>
-                                @endif
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2">
+                                        <x-heroicon-o-user class="h-4 w-4 text-neutral-400" />
+                                        <span class="text-neutral-800 dark:text-neutral-200">{{ $organization->primaryUser->name }}</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+                                            Primary
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <x-heroicon-o-envelope class="h-4 w-4 text-neutral-400" />
+                                        <span class="text-neutral-800 dark:text-neutral-200">{{ $organization->primaryUser->email }}</span>
+                                    </div>
+                                    @if($organization->primaryUser->phone)
+                                        <div class="flex items-center gap-2">
+                                            <x-heroicon-o-phone class="h-4 w-4 text-neutral-400" />
+                                            <span class="text-neutral-800 dark:text-neutral-200">{{ $organization->primaryUser->phone }}</span>
+                                        </div>
+                                    @endif
+                                </div>
                             </dd>
                         </div>
-                    @endforeach
+                    @else
+                        <div wire:key="field-no-primary-user-{{ $organization->id }}">
+                            <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Primary User</dt>
+                            <dd class="mt-1 text-sm">
+                                <span class="text-amber-600 dark:text-amber-400">No primary user set</span>
+                            </dd>
+                        </div>
+                    @endif
+
+                    {{-- TIN Number --}}
+                    <div wire:key="field-tin_no-{{ $organization->id }}">
+                        <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">TIN Number</dt>
+                        <dd class="mt-1 text-sm">
+                            @if ($editMode)
+                                <input type="text" wire:model.defer="form.tin_no"
+                                    class="w-full px-3 py-2 rounded-md bg-white/60 dark:bg-neutral-900/50 text-sm border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
+                            @else
+                                <span class="text-neutral-800 dark:text-neutral-200">{{ $organization->tin_no ?: 'Not provided' }}</span>
+                            @endif
+                        </dd>
+                    </div>
+
+                    {{-- Primary User Selection (Edit Mode Only) --}}
+                    @if($editMode)
+                        <div wire:key="field-primary-user-edit-{{ $organization->id }}">
+                            <dt class="font-medium text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">Primary User</dt>
+                            <dd class="mt-1 text-sm">
+                                <select wire:model.defer="form.primary_user_id"
+                                    class="w-full px-3 py-2 rounded-md bg-white/60 dark:bg-neutral-900/50 text-sm border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200">
+                                    <option value="">No primary user</option>
+                                    @foreach($organization->users as $user)
+                                        @if($user->hasRole('client'))
+                                            <option value="{{ $user->id }}" {{ $user->isPrimaryForOrganization($organization->id) ? 'selected' : '' }}>
+                                                {{ $user->name }} ({{ $user->email }})
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                                <p class="text-xs text-neutral-500 mt-1">
+                                    Primary users provide contact information for this organization. Only client users can be primary users.
+                                </p>
+                                @error("form.primary_user_id")
+                                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                                @enderror
+                            </dd>
+                        </div>
+                    @endif
 
                     {{-- Subscription Status & Active Toggle --}}
                     <div wire:key="subscription-status-{{ $organization->id }}">

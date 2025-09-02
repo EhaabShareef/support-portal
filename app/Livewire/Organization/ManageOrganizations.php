@@ -3,13 +3,14 @@
 namespace App\Livewire\Organization;
 
 use App\Models\Organization;
+use App\Traits\ValidatesOrganizations;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\On;
 
 class ManageOrganizations extends Component
 {
-    use WithPagination;
+    use WithPagination, ValidatesOrganizations;
 
     public bool $showForm = false;
     public ?int $deleteId = null;
@@ -22,6 +23,7 @@ class ManageOrganizations extends Component
         'is_active' => true,
         'subscription_status' => 'trial',
         'notes' => '',
+        'primary_user_id' => '',
     ];
 
     public string $search = '';
@@ -136,6 +138,7 @@ class ManageOrganizations extends Component
         }
 
         $this->form = $organization->toArray();
+        $this->form['primary_user_id'] = $organization->primary_user_id;
         $this->showForm = true;
     }
 
@@ -153,10 +156,24 @@ class ManageOrganizations extends Component
             }
         }
 
+        // Handle primary user assignment
+        $primaryUserId = $data['primary_user_id'] ?? null;
+        unset($data['primary_user_id']); // Remove from organization data
+
         $organization = Organization::updateOrCreate(
             ['id' => $data['id']],
             $data
         );
+
+        // Set primary user if specified
+        if ($primaryUserId && $organization->id) {
+            try {
+                \App\Models\OrganizationUser::setPrimaryUser($primaryUserId, $organization->id);
+            } catch (\Exception $e) {
+                session()->flash('error', 'Failed to set primary user: ' . $e->getMessage());
+                return;
+            }
+        }
 
         session()->flash('message', $this->form['id'] ? 'Organization updated successfully.' : 'Organization created successfully.');
         $this->showForm = false;

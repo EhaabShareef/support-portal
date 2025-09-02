@@ -83,6 +83,7 @@ class ViewOrganization extends Component
             'is_active' => $this->organization->is_active,
             'subscription_status' => $this->organization->subscription_status,
             'notes' => $this->organization->notes,
+            'primary_user_id' => $this->organization->primary_user_id,
         ];
     }
 
@@ -120,12 +121,36 @@ class ViewOrganization extends Component
             'form.is_active' => 'boolean',
             'form.subscription_status' => 'required|in:trial,active,suspended,cancelled',
             'form.notes' => 'nullable|string|max:1000',
+            'form.primary_user_id' => 'nullable|exists:users,id',
         ]);
+
+        // Handle primary user assignment
+        $primaryUserId = $this->form['primary_user_id'] ?? null;
+        unset($this->form['primary_user_id']); // Remove from organization data
 
         $this->organization->update($this->form);
 
+        // Set primary user if specified
+        if ($primaryUserId !== null) {
+            try {
+                if ($primaryUserId === '') {
+                    // Clear primary user
+                    $this->organization->update(['primary_user_id' => null]);
+                    // Also clear from pivot table
+                    $this->organization->users()->updateExistingPivot($this->organization->users()->wherePivot('is_primary', true)->pluck('users.id'), ['is_primary' => false]);
+                } else {
+                    // Set new primary user
+                    \App\Models\OrganizationUser::setPrimaryUser($primaryUserId, $this->organization->id);
+                }
+            } catch (\Exception $e) {
+                session()->flash('error', 'Failed to update primary user: ' . $e->getMessage());
+                return;
+            }
+        }
+
         session()->flash('message', 'Organization updated successfully.');
         $this->editMode = false;
+        $this->organization->refresh();
     }
 
     public function confirmDelete(): void

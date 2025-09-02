@@ -16,11 +16,10 @@ trait ValidatesOrganizations
             'form.company' => 'nullable|string|max:255',
             'form.company_contact' => 'required|string|max:255',
             'form.tin_no' => 'nullable|string|max:255|unique:organizations,tin_no',
-            'form.email' => 'required|email|unique:organizations,email',
-            'form.phone' => 'nullable|string|max:20',
             'form.is_active' => 'boolean',
             'form.subscription_status' => 'required|in:trial,active,suspended,cancelled',
             'form.notes' => 'nullable|string',
+            'form.primary_user_id' => 'nullable|exists:users,id',
         ];
     }
 
@@ -36,7 +35,6 @@ trait ValidatesOrganizations
         
         if ($excludeId) {
             $rules['form.tin_no'] = 'nullable|string|max:255|unique:organizations,tin_no,' . $excludeId;
-            $rules['form.email'] = 'required|email|unique:organizations,email,' . $excludeId;
         }
         
         return $rules;
@@ -53,10 +51,7 @@ trait ValidatesOrganizations
             'form.name.required' => 'Organization name is required',
             'form.company_contact.required' => 'Company contact is required',
             'form.tin_no.unique' => 'This TIN number is already in use',
-            'form.email.required' => 'Email is required',
-            'form.email.email' => 'Please enter a valid email address',
-            'form.email.unique' => 'This email is already in use',
-            'form.phone.max' => 'Phone number cannot exceed 20 characters',
+            'form.primary_user_id.exists' => 'Selected user does not exist',
             'form.subscription_status.required' => 'Subscription status is required',
             'form.subscription_status.in' => 'Invalid subscription status selected',
         ];

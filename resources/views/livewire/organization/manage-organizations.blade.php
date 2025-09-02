@@ -21,6 +21,42 @@
         </div>
     </div>
 
+    {{-- Primary User Warning Banner --}}
+    @php
+        $organizationsWithoutPrimary = $organizations->filter(function($org) {
+            return !$org->hasPrimaryUser();
+        });
+    @endphp
+    
+    @if($organizationsWithoutPrimary->count() > 0)
+        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+                <x-heroicon-o-exclamation-triangle class="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div class="flex-1">
+                    <h3 class="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">
+                        Primary User Required
+                    </h3>
+                    <p class="text-sm text-amber-700 dark:text-amber-300 mb-2">
+                        The following {{ $organizationsWithoutPrimary->count() }} organization(s) do not have a primary user set. 
+                        Primary users provide contact information for their organizations.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach($organizationsWithoutPrimary->take(5) as $org)
+                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                {{ $org->name }}
+                            </span>
+                        @endforeach
+                        @if($organizationsWithoutPrimary->count() > 5)
+                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                +{{ $organizationsWithoutPrimary->count() - 5 }} more
+                            </span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="flex flex-col space-y-6" x-data="{ showForm: @entangle('showForm') }">
 
         {{-- Inline Form --}}
@@ -49,8 +85,6 @@
         'company' => 'Company',
         'company_contact' => 'Company Contact',
         'tin_no' => 'TIN No',
-        'email' => 'Email',
-        'phone' => 'Phone',
     ] as $field => $label)
                         <div class="form-field-stagger">
                             <label for="{{ $field }}"
@@ -76,6 +110,38 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                {{-- Primary User Selection --}}
+                <div class="md:col-span-2 form-field-stagger">
+                    <label for="primary_user_id" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                        Primary User
+                        <span class="text-xs text-neutral-500">(Optional - can be set later)</span>
+                    </label>
+                    <select wire:model.defer="form.primary_user_id" id="primary_user_id"
+                        class="w-full px-4 py-2 mt-1 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 
+                               rounded-md text-sm text-neutral-800 dark:text-neutral-100 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none transition-all duration-200">
+                        <option value="">Select a primary user...</option>
+                        @if(isset($form['id']) && $form['id'])
+                            {{-- Show existing users for this organization --}}
+                            @php
+                                $orgUsers = \App\Models\Organization::find($form['id'])->users ?? collect();
+                            @endphp
+                            @foreach($orgUsers as $user)
+                                @if($user->hasRole('client'))
+                                    <option value="{{ $user->id }}" {{ $user->isPrimaryForOrganization($form['id']) ? 'selected' : '' }}>
+                                        {{ $user->name }} ({{ $user->email }})
+                                    </option>
+                                @endif
+                            @endforeach
+                        @endif
+                    </select>
+                    <p class="text-xs text-neutral-500 mt-1">
+                        Primary users provide contact information for their organizations. Only client users can be primary users.
+                    </p>
+                    @error("form.primary_user_id")
+                        <p class="text-sm text-red-600 mt-1 animate-pulse">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="md:col-span-2 form-field-stagger">
@@ -150,7 +216,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="md:col-span-2">
                 <input wire:model.live.debounce.300ms="search" type="text"
-                    placeholder="Search by name, company, or email..."
+                    placeholder="Search by name, company, or contact..."
                     class="w-full px-4 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 text-neutral-800 dark:text-neutral-200 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none text-sm transition-all duration-200" />
             </div>
             

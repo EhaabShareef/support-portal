@@ -54,6 +54,51 @@
         </div>
     @endif
 
+    {{-- Primary User Warning Banner --}}
+    @if(auth()->user()->hasRole('admin') || auth()->user()->can('organizations.read'))
+        @php
+            $organizationsWithoutPrimary = \App\Models\Organization::where('is_active', true)
+                ->whereNull('primary_user_id')
+                ->get();
+        @endphp
+        
+        @if($organizationsWithoutPrimary->count() > 0)
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                    <x-heroicon-o-exclamation-triangle class="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div class="flex-1">
+                        <h3 class="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">
+                            Primary User Required
+                        </h3>
+                        <p class="text-sm text-amber-700 dark:text-amber-300 mb-2">
+                            {{ $organizationsWithoutPrimary->count() }} organization(s) do not have a primary user set. 
+                            Primary users provide contact information for their organizations.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($organizationsWithoutPrimary->take(3) as $org)
+                                <a href="{{ route('organizations.show', $org) }}" 
+                                   class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors duration-200">
+                                    {{ $org->name }}
+                                </a>
+                            @endforeach
+                            @if($organizationsWithoutPrimary->count() > 3)
+                                <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                    +{{ $organizationsWithoutPrimary->count() - 3 }} more
+                                </span>
+                            @endif
+                        </div>
+                        <div class="mt-3">
+                            <a href="{{ route('organizations.index') }}" 
+                               class="inline-flex items-center px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-md transition-colors duration-200">
+                                View All Organizations
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
+
     {{-- Widget-Based Dashboard --}}
     @if ($userWidgets->isNotEmpty())
         <div class="dashboard-grid grid gap-6 auto-rows-min grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
