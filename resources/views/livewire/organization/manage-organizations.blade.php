@@ -11,12 +11,24 @@
                 <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">Manage and track client organizations</p>
             </div>
 
+            {{-- Debug Button (temporary) --}}
+            <button wire:click="debugPermissions"
+                class="inline-flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-all duration-200 mr-2">
+                <x-heroicon-o-bug-ant class="h-4 w-4 mr-1" />
+                Debug Perms
+            </button>
+
             @if($this->canCreate)
                 <button wire:click="create"
                     class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
                     <x-heroicon-o-plus class="h-4 w-4 mr-2" />
                     New Organization
                 </button>
+            @else
+                <div class="text-sm text-amber-600 dark:text-amber-400">
+                    Cannot create: Admin role: {{ auth()->user()->hasRole('admin') ? 'Yes' : 'No' }}, 
+                    Can create: {{ auth()->user()->can('organizations.create') ? 'Yes' : 'No' }}
+                </div>
             @endif
         </div>
     </div>
@@ -80,25 +92,67 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4" x-show="showForm" x-transition.delay.100ms>
-                    @foreach ([
-        'name' => 'Name',
-        'company' => 'Company',
-        'company_contact' => 'Company Contact',
-        'tin_no' => 'TIN No',
-    ] as $field => $label)
-                        <div class="form-field-stagger">
-                            <label for="{{ $field }}"
-                                class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">{{ $label }}</label>
-                            <input wire:model.defer="form.{{ $field }}" id="{{ $field }}"
-                                type="{{ $field === 'email' ? 'email' : 'text' }}"
-                                class="w-full px-4 py-2 mt-1 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 
+                    {{-- Name Field --}}
+                    <div class="form-field-stagger">
+                        <label for="name" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Name</label>
+                        <input wire:model.defer="form.name" id="name" type="text"
+                            class="w-full px-4 py-2 mt-1 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 
                                    rounded-md text-sm text-neutral-800 dark:text-neutral-100 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none transition-all duration-200" />
-                            @error("form.$field")
-                                <p class="text-sm text-red-600 mt-1 animate-pulse">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    @endforeach
+                        @error("form.name")
+                            <p class="text-sm text-red-600 mt-1 animate-pulse">{{ $message }}</p>
+                        @enderror
+                    </div>
 
+                    {{-- Company Field --}}
+                    <div class="form-field-stagger">
+                        <label for="company" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Company</label>
+                        <input wire:model.defer="form.company" id="company" type="text"
+                            class="w-full px-4 py-2 mt-1 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 
+                                   rounded-md text-sm text-neutral-800 dark:text-neutral-100 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none transition-all duration-200" />
+                        @error("form.company")
+                            <p class="text-sm text-red-600 mt-1 animate-pulse">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Company Contact Field --}}
+                    <div class="form-field-stagger">
+                        <label for="company_contact" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Company Contact</label>
+                        <input wire:model.defer="form.company_contact" id="company_contact" type="text"
+                            class="w-full px-4 py-2 mt-1 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 
+                                   rounded-md text-sm text-neutral-800 dark:text-neutral-100 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none transition-all duration-200" />
+                        @error("form.company_contact")
+                            <p class="text-sm text-red-600 mt-1 animate-pulse">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- TIN No Field --}}
+                    <div class="form-field-stagger">
+                        <label for="tin_no" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">TIN No</label>
+                        <input wire:model.defer="form.tin_no" id="tin_no" type="text"
+                            class="w-full px-4 py-2 mt-1 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 
+                                   rounded-md text-sm text-neutral-800 dark:text-neutral-100 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none transition-all duration-200" />
+                        @error("form.tin_no")
+                            <p class="text-sm text-red-600 mt-1 animate-pulse">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Subscription Status --}}
+                    <div class="form-field-stagger">
+                        <label for="subscription_status" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Subscription Status</label>
+                        <select wire:model.defer="form.subscription_status" id="subscription_status"
+                            class="w-full px-4 py-2 mt-1 bg-white/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 
+                                   rounded-md text-sm text-neutral-800 dark:text-neutral-100 focus:ring-2 focus:ring-sky-400 focus:border-transparent outline-none transition-all duration-200">
+                            <option value="trial">Trial</option>
+                            <option value="active">Active</option>
+                            <option value="suspended">Suspended</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        @error("form.subscription_status")
+                            <p class="text-sm text-red-600 mt-1 animate-pulse">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Active Status Toggle --}}
                     <div class="form-field-stagger">
                         <div class="flex items-center justify-between">
                             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Active Status</label>
@@ -156,13 +210,13 @@
                 </div>
 
                 <div class="flex justify-end gap-2" x-show="showForm" x-transition.delay.200ms>
-                    <button wire:click="$set('showForm', false)"
+                    <button wire:click="closeForm"
                         class="px-3 py-1 text-sm rounded-md bg-neutral-300 dark:bg-neutral-700 text-neutral-800 dark:text-white hover:bg-neutral-400 dark:hover:bg-neutral-600 transition-all duration-200 transform hover:scale-105">
                         Cancel
                     </button>
                     <button wire:click="save"
                         class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-md transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md">
-                        Save
+                        {{ $form['id'] ? 'Update' : 'Create' }} Organization
                     </button>
                 </div>
             </div>
@@ -209,6 +263,20 @@
                     <x-heroicon-o-exclamation-triangle class="h-5 w-5 mr-2" />
                     {{ session('error') }}
                 </div>
+            </div>
+        @endif
+
+        {{-- Debug Message (temporary) --}}
+        @if (session()->has('debug'))
+            <div class="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 px-4 py-3 text-sm shadow-md backdrop-blur rounded-md">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <x-heroicon-o-bug-ant class="h-5 w-5 mr-2" />
+                        <strong>Debug Info:</strong>
+                    </div>
+                    <button wire:click="$set('debug', null)" class="text-purple-600 hover:text-purple-800">×</button>
+                </div>
+                <pre class="mt-2 text-xs overflow-auto">{{ session('debug') }}</pre>
             </div>
         @endif
 
@@ -308,6 +376,21 @@
                             <x-heroicon-o-eye class="h-4 w-4 mr-1" />
                             View
                         </a>
+
+                        {{-- Status Toggle --}}
+                        @if($this->canEdit)
+                        <button wire:click="toggleStatus({{ $org->id }})"
+                            class="inline-flex items-center px-3 py-2 text-sm font-medium {{ $org->is_active ? 'text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30' : 'text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30' }} rounded-md transition-all duration-200"
+                            title="{{ $org->is_active ? 'Deactivate' : 'Activate' }}">
+                            @if($org->is_active)
+                                <x-heroicon-o-pause class="h-4 w-4 mr-1" />
+                                Deactivate
+                            @else
+                                <x-heroicon-o-play class="h-4 w-4 mr-1" />
+                                Activate
+                            @endif
+                        </button>
+                        @endif
 
                         {{-- Edit --}}
                         @if($this->canEdit)

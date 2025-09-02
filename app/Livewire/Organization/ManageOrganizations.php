@@ -58,17 +58,35 @@ class ManageOrganizations extends Component
 
     public function getCanCreateProperty()
     {
-        return auth()->user()->can('create', Organization::class);
+        $user = auth()->user();
+        // Admin role should always have access
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+        // Check specific permission
+        return $user->can('organizations.create');
     }
 
     public function getCanEditProperty()
     {
-        return auth()->user()->can('update', Organization::class);
+        $user = auth()->user();
+        // Admin role should always have access
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+        // Check specific permission
+        return $user->can('organizations.update');
     }
 
     public function getCanDeleteProperty()
     {
-        return auth()->user()->can('delete', Organization::class);
+        $user = auth()->user();
+        // Admin role should always have access
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+        // Check specific permission
+        return $user->can('organizations.delete');
     }
 
     public function render()
@@ -116,6 +134,7 @@ class ManageOrganizations extends Component
         $this->reset('form');
         $this->form['is_active'] = true;
         $this->form['subscription_status'] = 'trial';
+        $this->form['primary_user_id'] = '';
         $this->showForm = true;
     }
 
@@ -235,6 +254,7 @@ class ManageOrganizations extends Component
     {
         $this->showForm = false;
         $this->reset('form');
+        $this->resetPage();
     }
 
     public function cancelDelete()
@@ -242,39 +262,30 @@ class ManageOrganizations extends Component
         $this->deleteId = null;
     }
 
-    private function getOrganizationValidationRulesWithExclusion($excludeId = null)
-    {
-        $rules = [
-            'form.name' => 'required|string|max:255',
-            'form.company' => 'nullable|string|max:255',
-            'form.company_contact' => 'nullable|string|max:255',
-            'form.tin_no' => 'nullable|string|max:50',
-            'form.is_active' => 'boolean',
-            'form.subscription_status' => 'required|in:trial,active,suspended,cancelled',
-            'form.notes' => 'nullable|string|max:1000',
-        ];
-
-        return $rules;
-    }
-
-    private function getOrganizationValidationMessages()
-    {
-        return [
-            'form.name.required' => 'Organization name is required.',
-            'form.name.max' => 'Organization name cannot exceed 255 characters.',
-            'form.company.max' => 'Company name cannot exceed 255 characters.',
-            'form.company_contact.max' => 'Company contact cannot exceed 255 characters.',
-            'form.tin_no.max' => 'TIN number cannot exceed 50 characters.',
-            'form.subscription_status.required' => 'Subscription status is required.',
-            'form.subscription_status.in' => 'Invalid subscription status.',
-            'form.notes.max' => 'Notes cannot exceed 1000 characters.',
-        ];
-    }
+    // Remove custom validation methods - using ValidatesOrganizations trait instead
 
     #[On('refreshOrganizations')]
     public function refreshOrganizations()
     {
         $this->resetPage();
+    }
+
+    // Temporary debug method to check permissions
+    public function debugPermissions()
+    {
+        $user = auth()->user();
+        $debug = [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'roles' => $user->roles->pluck('name')->toArray(),
+            'has_admin_role' => $user->hasRole('admin'),
+            'can_create_org' => $user->can('organizations.create'),
+            'can_update_org' => $user->can('organizations.update'),
+            'can_delete_org' => $user->can('organizations.delete'),
+            'all_permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+        ];
+        
+        session()->flash('debug', json_encode($debug, JSON_PRETTY_PRINT));
     }
 
 

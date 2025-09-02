@@ -210,7 +210,7 @@ return [
             'description' => 'Administrative access to manage users, organizations, and all modules',
             'permissions' => [
                 'users.*',
-                'organizations.read', 'organizations.update',
+                'organizations.*',
                 'departments.*',
                 'department-groups.*',
                 'tickets.*',
