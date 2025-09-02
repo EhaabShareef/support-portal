@@ -4,11 +4,27 @@ Support Portal is a web-based application for managing customer support requests
 
 The application features a comprehensive **Role-Based Access Control (RBAC)** system using **Spatie Laravel Permission** for secure, scalable user and permission management.
 
+## 📋 Table of Contents
+
+- [Key Features](#key-features)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Email Integration System](#-email-integration-system)
+- [Role-Based Access Control (RBAC)](#role-based-access-control-rbac)
+- [Dashboard Widget System](#️-dashboard-widget-system)
+- [Organizational Structure](#organizational-structure)
+- [Reports & Analytics Module](#-reports--analytics-module)
+- [Recent Updates](#recent-updates)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Key Features
 
 - 🎫 **Advanced Ticket Management** - Complete ticket lifecycle with unified conversation system, priority controls, and audit logging
 - 🔒 **Ticket Rules & Controls** - One-way priority escalation, reopen windows, and comprehensive authorization
 - 💬 **Unified Conversation Stream** - Messages and notes in chronological timeline with system notifications
+- 📧 **Email Integration** - Secure webhook-based email processing with automatic ticket creation and reply handling
 - 🏢 **Organization Management** - Multi-tenant organization support with contract and hardware tracking
 - 📋 **Contract Tracking** - View and manage client contracts with automated alerts
 - 🛠️ **Hardware Management** - Track hardware assets, warranties, and support assignments
@@ -66,6 +82,56 @@ The repository is organized as follows:
 - `DATABASE_MIGRATION_GUIDE.md` – Notes on database setup and migrations.
 - `STYLING_GUIDE.md` – Frontend styling conventions.
 - `USER_ROLE_MANAGEMENT.md` – Documentation for role and permission management.
+
+## 📧 Email Integration System
+
+### 🔐 **Secure Webhook Processing**
+
+The Support Portal features a robust email integration system that allows automatic ticket creation and management through incoming emails. This system provides enterprise-grade security and reliability.
+
+#### **🛡️ Security Features**
+
+- **HMAC-SHA256 Signature Verification** - Cryptographic validation of webhook authenticity
+- **IP Allowlist Protection** - Restrict access to authorized IP addresses only
+- **Rate Limiting** - Prevent abuse with configurable request limits (10 requests/minute per IP)
+- **Timestamp Validation** - Prevent replay attacks with configurable tolerance (5 minutes default)
+- **Feature Flag Gating** - Enable/disable webhook functionality through configuration
+
+#### **📨 Email Processing Capabilities**
+
+- **Automatic Ticket Creation** - Convert incoming emails to support tickets automatically
+- **Smart User Detection** - Automatically find or create users based on email addresses
+- **Reply Threading** - Link email replies to existing tickets using secure tokens
+- **Attachment Handling** - Process and store email attachments with security validation
+- **Organization Routing** - Automatically assign tickets to correct organizations
+
+#### **🔧 Technical Implementation**
+
+- **Webhook Endpoint**: `/webhooks/email` with comprehensive security middleware
+- **Email Parser Service**: Robust email parsing with error handling and validation
+- **Database Transactions**: Atomic operations ensuring data consistency
+- **Audit Logging**: Complete tracking of all email processing activities
+- **Error Handling**: Graceful failure handling with detailed logging
+
+#### **⚙️ Configuration**
+
+```env
+# Email Webhook Configuration
+EMAIL_WEBHOOK_SECRET=your-secure-secret-here
+EMAIL_WEBHOOK_ENABLED=true
+EMAIL_WEBHOOK_IP_ALLOWLIST=127.0.0.1,::1,your-production-ip
+EMAIL_WEBHOOK_TIMESTAMP_TOLERANCE=300
+```
+
+#### **🚀 Getting Started with Email Integration**
+
+1. **Configure Webhook**: Set up your email provider to send webhooks to `/webhooks/email`
+2. **Set Security**: Configure your webhook secret and IP allowlist
+3. **Test Integration**: Use the provided test scripts to verify functionality
+4. **Monitor Logs**: Check Laravel logs for webhook processing status
+5. **Customize Processing**: Modify `EmailParserService` for specific business logic
+
+---
 
 ## Role-Based Access Control (RBAC)
 
@@ -145,6 +211,7 @@ The system organizes permissions into the following modules:
 The Support Portal features a comprehensive dashboard widget system that provides role-specific insights and functionality. Each user role has access to widgets tailored to their responsibilities and permissions.
 
 #### **🔧 Admin Widgets**
+
 - **System Health Monitor** - Real-time monitoring of database, cache, queues, and storage
 - **Ticket Analytics** - Comprehensive ticket trends, status breakdown, and performance metrics  
 - **Organization Management** - Contract alerts and organization overview metrics *(planned)*
@@ -152,6 +219,7 @@ The Support Portal features a comprehensive dashboard widget system that provide
 - **Department Performance** - Efficiency analysis and workload distribution *(planned)*
 
 #### **🎧 Support Widgets**
+
 - **My Workload** - Personal ticket queue with priority indicators and resolution metrics
 - **Agent Ticket Contributions** - GitHub-style activity heatmap tracking daily ticket interactions
 - **Team Performance** - Department rankings and comparative metrics *(planned)*
@@ -160,6 +228,7 @@ The Support Portal features a comprehensive dashboard widget system that provide
 - **Knowledge Insights** - Popular solutions and FAQ metrics *(planned)*
 
 #### **👤 Client Widgets**
+
 - **My Tickets Overview** - Organization ticket dashboard with status indicators
 - **Service Status** - SLA compliance and system uptime metrics *(planned)*
 - **Contract Information** - Active contracts and renewal alerts *(planned)*
@@ -203,6 +272,7 @@ The Support Portal features a comprehensive dashboard widget system that provide
 The system is organized into 7 department groups with 22 total departments:
 
 #### **Admin Group** (Admin role)
+
 - Admin
 - Finance  
 - Human Resource
@@ -210,6 +280,7 @@ The system is organized into 7 department groups with 22 total departments:
 - Sales
 
 #### **PMS Group** (Support role)
+
 - Opera
 - Opera Cloud
 - Vision
@@ -218,6 +289,7 @@ The system is organized into 7 department groups with 22 total departments:
 - Technical
 
 #### **POS Group** (Support role)
+
 - Simphny
 - Simphony Cloud
 - RES 3700
@@ -225,17 +297,21 @@ The system is organized into 7 department groups with 22 total departments:
 - R&A (Reporting & Analytics)
 
 #### **MC Group** (Support role)
+
 - Materials Control
 - Reporting
 
 #### **BO Group** (Support role)
+
 - BackOffice
 
 #### **Hardware Group** (Support role)
+
 - Local
 - Oracle
 
 #### **Email Group** (Admin role)
+
 - Email Case
 
 ### 👤 **Default Users**
@@ -262,6 +338,7 @@ The Support Portal features a powerful admin-only reporting system that provides
 #### **📈 Available Report Categories**
 
 ##### **1. Ticket & Support Performance**
+
 - **Ticket Volume & Status Trends** ✅ - Track ticket counts and workload patterns with advanced filtering
 - **Response & Resolution Time Analysis** - Monitor SLA compliance and team performance  
 - **Agent Workload Distribution** - Ensure balanced workloads across support staff
@@ -269,21 +346,25 @@ The Support Portal features a powerful admin-only reporting system that provides
 - **Aging & Overdue Tickets** - Identify stalled requests requiring attention
 
 ##### **2. Organization & Contract Oversight**
+
 - **Organization Summary** ✅ - High-level client engagement metrics with status indicators
 - **Contract Renewal Forecast** - Proactive contract management and renewal planning
 - **Contract Value Analysis** - Revenue tracking and financial insights
 
 ##### **3. Hardware & Asset Management**
+
 - **Hardware Inventory Snapshot** - Complete asset visibility and allocation tracking
 - **Warranty & Maintenance Schedule** - Proactive maintenance planning
 - **Hardware Allocation by Contract** - Contract deliverable validation
 
 ##### **4. User & Department Activity**
+
 - **User Account Status & Access** - Security auditing and access management
 - **Department Performance** - Team effectiveness and resource allocation insights
 - **Agent Productivity** - Individual performance tracking and recognition
 
 ##### **5. Schedule & Workforce Planning**
+
 - **Schedule Coverage** - Staffing adequacy and coverage gap identification
 - **User Schedule Summary** - Workload tracking and attendance validation
 
@@ -313,7 +394,58 @@ The Support Portal features a powerful admin-only reporting system that provides
 
 ## Recent Updates
 
-### 🚀 **v5.1.0 - Enhanced Action Buttons & Table Management** (Latest)
+### 🚀 **v5.2.0 - Secure Email Integration System** (Latest)
+
+#### 📧 **Enterprise-Grade Email Webhook System**
+
+- ✅ **Secure Webhook Processing**: Comprehensive email integration with automatic ticket creation
+  - **HMAC-SHA256 Signature Verification**: Cryptographic validation preventing unauthorized access
+  - **IP Allowlist Protection**: Restrict webhook access to authorized IP addresses only
+  - **Rate Limiting**: Configurable request limits (10 requests/minute per IP) preventing abuse
+  - **Timestamp Validation**: 5-minute tolerance preventing replay attacks
+  - **Feature Flag Gating**: Enable/disable functionality through configuration
+
+- ✅ **Email Processing Engine**: Robust email parsing and ticket management
+  - **Automatic Ticket Creation**: Convert incoming emails to support tickets automatically
+  - **Smart User Detection**: Find or create users based on email addresses with validation
+  - **Reply Threading**: Secure token-based linking of email replies to existing tickets
+  - **Attachment Handling**: Process and store email attachments with security validation
+  - **Organization Routing**: Automatic ticket assignment to correct organizations
+
+- ✅ **Security Middleware**: Multi-layered protection system
+  - **VerifyWebhookSignature Middleware**: Comprehensive security validation
+  - **Database Transactions**: Atomic operations ensuring data consistency
+  - **Error Handling**: Graceful failure handling with detailed logging
+  - **Audit Trail**: Complete tracking of all email processing activities
+
+#### 🔧 **Technical Implementation**
+
+- ✅ **New Components & Services**:
+  - **EmailWebhookController**: Handle incoming webhook requests with proper response codes
+  - **EmailParserService**: Parse emails and create tickets with transaction safety
+  - **EmailReplyService**: Generate secure reply addresses with HMAC token validation
+  - **VerifyWebhookSignature Middleware**: Multi-layer security validation
+
+- ✅ **Database Enhancements**:
+  - **Incoming Emails Table**: Track all processed emails with metadata
+  - **Email Fields Migration**: Add email routing and threading support to tickets/messages
+  - **Unique Constraints**: Prevent duplicate email processing and ensure data integrity
+
+- ✅ **Configuration & Security**:
+  - **Webhook Settings**: Centralized configuration in `config/services.php`
+  - **Environment Variables**: Secure secret management through `.env` files
+  - **IP Allowlist**: Configurable access control for production deployments
+  - **Rate Limiting**: Built-in abuse prevention with configurable limits
+
+#### 🎯 **Business Value**
+
+- ✅ **Automated Support**: Reduce manual ticket creation overhead
+- ✅ **24/7 Availability**: Process support requests outside business hours
+- ✅ **Improved Response Time**: Instant ticket creation from email submissions
+- ✅ **Professional Image**: Enterprise-grade email integration capabilities
+- ✅ **Security Compliance**: Multi-layer security meeting enterprise requirements
+
+### 🚀 **v5.1.0 - Enhanced Action Buttons & Table Management** (Previous)
 
 #### 🎯 **Advanced Action Button System**
 
@@ -463,7 +595,7 @@ The Support Portal features a powerful admin-only reporting system that provides
 
 #### 🔧 **Technical Implementation Highlights**
 
-- ✅ **Enhanced Models & Policies**: 
+- ✅ **Enhanced Models & Policies**:
   - **TicketPriority Enum**: Added `compare()` method and `getValue()` for hierarchy
   - **TicketPolicy**: New `escalatePriority()` and `reopen()` methods
   - **ActivityLog Model**: Enhanced with `record()` helper for streamlined logging
@@ -499,8 +631,6 @@ The Support Portal features a powerful admin-only reporting system that provides
     - "Solution Summary": "Internal only - visible to admin and support users only"
   - **Simplified UI**: Removed unnecessary "Internal Only" checkbox for cleaner interface
   - **Always Public Closing Messages**: All ticket closing messages are now visible to clients for transparency
-
-#### 🔧 **Technical Implementation**
 
 - ✅ **ViewTicket Component Updates**: Streamlined closing logic in `app/Livewire/ViewTicket.php`
   - Removed `internal` field from `$closeForm` array
@@ -600,7 +730,8 @@ The Support Portal features a powerful admin-only reporting system that provides
 #### 🔧 **Technical Architecture**
 
 - ✅ **Modular Component Structure**: Organized by role and size variants
-  ```
+
+  ```mermaid
   app/Livewire/Dashboard/Widgets/
   ├── Admin/SystemHealth/{Small,Medium,Large}.php
   ├── Admin/TicketAnalytics/{Small,Medium,Large}.php  
@@ -738,6 +869,7 @@ The Support Portal features a powerful admin-only reporting system that provides
 #### 📁 **Implementation Structure**
 
 - ✅ **Organized File Structure**: Clean separation of concerns
+
   ```
   app/Livewire/Admin/Reports/          # Report components
   resources/views/livewire/admin/reports/ # Report templates  
@@ -784,27 +916,27 @@ The Support Portal features a powerful admin-only reporting system that provides
 
 #### 🔧 **Technical Implementation**
 
-- ✅ **Complete Seeder Overhaul**: 
+- ✅ **Complete Seeder Overhaul**:
   - `DepartmentGroupSeeder`: Creates 7 department groups with colors and descriptions
   - `DepartmentSeeder`: Creates 22 departments with proper group assignments
   - `RolePermissionSeeder`: Clears existing data, creates admin/support roles
   - `UserSeeder`: Creates manager users for each department group
   - `DatabaseSeeder`: Orchestrates complete rebuild process
 
-- ✅ **Data Integrity**: 
+- ✅ **Data Integrity**:
   - Clears all existing users, roles, permissions, departments, and groups
   - Rebuilds from scratch to ensure clean organizational structure
   - Maintains referential integrity with proper foreign key relationships
   - Transaction-safe seeding with rollback capabilities
 
-- ✅ **Migration Compatibility**: 
+- ✅ **Migration Compatibility**:
   - Works with existing migration structure
   - No breaking changes to existing database schema
   - Maintains compatibility with all existing features
 
 #### 📊 **Business Logic Alignment**
 
-- ✅ **Domain-Specific Organization**: 
+- ✅ **Domain-Specific Organization**:
   - **Admin**: Administrative functions (Finance, HR, Sales, Project Management)
   - **PMS**: Property Management Systems (Opera, Vision, OXI, Technical)
   - **POS**: Point of Sale Systems (Simphony, RES series)
@@ -813,7 +945,7 @@ The Support Portal features a powerful admin-only reporting system that provides
   - **Hardware**: Local and Oracle hardware support
   - **Email**: Email case management
 
-- ✅ **Role Assignment Logic**: 
+- ✅ **Role Assignment Logic**:
   - Admin and Email groups get admin role (full system access)
   - All technical groups (PMS, POS, MC, BO, Hardware) get support role
   - Admin user separate from department structure
@@ -932,7 +1064,7 @@ The Support Portal features a powerful admin-only reporting system that provides
   - `ViewOrganization` now eager-loads `users.roles`, `hardware.contract`, `tickets.client/assigned/department`
   - Optimized database queries for better performance with large datasets
 
-- ✅ **Centralized Business Logic**: 
+- ✅ **Centralized Business Logic**:
   - Created `HardwareValidationService` for consistent contract validation across all hardware forms
   - Developed `ValidatesOrganizations` trait to eliminate duplicate validation rules
   - Standardized hardware contract requirements enforcement
@@ -976,17 +1108,17 @@ The Support Portal features a powerful admin-only reporting system that provides
 
 #### 🛠️ **Technical Architecture**
 
-- ✅ **Service Layer Implementation**: 
+- ✅ **Service Layer Implementation**:
   - `HardwareValidationService`: Centralized hardware-contract validation logic
   - Consistent business rule enforcement across all hardware entry points
   - Reduced code duplication and improved error handling
 
-- ✅ **Trait-Based Validation**: 
+- ✅ **Trait-Based Validation**:
   - `ValidatesOrganizations` trait with reusable validation rules and messages
   - Eliminates duplicate validation logic between `ManageOrganizations` and `ViewOrganization`
   - Supports exclusion rules for edit operations
 
-- ✅ **Component Organization**: 
+- ✅ **Component Organization**:
   - Separate management components (`ManageContracts`, `ManageHardware`, `ManageUsers`) for focused functionality
   - Compact overview tabs for quick information access
   - Clear separation of concerns between overview and management interfaces
@@ -1018,4 +1150,3 @@ Pull requests are welcome. Please ensure code style is maintained and tests are 
 ## License
 
 This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
