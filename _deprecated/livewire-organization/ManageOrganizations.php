@@ -62,12 +62,13 @@ class ManageOrganizations extends Component
     public function render()
     {
         $query = Organization::query()
+            ->with(['primaryUser', 'users'])
             ->withCount(['users', 'contracts', 'hardware', 'tickets'])
             ->where(function ($query) {
                 if ($this->search) {
                     $query->where('name', 'like', "%{$this->search}%")
                         ->orWhere('company', 'like', "%{$this->search}%")
-                        ->orWhere('email', 'like', "%{$this->search}%");
+                        ->orWhere('company_contact', 'like', "%{$this->search}%");
                 }
             });
 
@@ -80,10 +81,12 @@ class ManageOrganizations extends Component
             $query->where('subscription_status', $this->subscriptionFilter);
         }
 
-        // Role-based filtering
+        // Role-based filtering - Updated for new relationship structure
         $user = auth()->user();
         if ($user->hasRole('client')) {
-            $query->where('id', $user->organization_id);
+            // Get organizations where user is a member
+            $userOrgIds = $user->organizations->pluck('id');
+            $query->whereIn('id', $userOrgIds);
         }
 
         $organizations = $query->orderBy('name')->paginate(10);
@@ -114,9 +117,12 @@ class ManageOrganizations extends Component
         $organization = Organization::findOrFail($id);
         
         // Check if client can only edit their own organization
-        if (auth()->user()->hasRole('client') && $organization->id !== auth()->user()->organization_id) {
-            session()->flash('error', 'You can only edit your own organization.');
-            return;
+        if (auth()->user()->hasRole('client')) {
+            $userOrgIds = auth()->user()->organizations->pluck('id');
+            if (!$userOrgIds->contains($organization->id)) {
+                session()->flash('error', 'You can only edit your own organization.');
+                return;
+            }
         }
 
         $this->form = $organization->toArray();
