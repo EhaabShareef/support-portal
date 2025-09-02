@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -15,8 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $company
  * @property string $company_contact
  * @property string $tin_no
- * @property string $email
- * @property string $phone
+ * @property int|null $primary_user_id
  * @property bool $is_active
  * @property string $subscription_status
  * @property string|null $notes
@@ -35,11 +36,10 @@ class Organization extends Model
         'company',
         'company_contact',
         'tin_no',
-        'email',
-        'phone',
         'is_active',
         'subscription_status',
         'notes',
+        'primary_user_id', // NEW
     ];
 
     protected $guarded = [
@@ -66,9 +66,18 @@ class Organization extends Model
         return $this->hasMany(OrganizationContract::class, 'organization_id');
     }
 
-    public function users(): HasMany
+    // NEW: Primary user relationship
+    public function primaryUser(): BelongsTo
     {
-        return $this->hasMany(User::class, 'organization_id');
+        return $this->belongsTo(User::class, 'primary_user_id');
+    }
+    
+    // UPDATED: Many-to-many with users through pivot
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'organization_users')
+                    ->withPivot('is_primary')
+                    ->withTimestamps();
     }
 
     public function hardware(): HasMany
@@ -109,6 +118,35 @@ class Organization extends Model
         };
     }
 
+    // NEW: Get all users including corporate users
+    public function getAllUsers()
+    {
+        return $this->users()->orWhere('user_type', 'corporate')->get();
+    }
+    
+    // NEW: Check if primary user is set
+    public function hasPrimaryUser(): bool
+    {
+        return !is_null($this->primary_user_id);
+    }
+    
+    // NEW: Get primary user with fallback
+    public function getPrimaryUserAttribute()
+    {
+        return $this->primaryUser ?? $this->users()->wherePivot('is_primary', true)->first();
+    }
+    
+    // NEW: Get organization contact info from primary user
+    public function getContactEmailAttribute()
+    {
+        return $this->primaryUser?->email;
+    }
+    
+    public function getContactPhoneAttribute()
+    {
+        return $this->primaryUser?->phone;
+    }
+    
     // Helper methods
     public function canBeDeleted(): bool
     {

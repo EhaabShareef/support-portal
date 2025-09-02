@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -49,7 +50,8 @@ class User extends Authenticatable
         'timezone',
         'preferences',
         'department_group_id',
-        'organization_id',
+        'user_type', // NEW
+        // Remove organization_id
     ];
 
     protected $hidden = [
@@ -71,6 +73,11 @@ class User extends Authenticatable
         static::creating(function ($user) {
             if (empty($user->uuid)) {
                 $user->uuid = Str::uuid();
+            }
+            
+            // Set default user type if not specified
+            if (empty($user->user_type)) {
+                $user->user_type = 'standard';
             }
         });
         
@@ -100,9 +107,27 @@ class User extends Authenticatable
         return $this->belongsTo(DepartmentGroup::class);
     }
 
-    public function organization(): BelongsTo
+    // NEW: Many-to-many with organizations
+    public function organizations(): BelongsToMany
     {
-        return $this->belongsTo(Organization::class);
+        return $this->belongsToMany(Organization::class, 'organization_users')
+                    ->withPivot('is_primary')
+                    ->withTimestamps();
+    }
+    
+    // NEW: Get primary organization (for backward compatibility)
+    public function getPrimaryOrganizationAttribute()
+    {
+        return $this->organizations()->wherePivot('is_primary', true)->first();
+    }
+    
+    // NEW: Check if user is primary for any organization
+    public function isPrimaryForOrganization($organizationId): bool
+    {
+        return $this->organizations()
+                    ->where('organization_id', $organizationId)
+                    ->wherePivot('is_primary', true)
+                    ->exists();
     }
 
     // Get departments through department group
@@ -123,6 +148,26 @@ class User extends Authenticatable
         }
         
         return collect();
+    }
+    
+    // NEW: Get all accessible organizations
+    public function getAccessibleOrganizations()
+    {
+        if ($this->hasRole('admin')) {
+            return Organization::all();
+        }
+        
+        if ($this->hasRole('support')) {
+            // Support users see organizations with tickets in their department group
+            return Organization::whereHas('tickets', function($query) {
+                $query->whereHas('department', function($deptQuery) {
+                    $deptQuery->where('department_group_id', $this->department_group_id);
+                });
+            })->get();
+        }
+        
+        // Client users see their assigned organizations
+        return $this->organizations;
     }
 
     public function tickets()
