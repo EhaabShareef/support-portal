@@ -101,9 +101,10 @@ class ScheduleCalendar extends Component
         // Apply role-based filtering
         if ($user->hasRole('client')) {
             // Clients can only see users from their organization's departments
-            $query->whereHas('department', function ($q) use ($user) {
-                $q->whereHas('tickets', function ($ticketQ) use ($user) {
-                    $ticketQ->where('organization_id', $user->organization_id);
+            $userOrgIds = $user->organizations->pluck('id');
+            $query->whereHas('department', function ($q) use ($userOrgIds) {
+                $q->whereHas('tickets', function ($ticketQ) use ($userOrgIds) {
+                    $ticketQ->whereIn('organization_id', $userOrgIds);
                 });
             });
         }

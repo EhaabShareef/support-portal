@@ -12,6 +12,7 @@ class ManageOrganizations extends Component
     use WithPagination;
 
     public bool $showForm = false;
+    public ?int $deleteId = null;
     public array $form = [
         'id' => '',
         'name' => '',
@@ -176,24 +177,17 @@ class ManageOrganizations extends Component
             return;
         }
 
-        $this->dispatch('confirmDelete', [
-            'title' => 'Delete Organization',
-            'message' => "Are you sure you want to delete '{$organization->name}'? This action cannot be undone.",
-            'confirmText' => 'Delete',
-            'cancelText' => 'Cancel',
-            'confirmMethod' => 'delete',
-            'confirmParams' => ['id' => $id]
-        ]);
+        $this->deleteId = $id;
     }
 
-    public function delete($id)
+    public function delete()
     {
-        if (!$this->canDelete) {
+        if (!$this->deleteId || !$this->canDelete) {
             session()->flash('error', 'You do not have permission to delete organizations.');
             return;
         }
 
-        $organization = Organization::findOrFail($id);
+        $organization = Organization::findOrFail($this->deleteId);
         
         if (!$organization->canBeDeleted()) {
             session()->flash('error', 'This organization cannot be deleted because it has associated records.');
@@ -202,6 +196,7 @@ class ManageOrganizations extends Component
 
         $organization->delete();
         session()->flash('message', 'Organization deleted successfully.');
+        $this->deleteId = null;
         $this->resetPage();
     }
 
@@ -223,6 +218,11 @@ class ManageOrganizations extends Component
     {
         $this->showForm = false;
         $this->reset('form');
+    }
+
+    public function cancelDelete()
+    {
+        $this->deleteId = null;
     }
 
     private function getOrganizationValidationRulesWithExclusion($excludeId = null)
@@ -259,4 +259,6 @@ class ManageOrganizations extends Component
     {
         $this->resetPage();
     }
+
+
 }

@@ -187,7 +187,33 @@ class Dashboard extends Component
 
     private function getClientDashboardData($user)
     {
-        $organizationId = $user->organization_id;
+        // Get organization ID from new relationship structure
+        $organizationId = $user->organizations->first()?->id;
+        
+        // If no organization found, return empty data
+        if (!$organizationId) {
+            return [
+                'metrics' => [
+                    'my_tickets' => 0,
+                    'open_tickets' => 0,
+                    'resolved_tickets' => 0,
+                    'avg_response_time' => 0,
+                ],
+                'ticket_breakdown' => [
+                    'open' => 0,
+                    'in_progress' => 0,
+                    'awaiting_customer_response' => 0,
+                    'solution_provided' => 0,
+                    'closed' => 0,
+                ],
+                'contracts' => collect(),
+                'recent_tickets' => collect(),
+                'quick_actions' => [
+                    ['label' => 'Create Ticket', 'route' => 'tickets.create', 'icon' => 'plus-circle', 'color' => 'blue'],
+                    ['label' => 'My Tickets', 'route' => 'tickets.index', 'icon' => 'ticket', 'color' => 'green'],
+                ],
+            ];
+        }
         
         return [
             'metrics' => [
@@ -330,6 +356,8 @@ class Dashboard extends Component
 
     private function getAverageResponseTime($organizationId)
     {
+        if (!$organizationId) return 'N/A';
+        
         $avgMinutes = Ticket::where('organization_id', $organizationId)
             ->whereNotNull('first_response_at')
             ->avg('response_time_minutes');

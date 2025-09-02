@@ -8,12 +8,12 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\EmailWebhookController;
 // Livewire Components
 use App\Livewire\Dashboard;
-use App\Livewire\ManageOrganizations;
-use App\Livewire\ViewOrganization;
+use App\Livewire\Organization\ManageOrganizations;
+use App\Livewire\Organization\ViewOrganization;
 use App\Livewire\ManageContracts;
 use App\Livewire\ManageHardware;
 use App\Livewire\ManageUsers;
-use App\Livewire\OrganizationHardwareWizard;
+use App\Livewire\Organization\OrganizationHardwareWizard;
 use App\Livewire\Tickets\CreateTicket;
 use App\Livewire\Tickets\ManageTickets;
 use App\Livewire\Tickets\ViewTicket;

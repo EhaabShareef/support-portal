@@ -107,7 +107,7 @@
                 class="glass-card p-4 flex items-center justify-between border border-red-400 bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-300 rounded-xl">
                 <div class="text-sm">Are you sure you want to delete this organization?</div>
                 <div class="flex gap-2">
-                    <button wire:click="$set('deleteId', null)"
+                    <button wire:click="cancelDelete"
                         class="px-3 py-1 rounded-md bg-neutral-300 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white">
                         Cancel
                     </button>
@@ -190,15 +190,22 @@
 
                         {{-- Contact Info --}}
                         <div class="flex flex-wrap items-center gap-4 text-sm text-neutral-600 dark:text-neutral-400">
-                            <div class="flex items-center gap-1">
-                                <x-heroicon-o-envelope class="h-4 w-4" />
-                                {{ $org->email }}
-                            </div>
-                            @if($org->phone)
-                            <div class="flex items-center gap-1">
-                                <x-heroicon-o-phone class="h-4 w-4" />
-                                {{ $org->phone }}
-                            </div>
+                            @if($org->primaryUser)
+                                <div class="flex items-center gap-1">
+                                    <x-heroicon-o-envelope class="h-4 w-4" />
+                                    {{ $org->primaryUser->email }}
+                                </div>
+                                @if($org->primaryUser->phone)
+                                <div class="flex items-center gap-1">
+                                    <x-heroicon-o-phone class="h-4 w-4" />
+                                    {{ $org->primaryUser->phone }}
+                                </div>
+                                @endif
+                            @else
+                                <div class="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                    <x-heroicon-o-exclamation-triangle class="h-4 w-4" />
+                                    <span class="text-xs">No primary user set</span>
+                                </div>
                             @endif
                             <div class="flex items-center gap-1">
                                 <x-heroicon-o-identification class="h-4 w-4" />
