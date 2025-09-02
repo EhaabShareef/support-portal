@@ -52,8 +52,6 @@ class BasicDataSeeder extends Seeder
             'company' => 'Hospitality Technology Ltd',
             'company_contact' => 'Ismail Ibrahim',
             'tin_no' => '123456789',
-            'email' => 'info@ht.com',
-            'phone' => '+1234567890',
             'is_active' => true,
             'subscription_status' => 'active',
             'notes' => 'Default Organization',

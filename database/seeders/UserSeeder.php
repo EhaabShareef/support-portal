@@ -30,8 +30,6 @@ class UserSeeder extends Seeder
             'company' => 'Hospitality Technology Ltd',
             'company_contact' => 'System Admin',
             'tin_no' => '123456789',
-            'email' => 'info@hospitalitytechnology.com.mv',
-            'phone' => '+960-123-4567',
             'is_active' => true,
             'subscription_status' => 'active',
             'notes' => 'Default Organization',
@@ -52,7 +50,7 @@ class UserSeeder extends Seeder
                 'username' => 'superadmin',
                 'email' => 'superadmin@hospitalitytechnology.com.mv',
                 'password' => Hash::make('password'),
-                'organization_id' => $organization->id,
+                'user_type' => 'standard',
                 'department_group_id' => null, // Super admin not tied to specific department group
                 'email_verified_at' => now(),
                 'is_active' => true,
@@ -77,7 +75,7 @@ class UserSeeder extends Seeder
                     'username' => $username,
                     'email' => $email,
                     'password' => Hash::make('password'),
-                    'organization_id' => $organization->id,
+                    'user_type' => 'standard',
                     'department_group_id' => $group->id,
                     'email_verified_at' => now(),
                     'is_active' => true,
@@ -89,6 +87,41 @@ class UserSeeder extends Seeder
             $this->command->info("✓ {$name} user created with {$role->name} role");
         }
 
+        // Create organization-user relationships for all users (including support users)
+        $this->createOrganizationUserRelationships($organization);
+
         $this->command->info('✅ Users seeded successfully!');
+    }
+
+    /**
+     * Create organization-user relationships for all users
+     */
+    private function createOrganizationUserRelationships(Organization $organization): void
+    {
+        $this->command->info('🔗 Creating organization-user relationships...');
+
+        // Get all users that don't already have organization relationships
+        $users = User::whereDoesntHave('organizations')->get();
+
+        foreach ($users as $user) {
+            // Create the relationship in the pivot table
+            $user->organizations()->attach($organization->id, [
+                'is_primary' => false // Support users are not primary
+            ]);
+
+            $this->command->info("✓ Linked user {$user->name} to {$organization->name}");
+        }
+
+        // Set the Super Admin as the primary user for the default organization
+        $superAdmin = User::where('username', 'superadmin')->first();
+        if ($superAdmin) {
+            // Update the pivot table
+            $superAdmin->organizations()->updateExistingPivot($organization->id, ['is_primary' => true]);
+            
+            // Update the organization table
+            $organization->update(['primary_user_id' => $superAdmin->id]);
+            
+            $this->command->info("✓ Set {$superAdmin->name} as primary user for {$organization->name}");
+        }
     }
 }

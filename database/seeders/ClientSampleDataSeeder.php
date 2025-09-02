@@ -52,8 +52,6 @@ class ClientSampleDataSeeder extends Seeder
                 'company' => 'Paradise Bay Hospitality Ltd.',
                 'company_contact' => 'Sarah Mitchell',
                 'tin_no' => 'PBR2023001',
-                'email' => 'info@paradisebayresort.com',
-                'phone' => '+960-664-1234',
                 'is_active' => true,
                 'subscription_status' => 'active',
                 'notes' => '5-star luxury resort with 120 rooms, multiple restaurants and spa facilities'
@@ -63,8 +61,6 @@ class ClientSampleDataSeeder extends Seeder
                 'company' => 'Crystal Waters International',
                 'company_contact' => 'Ahmed Hassan',
                 'tin_no' => 'CWH2023002',
-                'email' => 'contact@crystalwatershotel.com',
-                'phone' => '+960-665-5678',
                 'is_active' => true,
                 'subscription_status' => 'active',
                 'notes' => '4-star business hotel with 80 rooms and conference facilities'
@@ -74,8 +70,6 @@ class ClientSampleDataSeeder extends Seeder
                 'company' => 'Sunset Hospitality Group',
                 'company_contact' => 'Maria Rodriguez',
                 'tin_no' => 'SVR2023003',
-                'email' => 'reservations@sunsetvillasresort.com',
-                'phone' => '+960-666-9012',
                 'is_active' => true,
                 'subscription_status' => 'active',
                 'notes' => 'Boutique villa resort with 45 villas and overwater bungalows'
@@ -149,16 +143,44 @@ class ClientSampleDataSeeder extends Seeder
                         'name' => $userData['name'],
                         'username' => $userData['username'],
                         'password' => Hash::make('client123'),
-                        'organization_id' => $organization->id,
-                        // No department_id column in fresh schema; clients are not assigned to internal departments
+                        'user_type' => 'standard',
                         'email_verified_at' => now(),
                         'is_active' => true,
                         'preferences' => json_encode(['title' => $userData['title']])
                     ]
                 );
                 
+                // Create the organization-user relationship
+                $user->organizations()->attach($organization->id, [
+                    'is_primary' => false // Will be set in next step
+                ]);
+                
                 $user->assignRole($clientRole);
                 $this->command->info("✓ Created user: {$user->name} ({$organization->name})");
+            }
+        }
+        
+        // Set primary users for each organization
+        $this->setPrimaryUsers($organizations);
+    }
+    
+    /**
+     * Set the first user of each organization as primary
+     */
+    private function setPrimaryUsers(array $organizations): void
+    {
+        $this->command->info('Setting primary users for organizations...');
+        
+        foreach ($organizations as $organization) {
+            $firstUser = $organization->users()->first();
+            if ($firstUser) {
+                // Update the pivot table
+                $firstUser->organizations()->updateExistingPivot($organization->id, ['is_primary' => true]);
+                
+                // Update the organization table
+                $organization->update(['primary_user_id' => $firstUser->id]);
+                
+                $this->command->info("✓ Set {$firstUser->name} as primary user for {$organization->name}");
             }
         }
     }
@@ -446,7 +468,7 @@ class ClientSampleDataSeeder extends Seeder
         $ticketNumber = 1001;
         foreach ($ticketsData as $orgTickets) {
             $organization = $organizations[$orgTickets['org_index']];
-            $orgUsers = User::where('organization_id', $organization->id)->get();
+            $orgUsers = $organization->users()->get();
             
             foreach ($orgTickets['tickets'] as $ticketData) {
                 $department = $departments->get($ticketData['department']);

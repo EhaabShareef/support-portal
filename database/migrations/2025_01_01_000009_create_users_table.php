@@ -32,10 +32,7 @@ return new class extends Migration
                   ->constrained('department_groups')
                   ->onDelete('set null'); // Don't cascade delete users
                   
-            $table->foreignId('organization_id')
-                  ->nullable()
-                  ->constrained('organizations')  
-                  ->onDelete('set null'); // Don't cascade delete users
+            $table->enum('user_type', ['standard', 'corporate'])->default('standard');
             
             $table->rememberToken();
             $table->timestamps();
@@ -43,8 +40,9 @@ return new class extends Migration
             
             // Composite indexes for common queries
             $table->index(['is_active', 'department_group_id']);
-            $table->index(['is_active', 'organization_id']);
+            $table->index(['is_active', 'user_type']);
             $table->index('last_login_at');
+            $table->index('user_type', 'idx_users_type');
         });
     }
 

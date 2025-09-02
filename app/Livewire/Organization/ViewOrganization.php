@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\OrganizationContract;
 use App\Models\OrganizationHardware;
 use App\Models\User;
+use App\Models\OrganizationUser;
 use App\Traits\ValidatesOrganizations;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
@@ -160,6 +161,39 @@ class ViewOrganization extends Component
     public function cancelDelete(): void
     {
         $this->confirmingDelete = false;
+    }
+
+    public function setPrimaryUser(int $userId): void
+    {
+        if (!$this->canEdit) {
+            session()->flash('error', 'You do not have permission to edit this organization.');
+            return;
+        }
+
+        // Check if the user belongs to this organization
+        $user = User::findOrFail($userId);
+        if (!$user->organizations->contains($this->organization->id)) {
+            session()->flash('error', 'This user does not belong to this organization.');
+            return;
+        }
+
+        // Check if the user has client role
+        if (!$user->hasRole('client')) {
+            session()->flash('error', 'Only client users can be set as primary users.');
+            return;
+        }
+
+        try {
+            // Use the OrganizationUser model to set the primary user
+            OrganizationUser::setPrimaryUser($userId, $this->organization->id);
+            
+            // Refresh the organization to get updated data
+            $this->organization->refresh();
+            
+            session()->flash('message', 'Primary user updated successfully.');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to update primary user: ' . $e->getMessage());
+        }
     }
 
     public function setActiveTab(string $tab): void

@@ -12,7 +12,7 @@ use App\Livewire\Organization\ManageOrganizations;
 use App\Livewire\Organization\ViewOrganization;
 use App\Livewire\ManageContracts;
 use App\Livewire\ManageHardware;
-use App\Livewire\ManageUsers;
+use App\Livewire\Organization\ManageUsers;
 use App\Livewire\Organization\OrganizationHardwareWizard;
 use App\Livewire\Tickets\CreateTicket;
 use App\Livewire\Tickets\ManageTickets;
