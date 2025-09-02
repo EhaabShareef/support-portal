@@ -115,12 +115,20 @@ return [
        'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    'email_domain' => env('EMAIL_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST) ?: 'example.com'),
+
     'email_parser' => [
         'enabled' => env('EMAIL_PARSER_ENABLED', false),
         'incoming_mailbox' => env('EMAIL_PARSER_MAILBOX', 'support@example.com'),
         'reply_prefix' => env('EMAIL_PARSER_REPLY_PREFIX', '[TICKET-'),
-        'max_attachment_size' => env('EMAIL_PARSER_MAX_ATTACHMENT', 10240),
-        'allowed_extensions' => explode(',', env('EMAIL_PARSER_ALLOWED_EXTENSIONS', 'pdf,doc,docx,xls,xlsx,png,jpg,jpeg,gif')),
+        'max_attachment_size' => (int) env('EMAIL_PARSER_MAX_ATTACHMENT', 10485760), // 10MB in bytes
+        'allowed_extensions' => collect(explode(',', env('EMAIL_PARSER_ALLOWED_EXTENSIONS', 'pdf,doc,docx,xls,xlsx,png,jpg,jpeg,gif')))
+            ->map(fn($ext) => strtolower(trim($ext)))
+            ->filter(fn($ext) => !empty($ext))
+            ->values()
+            ->toArray(),
+        'webhook_secret' => env('EMAIL_PARSER_WEBHOOK_SECRET'),
+        'webhook_timeout' => env('EMAIL_PARSER_WEBHOOK_TIMEOUT', 300), // 5 minutes default
     ],
 
 ];

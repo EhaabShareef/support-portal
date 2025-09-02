@@ -383,11 +383,27 @@ class Ticket extends Model
 
     public function getEmailReplyAddressAttribute(): string
     {
+        // Return stored value if it exists
+        if (isset($this->attributes['email_reply_address']) && $this->attributes['email_reply_address']) {
+            return $this->attributes['email_reply_address'];
+        }
+        
+        // Generate and return computed value without saving
+        return app(EmailReplyService::class)->generateReplyAddress($this);
+    }
+
+    /**
+     * Ensure the email reply address is generated and persisted
+     * 
+     * @return string
+     */
+    public function ensureEmailReplyAddress(): string
+    {
         if (!isset($this->attributes['email_reply_address']) || !$this->attributes['email_reply_address']) {
             $this->attributes['email_reply_address'] = app(EmailReplyService::class)->generateReplyAddress($this);
-            $this->save();
+            $this->saveQuietly();
         }
-
+        
         return $this->attributes['email_reply_address'];
     }
 }

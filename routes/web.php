@@ -32,9 +32,31 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Email webhook route - only enabled if feature flag is on
+if (config('services.email_webhook.enabled', false)) {
+    Route::post('/webhooks/email', [EmailWebhookController::class, 'handleIncomingEmail'])
+        ->name('webhooks.email')
+        ->withoutMiddleware(['web', 'auth', 'webhook.signature'])
+        ->middleware(['webhook.signature', 'throttle:60,1']); // 60 requests per minute
+}
+
+// TEMPORARY: Test webhook route (bypass feature flag for debugging)
 Route::post('/webhooks/email', [EmailWebhookController::class, 'handleIncomingEmail'])
-    ->name('webhooks.email')
-    ->withoutMiddleware(['auth', \App\Http\Middleware\VerifyCsrfToken::class]);
+    ->name('webhooks.email.test')
+    ->withoutMiddleware(['web', 'auth'])
+    ->middleware(['webhook.signature', 'throttle:60,1']);
+
+// TEMPORARY: Simple test route without middleware
+Route::post('/webhooks/test', function() {
+    return response()->json(['message' => 'Test route working!']);
+})->name('webhooks.test')
+->withoutMiddleware(['web', 'auth']);
+
+// TEMPORARY: Simple GET test route
+Route::get('/webhooks/test-get', function() {
+    return response()->json(['message' => 'GET route working!']);
+})->name('webhooks.test.get')
+->withoutMiddleware(['web', 'auth']);
 
 
 // Authentication

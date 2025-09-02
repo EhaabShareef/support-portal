@@ -3,6 +3,10 @@
 .env
 .env.backup
 .env.production
+
+# Test files with webhook secrets
+test_*_webhook.php
+test_simple_*.php
 .phpactor.json
 .phpunit.result.cache
 /.fleet

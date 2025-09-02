@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'email_webhook' => [
+        'secret' => env('EMAIL_WEBHOOK_SECRET'),
+        'enabled' => env('EMAIL_WEBHOOK_ENABLED', false),
+        'ip_allowlist' => array_filter(explode(',', env('EMAIL_WEBHOOK_IP_ALLOWLIST', ''))),
+        'timestamp_tolerance' => env('EMAIL_WEBHOOK_TIMESTAMP_TOLERANCE', 300), // 5 minutes default
+    ],
+
 ];
